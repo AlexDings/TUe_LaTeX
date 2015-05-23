@@ -3,7 +3,7 @@
 % the standard report/book document class, so it is designed to work with these
 % classes only!
 %
-% Author: Alex Dings, elaborated on the works of Marko Boon
+% Author: Alex Dings & Christiaan Dirkx, elaborated on the works of Marko Boon
 % Date: May, 2015.
 
 
