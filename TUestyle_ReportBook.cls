@@ -305,7 +305,6 @@
 
 %%% Defining the commands to specify name, department, etc.
 \newvariable{name}{}
-\newvariable{name}{}
 \newvariable{date}{\today}
 \newvariable{administrativeunit}{}
 \newvariable{department}{}
@@ -318,6 +317,24 @@
 \newvariable{copyholder}{}
 \newvariable{addfrontpage}{}
 
+
+\ifx\nederlands\undefined
+	% English
+	\newvariable{copyholderlabel}{Copyholder}
+	\newvariable{authorlabel}{Author}
+	\newvariable{orderissuerlabel}{Order issuer}
+	\newvariable{referencelabel}{Reference}
+	\newvariable{datelabel}{Date}
+	\newvariable{versionlabel}{Version}
+\else
+	% Dutch
+	\newvariable{copyholderlabel}{Kopiehouder}
+	\newvariable{authorlabel}{Auteur}
+	\newvariable{orderissuerlabel}{Opdrachtgever}
+	\newvariable{referencelabel}{Referentie}
+	\newvariable{datelabel}{Datum}
+	\newvariable{versionlabel}{Versie}
+\fi
 
 
 
@@ -473,7 +490,9 @@
 \colorlet{linkpink}{tuewarmred!10!}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ENGELS VS NEDERLANDSSSSSSSSSS
+
+
+
 %%%
 % Clean up the tables, figures, defintions and sources lists
 %%%
@@ -597,47 +616,25 @@
 		\pgftext[at=\pgfpoint{1.55cm}{\the\paperheight-9cm},left,top]{%
 			\parbox[t]{5cm}{%
 				\hbadness=10000
-				\ifx\nederlands\undefined
-					\frontpagehead{Author}
+					\frontpagehead{\theauthorlabel}
 					\frontpagebody{\@author} 
 					\ifthenelse{\equal{\theorderissuer}{}}{}{
-						\frontpagehead{Order issuer}
+						\frontpagehead{\theorderissuerlabel}
 						\frontpagebody{\theorderissuer} 
 					}
 					\ifthenelse{\equal{\thereference}{}}{}{
-						\frontpagehead{Reference}
+						\frontpagehead{\thereferencelabel}
 						\frontpagebody{\thereference} 
 					}
 					\theaddfrontpage
 					\ifthenelse{\equal{\thedate}{}}{}{
-						\frontpagehead{Date}
+						\frontpagehead{\thedatelabel}
 						\frontpagebody{\thedate} 
 					}
 					\ifthenelse{\equal{\theversionnum}{}}{}{
-						\frontpagehead{Version}
+						\frontpagehead{\theversionlabel}
 						\frontpagebody{\theversionnum} 
 					}
-				\else%
-					\frontpagehead{Auteur}
-					\frontpagebody{\@author} 
-					\ifthenelse{\equal{\theorderissuer}{}}{}{
-						\frontpagehead{Opdrachtgever}
-						\frontpagebody{\theorderissuer} 
-					}
-					\ifthenelse{\equal{\thereference}{}}{}{
-						\frontpagehead{Referentie}
-						\frontpagebody{\thereference} 
-					}
-					\theaddfrontpage
-					\ifthenelse{\equal{\thedate}{}}{}{
-						\frontpagehead{Datum}
-						\frontpagebody{\thedate} 
-					}
-					\ifthenelse{\equal{\theversionnum}{}}{}{
-						\frontpagehead{Versie}
-						\frontpagebody{\theversionnum} 
-					}
-				\fi%
 			}
 		}%
 
@@ -658,15 +655,10 @@
 		\pgftext[at=\pgfpoint{\the\paperwidth/2-4cm}{1.2cm},left,bottom]{%
 			\parbox[b][3.5cm]{8cm}{
 				\centering
-				\ifx\nederlands\undefined
-					\ifthenelse{\equal{\thecopyholder}{}}{}{
-						\frontpagehead{Copy holder}\meta\thecopyholder
-					}
-				\else
-					\ifthenelse{\equal{\thecopyholder}{}}{}{
-						\frontpagehead{Kopiehouder}\meta\thecopyholder
-					}
-				\fi
+				\ifthenelse{\equal{\thecopyholder}{}}{}{
+					\frontpagehead{\thecopyholderlabel}\meta\thecopyholder
+				}
+
 			\par}
 		 }
 	\end{pgfpicture}%
@@ -1146,7 +1138,7 @@
 %%%	Define left side footer
 \newcommand{\leftsidefoot}{
 	\small \footnumber\hspace{0.1cm}\color{hfcolor} - 
-	\@title \ifthenelse{\equal{\theversionnum}{}}{}{ / \ifx\nederlands\undefined Version \else Versie \fi \theversionnum }\\ 
+	\@title \ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel \theversionnum }\\ 
 	\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 	\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
 }
@@ -1154,7 +1146,7 @@
 %%%	Define right side footer
 \newcommand{\rightsidefoot}{
 		\small \hspace{0.1cm}\color{hfcolor} \@title
-		\ifthenelse{\equal{\theversionnum}{}}{}{ / \ifx\nederlands\undefined Version \else Versie \fi \theversionnum } - \color{black}
+		\ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel \theversionnum } - \color{black}
 		\footnumber\hspace{0.1cm}\color{hfcolor} \\ 
 		\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 		\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
@@ -1162,17 +1154,9 @@
 
 %%%	Define copyholder footer
 \newcommand{\copyfoot}{
-\ifx\makecopyf\undefined\relax\else
-	\ifx\nederlands\undefined
-		\ifthenelse{\equal{\thecopyholder}{}}{}{
-			\frontpagehead{Copy holder}\meta\thecopyholder
-		}
-	\else
-		\ifthenelse{\equal{\thecopyholder}{}}{}{
-			\frontpagehead{Kopiehouder}\meta\thecopyholder
-		}
+	\ifx\makecopyf\undefined\relax\else
+		\frontpagehead{\copyholderlabel}\meta\thecopyholder
 	\fi
-\fi
 }
 
 %%%	Define draft overlay
