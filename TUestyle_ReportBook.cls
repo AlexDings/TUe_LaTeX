@@ -15,11 +15,44 @@
 %%%
 
 \NeedsTeXFormat{LaTeX2e}
-\def\fileversion{v.2.0}\def\filedate{2015/04/13}
-\ProvidesClass{tuestyle_aLeX}
-	[\filedate\space\fileversion\space  TU/e style report & book 2008]
+\def\fileversion{v.2.0}
+\def\filedate{2015/05/14}
+\ProvidesClass{TUestyle_ReportBook}[\filedate\space\fileversion\space  TU/e style report & book 2008]
 
 
+
+
+
+%%
+%	Command \newvariable
+%	Declares a new variable
+%	set : \variable{value}
+%	get : \thevariable
+%%
+\newcommand{\newvariable}[2]{
+	\@namedef{#1}##1{%
+		\@namedef{the#1}{##1}
+	}
+	\@nameuse{#1}{#2}
+}
+
+
+
+
+
+%%
+%	Environment onecolarea
+%	Defines a temporary one-column area
+%%
+\newenvironment{onecolarea}{%
+	\if@twocolumn
+	  \@restonecoltrue\onecolumn
+	\else
+	  \@restonecolfalse
+	\fi
+	}{%
+	\if@restonecol\twocolumn\fi
+	}
 
 
 
@@ -41,9 +74,6 @@
 
 %%%	Option for leaving out the TU/e logo
 \DeclareOptionX{notuelogo}{\def\drawtuelogo{false}}
-
-%%%	Option for using standard table of contents style
-\DeclareOptionX{notuetoc}{\def\notuetoc{true}}
 
 %%%	Option for using standard chapter style
 \DeclareOptionX{notuechapters}{\def\notuechapters{true}}
@@ -175,6 +205,7 @@
 %	Default is black
 \RequirePackage{pgf}
 \RequirePackage{color}
+
 \ifx\makefadehf\undefined
 	\definecolor{hfcolor}{gray}{0}
 \else
@@ -255,24 +286,41 @@
 \newcommand{\etc}{etc.}
 \newcommand{\etal}{{\emph{et al.}}}
 
+\newcommand{\tue}{TU/e}
+\newcommand{\tuesite}{www.tue.nl}
+\newcommand{\tuefull}{Technische Universiteit \textbf{Eindhoven} University of Technology}
+\ifx\nederlands\undefined
+	\newcommand{\tuename}{Eindhoven University of Technology}	% english
+\else
+	\newcommand{\tuename}{Technische Universiteit Eindhoven}	% dutch
+\fi
+
+
+
+
 
 %%%
 % 	Declare data commands, commands used by the user to enter data
 %%%
 
 %%% Defining the commands to specify name, department, etc.
-\newcommand*{\name}[1]{\def\fromname{#1}}
-\renewcommand*{\date}[1]{\def\datedata{#1}}
-\newcommand*{\administrativeunit}[1]{\def\departmentdata{#1}}
-\newcommand*{\department}[1]{\def\afdelingdata{#1}}
-\newcommand*{\website}[1]{\def\websitedata{#1}}
-\newcommand*{\subtitle}[1]{\def\subtitledata{#1}}
-\newcommand*{\orderissuer}[1]{\def\orderissuerdata{#1}}
-\newcommand*{\reference}[1]{\def\referencedata{#1}}
-\newcommand*{\versionnum}[1]{\def\versiondata{#1}}
-\newcommand*{\copyholder}[1]{\def\copyholderdata{#1}}
-\newcommand*{\address}[1]{\def\addressdata{#1}}
-\newcommand*{\addfrontpage}[1]{\def\addfrontpagedata{#1}}
+\newvariable{name}{}
+\newvariable{name}{}
+\newvariable{date}{\today}
+\newvariable{administrativeunit}{}
+\newvariable{department}{}
+\newvariable{website}{\tuesite}
+\newvariable{subtitle}{}
+\newvariable{orderissuer}{}
+\newvariable{reference}{}
+\newvariable{address}{}
+\newvariable{versionnum}{}
+\newvariable{copyholder}{}
+\newvariable{addfrontpage}{}
+
+
+
+
 
 \newcounter{authorCounter}
 \newcounter{maxAuthorCounter}
@@ -330,19 +378,6 @@
 
 \author{\VerticalAuthorM}
 
-%%% Initialisation of the above commands
-\name{}
-\date{\today}
-\administrativeunit{}
-\department{}
-\website{www.tue.nl}
-\subtitle{}
-\orderissuer{}
-\reference{}
-\versionnum{}
-\copyholder{}
-\address{}
-\addfrontpage{}
 
 %%% Defining the commands to add custom footer and header  data
 \newcommand*{\extraf}[1]{\def\extrafooter{#1}}
@@ -446,6 +481,27 @@
 %%%	Remove dots between text and pagenumbers
 \renewcommand{\@dotsep}{10000}
 
+%%%	Declare the \tuetables command for the list of tables
+\newcommand{\tuetables}[1][List of Tables]{
+	\renewcommand{\listtablename}{#1}
+	\renewcommand*\l@table{\@dottedtocline{1}{0em}{3em}}% Default: 1.5em/2.3em
+	\let\origaddvspace\addvspace
+	\renewcommand{\addvspace}[1]{}
+	\addcontentsline{toc}{chapter}{\listtablename}
+	\listoftables
+	\let\addvspace\origaddvspace
+}
+
+%%%	Declare the \tuefigures command for the list of figures
+\newcommand{\tuefigures}[1][List of Figures]{
+	\renewcommand*\l@figure{\@dottedtocline{1}{0em}{3em}}% Default: 1.5em/2.3em
+	\let\origaddvspace\addvspace
+	\renewcommand{\addvspace}[1]{}
+	\addcontentsline{toc}{chapter}{\listfigurename}
+	\listoffigures
+	\let\addvspace\origaddvspace
+}
+
 
 
 
@@ -512,28 +568,26 @@
 			\ifx\nederlands\undefined
 				\parbox[b][3.5cm]{5cm}%
 				{\meta%
-					\raggedright\mbox{}\textbf{\departmentdata}\\
-					\mbox{}\afdelingdata\\
-					\ifthenelse{\equal{\addressdata}{}}{}{
-					\addressdata ,}
+					\raggedright\mbox{}\textbf{\thedepartment}\\
+					\ifthenelse{\equal{\theaddress}{}}{}{
+					\theaddress ,}
 					5612 AZ Eindhoven\\
 					P.O. Box 513, 5600 MB Eindhoven\\
 					The Netherlands\\
 					\hypersetup{urlcolor={black}}
-					{\urlstyle{same}\url{\websitedata}}
+					{\urlstyle{same}\url{\thewebsite}}
 					\hypersetup{urlcolor={tuewarmred}}
 				}\par
 			\else
 				\parbox[b][3.5cm]{5cm}%
 				{\meta%
-					\raggedright\mbox{}\textbf{\departmentdata}\\
-					\mbox{}\afdelingdata\\
-					\ifthenelse{\equal{\addressdata}{}}{}{
-					\addressdata ,}
+					\raggedright\mbox{}\textbf{\thedepartment}\\
+					\ifthenelse{\equal{\theaddress}{}}{}{
+					\theaddress ,}
 					5612 AZ Eindhoven\\
 					Postbus 513, 5600 MB Eindhoven\\
 					\hypersetup{urlcolor={black}}
-					{\urlstyle{same}\url{\websitedata}}
+					{\urlstyle{same}\url{\thewebsite}}
 					\hypersetup{urlcolor={tuewarmred}}
 				}\par
 			 \fi
@@ -546,42 +600,42 @@
 				\ifx\nederlands\undefined
 					\frontpagehead{Author}
 					\frontpagebody{\@author} 
-					\ifthenelse{\equal{\orderissuerdata}{}}{}{
+					\ifthenelse{\equal{\theorderissuer}{}}{}{
 						\frontpagehead{Order issuer}
-						\frontpagebody{\orderissuerdata} 
+						\frontpagebody{\theorderissuer} 
 					}
-					\ifthenelse{\equal{\referencedata}{}}{}{
+					\ifthenelse{\equal{\thereference}{}}{}{
 						\frontpagehead{Reference}
-						\frontpagebody{\referencedata} 
+						\frontpagebody{\thereference} 
 					}
-					\addfrontpagedata
-					\ifthenelse{\equal{\datedata}{}}{}{
+					\theaddfrontpage
+					\ifthenelse{\equal{\thedate}{}}{}{
 						\frontpagehead{Date}
-						\frontpagebody{\datedata} 
+						\frontpagebody{\thedate} 
 					}
-					\ifthenelse{\equal{\versiondata}{}}{}{
+					\ifthenelse{\equal{\theversionnum}{}}{}{
 						\frontpagehead{Version}
-						\frontpagebody{\versiondata} 
+						\frontpagebody{\theversionnum} 
 					}
 				\else%
 					\frontpagehead{Auteur}
 					\frontpagebody{\@author} 
-					\ifthenelse{\equal{\orderissuerdata}{}}{}{
+					\ifthenelse{\equal{\theorderissuer}{}}{}{
 						\frontpagehead{Opdrachtgever}
-						\frontpagebody{\orderissuerdata} 
+						\frontpagebody{\theorderissuer} 
 					}
-					\ifthenelse{\equal{\referencedata}{}}{}{
+					\ifthenelse{\equal{\thereference}{}}{}{
 						\frontpagehead{Referentie}
-						\frontpagebody{\referencedata} 
+						\frontpagebody{\thereference} 
 					}
-					\addfrontpagedata
-					\ifthenelse{\equal{\datedata}{}}{}{
+					\theaddfrontpage
+					\ifthenelse{\equal{\thedate}{}}{}{
 						\frontpagehead{Datum}
-						\frontpagebody{\datedata} 
+						\frontpagebody{\thedate} 
 					}
-					\ifthenelse{\equal{\versiondata}{}}{}{
+					\ifthenelse{\equal{\theversionnum}{}}{}{
 						\frontpagehead{Versie}
-						\frontpagebody{\versiondata} 
+						\frontpagebody{\theversionnum} 
 					}
 				\fi%
 			}
@@ -590,13 +644,13 @@
 		%%% Title and subtitle at normal position
 		\ifx\drawcover\undefined
 			\pgftext[at=\pgfpoint{\the\paperwidth/2-3cm}{\the\paperheight-9cm},left,top]{%
-				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \subtitledata}%
+				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
 			}
 
 		%%% Title and subtitle positioned underneath cover
 		\else           
 			\pgftext[at=\pgfpoint{4cm}{8.5cm},left,top]{%
-				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \subtitledata}%
+				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
 			}
 		\fi
 
@@ -605,12 +659,12 @@
 			\parbox[b][3.5cm]{8cm}{
 				\centering
 				\ifx\nederlands\undefined
-					\ifthenelse{\equal{\copyholderdata}{}}{}{
-						\frontpagehead{Copy holder}\meta\copyholderdata
+					\ifthenelse{\equal{\thecopyholder}{}}{}{
+						\frontpagehead{Copy holder}\meta\thecopyholder
 					}
 				\else
-					\ifthenelse{\equal{\copyholderdata}{}}{}{
-						\frontpagehead{Kopiehouder}\meta\copyholderdata
+					\ifthenelse{\equal{\thecopyholder}{}}{}{
+						\frontpagehead{Kopiehouder}\meta\thecopyholder
 					}
 				\fi
 			\par}
@@ -844,58 +898,57 @@
 % It shows the TU/e logo and draws the axes.
 % It also needs to redefine the margins temporarily,
 % for which the geometry package is used.
-\ifx\notuetoc\undefined
-	\renewcommand\tableofcontents{%
-		\if@openright
-			\cleardoublepage
-		\else\relax\fi
 
-		% The table of contents needs different margins. The package geometry is used to
-		% change the margins of certain pages within a document.
-		% After the table of contents, they will be reset.
+\newcommand\TUeTableofcontents{%
+	\if@openright
+		\cleardoublepage
+	\else\relax\fi
 
-		\newgeometry{layouthoffset=0cm, bottom=\bottomspecified, twoside=false,marginparsep=0pt, marginpar=0pt, right=\rightspecified, left=7.2cm, top=9cm,headheight=16pt}
+	% The table of contents needs different margins. The package geometry is used to
+	% change the margins of certain pages within a document.
+	% After the table of contents, they will be reset.
 
-		\fancyhf{}
-		\setlength{\oldheadrulewidth}{\headrulewidth}
-		\renewcommand{\headrulewidth}{0.0pt}
+	\newgeometry{layouthoffset=0cm, bottom=\bottomspecified, twoside=false,marginparsep=0pt, marginpar=0pt, right=\rightspecified, left=7.2cm, top=9cm,headheight=16pt}
 
-		\fancyhead[R]{
-			\hfuzz=1000pt
-			\begin{pgfpicture}{7.2cm}{\headheight+\headsep+\textheight+\bottomspecified}{\the\paperwidth*2}{0cm}
-			\drawtuetableofcontents
-			\end{pgfpicture}
-		}
-		\hfuzz=0pt
-		
-		\pagestyle{fancy}
-			%%%	Draw TOC (Table of Contents)
-			{
-			\@starttoc{toc} 
-		 }%
-		 
+	\fancyhf{}
+	\setlength{\oldheadrulewidth}{\headrulewidth}
+	\renewcommand{\headrulewidth}{0.0pt}
 
-		
-		%%%	Begin new page to start layout-change
-		\newpage
-
-		\disablepageskip
-		
-		%%%	Reset the original values of all margins
-		\setmargins
-		\sethf
-		
-		\renewcommand{\headrulewidth}{\oldheadrulewidth}
-		
-		\enablepageskip
-		
-		\ifx\drawtwocolumn\undefined
-			\relax
-		\else
-			\twocolumn
-		\fi
+	\fancyhead[R]{
+		\hfuzz=1000pt
+		\begin{pgfpicture}{7.2cm}{\headheight+\headsep+\textheight+\bottomspecified}{\the\paperwidth*2}{0cm}
+		\drawtuetableofcontents
+		\end{pgfpicture}
 	}
-\fi
+	\hfuzz=0pt
+	
+	\pagestyle{fancy}
+		%%%	Draw TOC (Table of Contents)
+		{
+		\@starttoc{toc} 
+	 }%
+	 
+
+	
+	%%%	Begin new page to start layout-change
+	\newpage
+
+	\disablepageskip
+	
+	%%%	Reset the original values of all margins
+	\setmargins
+	\sethf
+	
+	\renewcommand{\headrulewidth}{\oldheadrulewidth}
+	
+	\enablepageskip
+	
+	\ifx\drawtwocolumn\undefined
+		\relax
+	\else
+		\twocolumn
+	\fi
+}
 
 %%%	Disable clearpage, cleardoublepage & newpage commands
 \newcommand{\disablepageskip}{
@@ -1101,7 +1154,7 @@
 %%%	Define left side footer
 \newcommand{\leftsidefoot}{
 	\small \footnumber\hspace{0.1cm}\color{hfcolor} - 
-	\@title \ifthenelse{\equal{\versiondata}{}}{}{ / \ifx\nederlands\undefined Version \else Versie \fi \versiondata }\\ 
+	\@title \ifthenelse{\equal{\theversionnum}{}}{}{ / \ifx\nederlands\undefined Version \else Versie \fi \theversionnum }\\ 
 	\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 	\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
 }
@@ -1109,7 +1162,7 @@
 %%%	Define right side footer
 \newcommand{\rightsidefoot}{
 		\small \hspace{0.1cm}\color{hfcolor} \@title
-		\ifthenelse{\equal{\versiondata}{}}{}{ / \ifx\nederlands\undefined Version \else Versie \fi \versiondata } - \color{black}
+		\ifthenelse{\equal{\theversionnum}{}}{}{ / \ifx\nederlands\undefined Version \else Versie \fi \theversionnum } - \color{black}
 		\footnumber\hspace{0.1cm}\color{hfcolor} \\ 
 		\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 		\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
@@ -1119,12 +1172,12 @@
 \newcommand{\copyfoot}{
 \ifx\makecopyf\undefined\relax\else
 	\ifx\nederlands\undefined
-		\ifthenelse{\equal{\copyholderdata}{}}{}{
-			\frontpagehead{Copy holder}\meta\copyholderdata
+		\ifthenelse{\equal{\thecopyholder}{}}{}{
+			\frontpagehead{Copy holder}\meta\thecopyholder
 		}
 	\else
-		\ifthenelse{\equal{\copyholderdata}{}}{}{
-			\frontpagehead{Kopiehouder}\meta\copyholderdata
+		\ifthenelse{\equal{\thecopyholder}{}}{}{
+			\frontpagehead{Kopiehouder}\meta\thecopyholder
 		}
 	\fi
 \fi
@@ -1140,6 +1193,7 @@
 	\fi
 }
 
+%%%	Define footer number
 \newcommand{\footnumber}{
 	\thepage%
 	\ifx\drawendf\undefined\relax\else
@@ -1229,17 +1283,25 @@
 \sethf
 
 
+
+
+
+%%%
+% Define draftmark
+%%%
+
 \newsavebox{\draftBox}
 \savebox{\draftBox}{%
-	%%%%%%%%%%%%%%%%%%%%%\pgfsetfillopacity{0.2}
 	\color{linkpink}
 	\rotatebox[origin=c]{-45}{Draft}%
 }%
 
-%%%	Declare the \aLeX command and scale it to the text
+%%%	Declare the \draftmark command and scale it to the text
 \newcommand{\draftmark}{%
 	\resizebox{!}{200pt}{\usebox{\draftBox}}%
 }
+
+
 
 
 
@@ -1262,173 +1324,176 @@
   \resizebox{!}{\@tempdima}{\usebox{\aLeXbox}}%
 }
 
-\newsavebox{\DirkxDingsBox}
-\savebox{\DirkxDingsBox}{\Large DI\hspace{-0.8ex} %
-%    \raisebox{0.80ex}{\scriptsize I}%
-%    \settowidth{\@tempdima}{\scriptsize I}%
-%    \hspace{-\@tempdima}%
-%    \raisebox{0.0ex}{\scriptsize I}%
- 
-    \raisebox{0.80ex}{\scriptsize R}%
-    \settowidth{\@tempdima}{\scriptsize R}%
-    \hspace{-\@tempdima}%
-    \raisebox{0.0ex}{\scriptsize N}%   
-    
-    \raisebox{0.80ex}{\scriptsize K}%
-    \settowidth{\@tempdima}{\scriptsize K}%
-    \hspace{-\@tempdima}%
-    \raisebox{0.0ex}{\scriptsize G}% 
 
-	S\hspace{-1.4ex}\raisebox{0.40ex}{\scriptsize X}
 
-	%S%
-    %\hspace{-1.4ex}%
-    %X%   
-    
-	%X\hspace{-1.8ex}\raisebox{0.40ex}{\scriptsize S}
-  }%
 
-\newcommand{\DirkxDings}{%
-  \settoheight{\@tempdima}{L}%
-  \addtolength{\@tempdima}{\@tempdima}
-  \resizebox{!}{\@tempdima}{\usebox{\DirkxDingsBox}}%
-}
+
+%%%
+% \CaTeX
+%%%
+
+%%%%%%%%%%%% Needs to be made
+
 
 
 %%%
 % set PDF meta data
 %%%
 
-\makeatletter
+
 \AtBeginDocument{
 	%%%	Generate authors
 	\GenerateAllAuthorM
 	%%%	Set meta data
-	\hypersetup{pdftitle = {\@title},pdfauthor = {\AllAuthorM},pdfsubject={\subtitledata},pdfkeywords={Version \versiondata} {Eindhoven University of Technology},pdfcreator={aLeX TU/e template}}
+	\hypersetup{pdftitle = {\@title},pdfauthor = {\AllAuthorM},pdfsubject={\thesubtitle},pdfkeywords={Version \theversionnum} {Eindhoven University of Technology},pdfcreator={aLeX TU/e template}}
 }
-\makeatother
+
+
+
+
 
 %%%
 % Listing styling
 %%%
 
-\makeatletter
-\AtBeginDocument{
-\@ifpackageloaded{listings}{
-	\renewcommand\lstlistoflistings{%
-		\if@twocolumn
-		  \@restonecoltrue\onecolumn
-		\else
-		  \@restonecolfalse
-		\fi
-	\chapternn{Listings}
-		\@starttoc{lol}%
-		\if@restonecol\twocolumn\fi
-	}
-		
-	\renewcommand*{\l@lstlisting}[2]{%
-		\@dottedtocline{1}
-		 {0em} % Indent
-		 {3em} % Listing number width
-		 {#1} % Entry text
-		 {#2}% % Page number
-	}
-}{}
-}
+%%%
+%	Notes
+%%%
 
-%%%	Define the note command if the "notes" option is used
+%%
+%	Variable \notelabel
+%	The note label
+%
+%	Variable \listnotename
+%	The list of notes' name
+%%
+\newvariable{notelabel}{}
+\newvariable{listnotename}{}
+\ifx\nederlands\undefined
+	% english
+	\notelabel{NOTE}
+	\listnotename{List of Notes}
+\else
+	% dutch
+	\notelabel{NOTITIE}
+	\listnotename{Lijst van Notities}
+\fi
+
+% define \note command if the \drawnodes option is set
 \ifx\drawnotes\undefined
 		\newcommand{\note}[1]{}
 	\else
-		\newcounter{note}%
+		% note counter
+		\newcounter{note}
+		
+		%%
+		%	Command \note
+		%	Declares a new note
+		%%
 		\newcommand{\note}[1]{%
 			\refstepcounter{note}%
 			\notestyle{\thenote}{#1}%
-			\addcontentsline{lon}{note}{\numberline {\thenote} #1}%
-		}%
+			\addcontentsline{lon}{note}{\numberline {\thenote} #1}
+		}
 	\fi
 
+% defines the note styling
 \newcommand{\notestyle}[2]{%
-{\textcolor{tuewarmred}{\textbf{[NOTE #1:} #2\textbf{]}}}%
+{\textcolor{tuewarmred}{\textbf{[\thenotelabel\space #1:} #2\textbf{]}}}%
 }
 
+%%
+%	Command \listofnotes
+%	Produces a list of all notes
+%% 
+\newcommand{\listofnotes}{%
+	\begin{onecolarea}
+		\chapternn{\thelistnotename}%
+		\@starttoc{lon}%
+	\end{onecolarea}
+}
+
+% defines the list of notes' formatting	
 \newcommand{\l@note}[2]{%
-	\@dottedtocline{1}%
+	\@dottedtocline{1}
 	 {0em} % Indent
 	 {3em} % Listing number width
 	 {#1} % Entry text
 	 {#2}% % Page number
 }
 
-\newcommand{\listnotename}{List of Notes}
-\newcommand{\listofnotes}{%
-	\if@twocolumn
-	  \@restonecoltrue\onecolumn
-	\else
-	  \@restonecolfalse
-	\fi
-	\chapternn{\listnotename
-	\@mkboth{\MakeUppercase\listnotename}%
-	{\MakeUppercase\listnotename}}%
-	\@starttoc{lon}%
-	\if@restonecol\twocolumn\fi
-}
 
 
 
+%%%
+%	Definitions
+%%%
 
-
-
-
-
-
+% definition counter
 \newcounter{definition}
+
+%%
+%	Command \definedef
+%	Declares a new definition
+%%
 \newcommand{\definedef}[2]{%
 	\refstepcounter{definition}%
-	\begingroup%
-		\setlength{\fboxsep}{1pt}%
-		\colorbox{linkpink}{\hyperref[def:#1]{#1}}%
-	\endgroup%
-	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}%
-	#2}%
+	\colorbox{linkpink}{\strut\refdef{#1}}%
+	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}#2}%
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
 
+%%
+%	Command \defineabbr
+%	Declares a new abbreviation
+%%
 \newcommand{\defineabbr}[2]{%
 	\refstepcounter{definition}%
-	\begingroup%
-		\setlength{\fboxsep}{1pt}%
-		\colorbox{linkpink}{\hyperref[def:#1]{#1}} (#2)%
-	\endgroup%
-	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}%
-	#2}%
+	\colorbox{linkpink}{\strut\refdef{#1}}\space(#2)%
+	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}#2}%
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
 
+% defines the definition styling
 \newcommand{\definitionstyle}[1]{%
 \begingroup
-\parbox[b]{7em}{#1}
+\parbox[b]{7em}{\textbf{#1}}
 \endgroup
 }
 
+%%
+%	Command \refdef
+%	References a definition
+%%
 \newcommand{\refdef}[1]{%
 	\hyperref[def:#1]{#1}
 }
 
-\newcommand{\listdefintionname}{List of Definitions}
+%%
+%	Variable \listdefinitionname
+%	The list of definitions' name
+%%
+\newvariable{listdefintionname}{}
+\ifx\nederlands\undefined
+	% english
+	\listdefintionname{List of Definitions}
+\else
+	% dutch
+	\listdefintionname{Lijst van Definities}
+\fi
+
+%%
+%	Command \listofdefinitions
+%	Produces a list of all definitions
+%% 
 \newcommand{\listofdefinitions}{%
-	\if@twocolumn
-	  \@restonecoltrue\onecolumn
-	\else
-	  \@restonecolfalse
-	\fi
-	\chapternn{\listdefintionname
-	\@mkboth{\MakeUppercase\listdefintionname}%
-	{\MakeUppercase\listdefintionname}}%
-	\@starttoc{lod}%
-	\if@restonecol\twocolumn\fi
+	\begin{onecolarea}
+		\chapternn{\thelistdefintionname}%
+		\@starttoc{lod}%
+	\end{onecolarea}
 }
 
+% defines the list of definitions' formatting	
 \newcommand{\l@definition}[2]{%
 	\@dottedtocline{0}%
 	 {0em} % Indent
@@ -1437,9 +1502,10 @@
 	 {#2}% % Page number
 }
 
-\makeatother
 
-\makeatletter
+
+
+
 \AtEndDocument{
 	\label{lastdocpage}
 }
