@@ -280,11 +280,11 @@
 \newcommand{\up}[1]{\ensuremath{^{\textrm{\small#1}}}} 
 
 %%%	Abbreviation commands
-\newcommand{\ie}{{\emph{i.e.}},}
-\newcommand{\viz}{{\emph{viz.}},}
-\newcommand{\eg}{{\emph{e.g.}},}
-\newcommand{\etc}{etc.}
-\newcommand{\etal}{{\emph{et al.}}}
+\def\ie/{{\emph{i.e.}},}
+\def\viz/{{\emph{viz.}},}
+\def\eg/{{\emph{e.g.}},}
+\def\etc/{etc.}
+\def\etal/{{\emph{et al.}}}
 
 \newcommand{\tue}{TU/e}
 \newcommand{\tuesite}{www.tue.nl}
@@ -1125,13 +1125,9 @@
 \newcommand{\leftsidehead}{
 	\small\color{hfcolor} 
 	\ifx\makeshorth\undefined 
-		Technische Universiteit \textbf{Eindhoven} University of Technology
-	\else 
-		\ifx\nederlands\undefined 
-			\textbf{Eindhoven University of Technology}
-		\else  
-			\textbf{Technische Universiteit Eindhoven}
-		\fi
+		\tuefull
+	\else
+		\tuename
 	\fi
 		\ifthenelse{\equal{\extraheader}{}}{}{- \extraheader}
 }
@@ -1141,13 +1137,9 @@
 	\small\color{hfcolor} 
 	\ifthenelse{\equal{\extraheader}{}}{}{\extraheader\space-}
 	\ifx\makeshorth\undefined 
-		Technische Universiteit \textbf{Eindhoven} University of Technology
+		\tuefull
 	\else 
-		\ifx\nederlands\undefined 
-			\textbf{Eindhoven University of Technology}
-		\else  
-			\textbf{Technische Universiteit Eindhoven}
-		\fi
+		\tuename
 	\fi
 }
 
@@ -1438,7 +1430,7 @@
 %%
 \newcommand{\definedef}[2]{%
 	\refstepcounter{definition}%
-	\colorbox{linkpink}{\strut\refdef{#1}}%
+	\refdef{#1}%
 	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}#2}%
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
@@ -1449,16 +1441,14 @@
 %%
 \newcommand{\defineabbr}[2]{%
 	\refstepcounter{definition}%
-	\colorbox{linkpink}{\strut\refdef{#1}}\space(#2)%
+	\refdef{#1}%
 	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}#2}%
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
 
 % defines the definition styling
 \newcommand{\definitionstyle}[1]{%
-\begingroup
-\parbox[b]{7em}{\textbf{#1}}
-\endgroup
+	\parbox[b]{7em}{#1}
 }
 
 %%
@@ -1466,7 +1456,7 @@
 %	References a definition
 %%
 \newcommand{\refdef}[1]{%
-	\hyperref[def:#1]{#1}
+	\colorbox{linkpink}{\strut\hyperref[def:#1]{#1}}
 }
 
 %%
