@@ -204,7 +204,7 @@
 %%%	Option for faded header and footer
 %	Default is black
 \RequirePackage{pgf}
-\RequirePackage{color}
+%\RequirePackage{color}
 
 \ifx\makefadehf\undefined
 	\definecolor{hfcolor}{gray}{0}
@@ -534,11 +534,10 @@
 	\let\footnotesize\small%
 	\let\footnoterule\relax%
 	\let \footnote \thanks%
-	\hfuzz=1000pt
+	%\hfuzz=1000pt
 
-	\newgeometry{left=0cm,top=0cm, voffset=0cm,ignoreall}
-
-	\begin{pgfpicture}{0cm}{\the\paperheight-10pt}{\the\paperwidth*2}{16pt}
+	\newgeometry{left=0cm,top=0cm,bottom=0cm, right=0cm, ignoreall}
+	\begin{pgfpicture}{0cm}{0cm}{\the\paperwidth*2}{\the\paperheight}
 
 		%%%	If the cover is specified then draw cover and white overlays
 		\ifx\drawcover\undefined\relax
@@ -548,11 +547,11 @@
 			\ifx\drawmargins\undefined\relax
 			\else
 				\pgfsetcolor{black!20!white}
-				\pgfpathmoveto{\pgfpoint{0mm}{21.2cm}}
-				\pgfpathlineto{\pgfpoint{\the\paperwidth}{21.2cm}}
+				\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
+				\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperwidth + .2cm}}
 				\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
 				\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-				\pgfpathmoveto{\pgfpoint{0mm}{21.2cm}}
+				\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
 				\pgfusepath{fill}  
 			\fi
 
@@ -900,11 +899,16 @@
 		\cleardoublepage
 	\else\relax\fi
 
+	\newlength{\tocleftspace}
+	\setlength{\tocleftspace}{7.2cm}
+	
+	\newlength{\toctopspace}
+	\setlength{\toctopspace}{9.0cm}	
+
 	% The table of contents needs different margins. The package geometry is used to
 	% change the margins of certain pages within a document.
 	% After the table of contents, they will be reset.
-
-	\newgeometry{layouthoffset=0cm, bottom=\bottomspecified, twoside=false,marginparsep=0pt, marginpar=0pt, right=\rightspecified, left=7.2cm, top=9cm,headheight=16pt}
+	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\tocleftspace, top=\toctopspace, headheight=16pt, headsep=0cm}
 
 	\fancyhf{}
 	\setlength{\oldheadrulewidth}{\headrulewidth}
@@ -912,8 +916,8 @@
 
 	\fancyhead[R]{
 		\hfuzz=1000pt
-		\begin{pgfpicture}{7.2cm}{\headheight+\headsep+\textheight+\bottomspecified}{\the\paperwidth*2}{0cm}
-		\drawtuetableofcontents
+		\begin{pgfpicture}{\tocleftspace}{\the\paperheight+\headheight-\toctopspace}{\the\paperwidth*2}{0cm}
+			\drawtuetableofcontents
 		\end{pgfpicture}
 	}
 	\hfuzz=0pt
