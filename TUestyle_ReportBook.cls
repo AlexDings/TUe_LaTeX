@@ -587,7 +587,9 @@
 			\ifx\nederlands\undefined
 				\parbox[b][3.5cm]{5cm}%
 				{\meta%
-					\raggedright\mbox{}\textbf{\thedepartment}\\
+					\raggedright\textbf{\theadministrativeunit}
+					\ifthenelse{\equal{\thedepartment}{}}{}{%
+					\\\textit{\textbf{\thedepartment}}}\\[2ex]
 					\ifthenelse{\equal{\theaddress}{}}{}{
 					\theaddress ,}
 					5612 AZ Eindhoven\\
@@ -600,7 +602,9 @@
 			\else
 				\parbox[b][3.5cm]{5cm}%
 				{\meta%
-					\raggedright\mbox{}\textbf{\thedepartment}\\
+					\raggedright\textbf{\theadministrativeunit}
+					\ifthenelse{\equal{\thedepartment}{}}{}{%
+					\\\textit{\textbf{\thedepartment}}}\\[2ex]
 					\ifthenelse{\equal{\theaddress}{}}{}{
 					\theaddress ,}
 					5612 AZ Eindhoven\\
