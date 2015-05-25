@@ -256,6 +256,39 @@
 
 
 %%%
+% Define lengths
+%%%
+
+\newdimen\@Vspacing
+\setlength\@Vspacing\paperheight
+\addtolength\@Vspacing{-8.5cm}
+
+\newdimen\@Hspacing
+\setlength\@Hspacing{0.5\paperwidth}
+\addtolength\@Hspacing{-1.12cm}
+
+\newdimen\@Axiswidth
+\setlength\@Axiswidth{.2mm}
+
+\newdimen\@Hshift
+\setlength{\@Hshift}{0.287\paperheight}
+
+\newdimen\@Leftcolumn
+\setlength\@Leftcolumn{1.55cm}
+
+\newlength{\tocleftspace}
+\setlength{\tocleftspace}{\@Hspacing}
+\addtolength{\tocleftspace}{-1.88cm}
+
+\newlength{\toctopspace}
+\setlength{\toctopspace}{\paperheight}
+\addtolength{\toctopspace}{-\@Vspacing}
+\addtolength{\toctopspace}{\@Axiswidth}
+\addtolength{\toctopspace}{0.48cm}
+
+
+
+%%%
 % Define usage commands
 %%%
 
@@ -582,7 +615,7 @@
 		
 		%%% From name and address
 		\pgfsetcolor{black}
-		\pgftext[at=\pgfpoint{1.55cm}{\the\paperheight-8.15cm},left,bottom]{%
+		\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing+0.35cm},left,bottom]{%
 			\ifx\nederlands\undefined
 				\parbox[b][3.5cm]{5cm}%
 				{\meta%
@@ -616,7 +649,7 @@
 		}
 		
 		%%% Left column with info
-		\pgftext[at=\pgfpoint{1.55cm}{\the\paperheight-9cm},left,top]{%
+		\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing-\@Axiswidth-0.48cm},left,top]{%
 			\parbox[t]{5cm}{%
 				\hbadness=10000
 					\frontpagehead{\theauthorlabel}
@@ -643,7 +676,7 @@
 
 		%%% Title and subtitle at normal position
 		\ifx\drawcover\undefined
-			\pgftext[at=\pgfpoint{\the\paperwidth/2-3cm}{\the\paperheight-9cm},left,top]{%
+			\pgftext[at=\pgfpoint{\@Hspacing-1.88cm}{\@Vspacing-\@Axiswidth-0.48cm},left,top]{%
 				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
 			}
 
@@ -886,8 +919,6 @@
 % 	Redefine table of contents
 %%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Bad practice to set the table of contents to this
-
 \newlength{\oldheadrulewidth}
 % Completely redefine the \tableofcontents command.
 % It shows the TU/e logo and draws the axes.
@@ -899,16 +930,10 @@
 		\cleardoublepage
 	\else\relax\fi
 
-	\newlength{\tocleftspace}
-	\setlength{\tocleftspace}{7.2cm}
-	
-	\newlength{\toctopspace}
-	\setlength{\toctopspace}{9.0cm}	
-
 	% The table of contents needs different margins. The package geometry is used to
 	% change the margins of certain pages within a document.
 	% After the table of contents, they will be reset.
-	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\tocleftspace, top=\toctopspace, headheight=16pt, headsep=0cm}
+	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\tocleftspace, top=\toctopspace, headheight=\toctopspace, headsep=0cm}
 
 	\fancyhf{}
 	\setlength{\oldheadrulewidth}{\headrulewidth}
@@ -916,7 +941,7 @@
 
 	\fancyhead[R]{
 		\hfuzz=1000pt
-		\begin{pgfpicture}{\tocleftspace}{\the\paperheight+\headheight-\toctopspace}{\the\paperwidth*2}{0cm}
+		\begin{pgfpicture}{\tocleftspace}{\paperheight-\toctopspace}{\paperwidth+\tocleftspace}{\paperheight}
 			\drawtuetableofcontents
 		\end{pgfpicture}
 	}
@@ -927,8 +952,6 @@
 		{
 		\@starttoc{toc} 
 	 }%
-	 
-
 	
 	%%%	Begin new page to start layout-change
 	\newpage
@@ -1002,7 +1025,7 @@
 	\color{black}
 	
 	%%% Draw "Table of contents" or "Inhoudsopgave" title
-	\pgftext[at=\pgfpoint{1.55cm}{\the\paperheight-8.15cm},left,bottom]{%
+	\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing+0.35cm},left,bottom]{%
 		\parbox[b][3.5cm]{5cm}{
 			\Large\ifx\nederlands\undefined 
 				Table of contents
@@ -1013,7 +1036,7 @@
 	}
 
 	%%% Draw title and subtitle
-	\pgftext[at=\pgfpoint{1.55cm}{\the\paperheight-9cm},left,top]{%
+	\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing-\@Axiswidth-0.48cm},left,top]{%
 		\parbox[t]{4.9cm}{%
 			\ifx\nederlands\undefined
 				\frontpagehead{Title}
@@ -1039,30 +1062,30 @@
 	%%%	If drawtuelogo is not set to false, by the "notuelogo" option
 	\ifx\drawtuelogo\undefined
 		 % TU/e logo and red lines
-		 \pgftext[at=\pgfpoint{\the\paperwidth/2-0.85mm}{\the\paperheight-1.8cm},center,center]{\includegraphics[width=7cm]{tuelogo}}%        
+		 \pgftext[at=\pgfpoint{\@Hspacing+1.035cm}{\the\paperheight-1.8cm},center,center]{\includegraphics[width=7cm]{tuelogo}}%        
 	\else
 		\relax
 	\fi
 	
 	%%%	Draw horizontal axis
 	\pgfsetcolor{tuered}
-	\pgfpathmoveto{\pgfpoint{0mm}{\the\paperheight-8.5cm}}
-	\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperheight-8.5cm}}
-	\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperheight-8.52cm}}
-	\pgfpathlineto{\pgfpoint{0cm}{\the\paperheight-8.52cm}}
+	\pgfpathmoveto{\pgfpoint{0mm}			{\@Vspacing}}
+	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@Vspacing}}
+	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@Vspacing-\@Axiswidth}}
+	\pgfpathlineto{\pgfpoint{0cm}			{\@Vspacing-\@Axiswidth}}
 	\pgfusepath{fill}
 	
 	%%%	Draw diagonal axis
-	\pgfpathmoveto{\pgfpoint{\the\paperwidth/2-1.12cm}{\the\paperheight}}
-	\pgfpathlineto{\pgfpoint{\the\paperwidth/2-1.12cm-\the\paperheight/3.487}{0cm}}
-	\pgfpathlineto{\pgfpoint{\the\paperwidth/2-1.14cm-\the\paperheight/3.487}{0cm}}
-	\pgfpathlineto{\pgfpoint{\the\paperwidth/2-1.14cm}{\the\paperheight}}
+	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\paperheight}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Axiswidth-\@Hshift}	{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Axiswidth}			{\paperheight}}
 	\pgfusepath{fill}
 
 	%%%	If innovation is not set to false, by the "noinnovation" option
 	\ifx\innovation\undefined
 		\pgfsetcolor{tuedarkblue}
-		\pgftext[at=\pgfpoint{\the\paperwidth/2-0.7cm-\the\paperheight/3.487}{0.8cm},left,bottom]{\bfseries Where innovation starts}%
+		\pgftext[at=\pgfpoint{\@Hspacing-\@Hshift+0.42cm}{0.8cm},left,bottom]{\bfseries Where innovation starts}%
 	\fi
 	
 	%%%	Reset colour to black
@@ -1153,9 +1176,9 @@
 
 %%%	Define right side footer
 \newcommand{\rightsidefoot}{
-		\small \hspace{0.1cm}\color{hfcolor} \@title
+		\small \color{hfcolor} \@title
 		\ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel \theversionnum } - \color{black}
-		\footnumber\hspace{0.1cm}\color{hfcolor} \\ 
+		\hspace{0.1cm}\footnumber\color{hfcolor} \\ 
 		\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 		\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
 }
