@@ -570,7 +570,7 @@
 	%\hfuzz=1000pt
 
 	\newgeometry{left=0cm,top=0cm,bottom=0cm, right=0cm, ignoreall}
-	\begin{pgfpicture}{0cm}{0cm}{\the\paperwidth*2}{\the\paperheight}
+	\begin{pgfpicture}{0cm}{0cm}{\paperwidth}{\paperheight}
 
 		%%%	If the cover is specified then draw cover and white overlays
 		\ifx\drawcover\undefined\relax
@@ -933,17 +933,20 @@
 	% The table of contents needs different margins. The package geometry is used to
 	% change the margins of certain pages within a document.
 	% After the table of contents, they will be reset.
-	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\tocleftspace, top=\toctopspace, headheight=\toctopspace, headsep=0cm}
+	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\tocleftspace, top=\toctopspace, headheight=0cm, headsep=0cm,footskip=0cm,marginpar=0cm,marginparsep=0cm}
 
 	\fancyhf{}
 	\setlength{\oldheadrulewidth}{\headrulewidth}
 	\renewcommand{\headrulewidth}{0.0pt}
 
-	\fancyhead[R]{
-		\hfuzz=1000pt
-		\begin{pgfpicture}{\tocleftspace}{\paperheight-\toctopspace}{\paperwidth+\tocleftspace}{\paperheight}
-			\drawtuetableofcontents
-		\end{pgfpicture}
+	\fancyfoot[L]{%
+	\vspace{\dimexpr-\toctopspace-\textheight}%
+	\makebox[\textwidth][l]{%
+		\hspace{-\tocleftspace}%
+			\begin{pgfpicture}{0mm}{0mm}{\paperwidth}{\paperheight}
+				\drawtuetableofcontents
+			\end{pgfpicture}
+		}
 	}
 	\hfuzz=0pt
 	
