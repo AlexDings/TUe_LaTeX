@@ -86,6 +86,30 @@
 \ifthenelse{\equal{#1}{}}{\def\covername{cover}}{\def\covername{#1}}
 \def\drawcover{true}}
 
+
+%%%	Option for cover ratio
+\newdimen\@Coverwidth
+\newdimen\@Coverbottom
+\setlength\paperheight{297mm}
+
+	\setlength\@Coverwidth{179.34mm} %4:3
+	\setlength\@Coverbottom{\dimexpr \paperheight - 220mm} %4:3
+
+\DeclareOptionX{coverratio}{
+\ifthenelse{\equal{#1}{43}}{
+	\setlength\@Coverwidth{179.34mm} %4:3
+	\setlength\@Coverbottom{\dimexpr \paperheight - 220mm} %4:3
+}{}
+\ifthenelse{\equal{#1}{169}}{
+	\setlength\@Coverwidth{167.573mm} %16:9
+	\setlength\@Coverbottom{\dimexpr \paperheight - 179mm} %16:9
+}{}
+\ifthenelse{\equal{#1}{32}}{
+	\setlength\@Coverwidth{173.887mm} %3:2
+	\setlength\@Coverbottom{\dimexpr \paperheight - 201mm} %3:2
+}{}
+\def\drawcover{true}}
+
 %%%	Option for showing margins
 \DeclareOptionX{margins}{\def\drawmargins{true}}
 
@@ -276,6 +300,9 @@
 \newdimen\@Leftcolumn
 \setlength\@Leftcolumn{1.55cm}
 
+\newdimen\@Covertop
+\setlength\@Covertop{\dimexpr \@Vspacing-0.1mm}
+
 \newlength{\tocleftspace}
 \setlength{\tocleftspace}{\@Hspacing}
 \addtolength{\tocleftspace}{-1.88cm}
@@ -286,6 +313,7 @@
 \addtolength{\toctopspace}{\@Axiswidth}
 \addtolength{\toctopspace}{0.48cm}
 
+\def\Shiftratio{0.287}
 
 
 %%%
@@ -359,6 +387,8 @@
 	\newvariable{referencelabel}{Reference}
 	\newvariable{datelabel}{Date}
 	\newvariable{versionlabel}{Version}
+	\newvariable{Netherlands}{The Netherlands\\}
+	\newvariable{PObox}{P.O. Box}
 \else
 	% Dutch
 	\newvariable{copyholderlabel}{Kopiehouder}
@@ -367,6 +397,8 @@
 	\newvariable{referencelabel}{Referentie}
 	\newvariable{datelabel}{Datum}
 	\newvariable{versionlabel}{Versie}
+	\newvariable{Netherlands}{}
+	\newvariable{PObox}{Postbus}
 \fi
 
 
@@ -587,27 +619,25 @@
 				\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
 				\pgfusepath{fill}  
 			\fi
-
-			%%% Draw the cover from the bottom left corner to the top right corner
-			\pgftext[at=\pgfpoint{\the\paperwidth/2-7.1cm}{\the\paperheight-8.51cm},left,top]{\includegraphics[width={18cm}]{\definedpath \covername}}%             
-
-			%%% Draw left white overlay for the cover
-			\pgfsetcolor{white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\the\paperheight-8.51cm}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth/2-3.56cm}{\the\paperheight-8.51cm}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth/2-1.12cm-\the\paperheight/3.487}{0cm}}
-			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-			\pgfpathlineto{\pgfpoint{0cm}{\the\paperheight-9.5cm}}
-			\pgfusepath{fill}              
+ %%% HEREEE
+			%%% Draw the cover 
+			\pgftext[at=\pgfpoint{\paperwidth-\@Coverwidth}{\@Covertop},left,top]{\includegraphics[width={\@Coverwidth}]{\definedpath \covername}}%             
 
 			 %%% Draw bottom white overlay for the cover
 			\pgfsetcolor{white}
-			\pgfpathmoveto{\pgfpoint{0mm}{9cm}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{9cm}}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@Coverbottom}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@Coverbottom}}
 			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
 			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-			\pgfpathmoveto{\pgfpoint{0mm}{9cm}}
-			\pgfusepath{fill}           
+			\pgfusepath{fill}
+			
+			%%% Draw left white overlay for the cover
+			\pgfsetcolor{pink}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@Vspacing}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\Shiftratio*85mm}{\@Vspacing}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\Shiftratio*\paperheight}{0cm}}
+			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
+			\pgfusepath{fill}
 		\fi
 		
 		%%%	Drawing of the TU/e axes and logo
@@ -616,36 +646,20 @@
 		%%% From name and address
 		\pgfsetcolor{black}
 		\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing+0.35cm},left,bottom]{%
-			\ifx\nederlands\undefined
-				\parbox[b][3.5cm]{5cm}%
-				{\meta%
-					\raggedright\textbf{\theadministrativeunit}
-					\ifthenelse{\equal{\thedepartment}{}}{}{%
-					\\\textit{\textbf{\thedepartment}}}\\[2ex]
-					\ifthenelse{\equal{\theaddress}{}}{}{
-					\theaddress ,}
-					5612 AZ Eindhoven\\
-					P.O. Box 513, 5600 MB Eindhoven\\
-					The Netherlands\\
-					\hypersetup{urlcolor={black}}
-					{\urlstyle{same}\url{\thewebsite}}
-					\hypersetup{urlcolor={tuewarmred}}
-				}\par
-			\else
-				\parbox[b][3.5cm]{5cm}%
-				{\meta%
-					\raggedright\textbf{\theadministrativeunit}
-					\ifthenelse{\equal{\thedepartment}{}}{}{%
-					\\\textit{\textbf{\thedepartment}}}\\[2ex]
-					\ifthenelse{\equal{\theaddress}{}}{}{
-					\theaddress ,}
-					5612 AZ Eindhoven\\
-					Postbus 513, 5600 MB Eindhoven\\
-					\hypersetup{urlcolor={black}}
-					{\urlstyle{same}\url{\thewebsite}}
-					\hypersetup{urlcolor={tuewarmred}}
-				}\par
-			 \fi
+			\parbox[b][3.5cm]{5cm}%
+			{\meta%
+				\raggedright\textbf{\theadministrativeunit}
+				\ifthenelse{\equal{\thedepartment}{}}{}{%
+				\\\textit{\textbf{\thedepartment}}}\\[2ex]
+				\ifthenelse{\equal{\theaddress}{}}{}{
+				\theaddress ,}
+				5612 AZ Eindhoven\\
+				\thePObox\space513, 5600 MB Eindhoven\\
+				\theNetherlands
+				\hypersetup{urlcolor={black}}
+				{\urlstyle{same}\url{\thewebsite}}
+				\hypersetup{urlcolor={tuewarmred}}
+			}\par
 		}
 		
 		%%% Left column with info
@@ -682,7 +696,7 @@
 
 		%%% Title and subtitle positioned underneath cover
 		\else           
-			\pgftext[at=\pgfpoint{4cm}{8.5cm},left,top]{%
+			\pgftext[at=\pgfpoint{\paperwidth-\@Coverwidth+0.5cm}{\@Coverbottom-0.5cm},left,top]{%
 				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
 			}
 		\fi
@@ -1501,7 +1515,7 @@
 	\end{onecolarea}
 }
 
-% defines the list of definitions' formatting	
+% defines the list of definitions' formatting
 \newcommand{\l@definition}[2]{%
 	\@dottedtocline{0}%
 	 {0em} % Indent
