@@ -23,6 +23,10 @@
 
 
 
+%%%
+% 	Declare utility commands
+%%%
+
 %%
 %	Command \newvariable
 %	Declares a new variable
@@ -35,10 +39,6 @@
 	}
 	\@nameuse{#1}{#2}
 }
-
-
-
-
 
 %%
 %	Environment onecolarea
@@ -53,6 +53,8 @@
 	}{%
 	\if@restonecol\twocolumn\fi
 	}
+
+
 
 
 
@@ -632,7 +634,7 @@
 			\pgfusepath{fill}
 			
 			%%% Draw left white overlay for the cover
-			\pgfsetcolor{pink}
+			\pgfsetcolor{white}
 			\pgfpathmoveto{\pgfpoint{0mm}{\@Vspacing}}
 			\pgfpathlineto{\pgfpoint{\@Hspacing-\Shiftratio*85mm}{\@Vspacing}}
 			\pgfpathlineto{\pgfpoint{\@Hspacing-\Shiftratio*\paperheight}{0cm}}
@@ -962,7 +964,6 @@
 			\end{pgfpicture}
 		}
 	}
-	\hfuzz=0pt
 	
 	\pagestyle{fancy}
 		%%%	Draw TOC (Table of Contents)
@@ -974,7 +975,7 @@
 	\newpage
 
 	\disablepageskip
-	
+
 	%%%	Reset the original values of all margins
 	\setmargins
 	\sethf
@@ -1083,7 +1084,7 @@
 	\else
 		\relax
 	\fi
-	
+
 	%%%	Draw horizontal axis
 	\pgfsetcolor{tuered}
 	\pgfpathmoveto{\pgfpoint{0mm}			{\@Vspacing}}
@@ -1091,7 +1092,7 @@
 	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@Vspacing-\@Axiswidth}}
 	\pgfpathlineto{\pgfpoint{0cm}			{\@Vspacing-\@Axiswidth}}
 	\pgfusepath{fill}
-	
+
 	%%%	Draw diagonal axis
 	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\paperheight}}
 	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
@@ -1104,7 +1105,7 @@
 		\pgfsetcolor{tuedarkblue}
 		\pgftext[at=\pgfpoint{\@Hspacing-\@Hshift+0.42cm}{0.8cm},left,bottom]{\bfseries Where innovation starts}%
 	\fi
-	
+
 	%%%	Reset colour to black
 	\pgfsetcolor{black}
 }
@@ -1364,7 +1365,6 @@
 % set PDF meta data
 %%%
 
-
 \AtBeginDocument{
 	%%%	Generate authors
 	\GenerateAllAuthorM
@@ -1478,7 +1478,8 @@
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
 
-% defines the definition styling
+%	Defines the definition styling inside lod
+%	This breaks long defintions in the lod
 \newcommand{\definitionstyle}[1]{%
 	\parbox[b]{7em}{#1}
 }
@@ -1527,6 +1528,10 @@
 
 
 
+
+%%%
+%	Set last page label
+%%%
 
 \AtEndDocument{
 	\label{lastdocpage}
