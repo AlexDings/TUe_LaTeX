@@ -92,24 +92,13 @@
 %%%	Option for cover ratio
 \newdimen\@Coverwidth
 \newdimen\@Coverbottom
-\setlength\paperheight{297mm}
 
-	\setlength\@Coverwidth{179.34mm} %4:3
-	\setlength\@Coverbottom{\dimexpr \paperheight - 220mm} %4:3
+\def\@Coverratio{1333} % (4:3)*1000
 
 \DeclareOptionX{coverratio}{
-\ifthenelse{\equal{#1}{43}}{
-	\setlength\@Coverwidth{179.34mm} %4:3
-	\setlength\@Coverbottom{\dimexpr \paperheight - 220mm} %4:3
-}{}
-\ifthenelse{\equal{#1}{169}}{
-	\setlength\@Coverwidth{167.573mm} %16:9
-	\setlength\@Coverbottom{\dimexpr \paperheight - 179mm} %16:9
-}{}
-\ifthenelse{\equal{#1}{32}}{
-	\setlength\@Coverwidth{173.887mm} %3:2
-	\setlength\@Coverbottom{\dimexpr \paperheight - 201mm} %3:2
-}{}
+\def\@lala{\numexpr 1000*#1}
+\ClassWarning{tuestyle_aLeX}{\the\@lala}{}
+\def\@Coverratio{\the\@lala}
 \def\drawcover{true}}
 
 %%%	Option for showing margins
@@ -296,8 +285,11 @@
 \newdimen\@Axiswidth
 \setlength\@Axiswidth{.2mm}
 
+\def\@Shiftratio{0.287} %0.287
+\def\@ShiftratioB{287} %0.287*1000
+
 \newdimen\@Hshift
-\setlength{\@Hshift}{0.287\paperheight}
+\setlength{\@Hshift}{\@Shiftratio\paperheight}
 
 \newdimen\@Leftcolumn
 \setlength\@Leftcolumn{1.55cm}
@@ -315,7 +307,22 @@
 \addtolength{\toctopspace}{\@Axiswidth}
 \addtolength{\toctopspace}{0.48cm}
 
-\def\Shiftratio{0.287}
+\setlength\paperheight{297mm}
+\setlength\paperwidth{210mm}
+
+\def\@Tempnum{\numexpr \@Coverratio - \@ShiftratioB \relax}
+\setlength\@tempdima{8.5cm}
+
+\newlength{\@Coverheight}
+\setlength{\@Coverheight}{\dimexpr (\paperwidth - \@Hspacing + \@Shiftratio\@tempdima)/\@Tempnum}
+\setlength{\@Coverheight}{1000\@Coverheight}
+\ClassWarning{tuestyle_aLeX}{\the\@Coverheight}{}
+
+\setlength\@Coverbottom{\dimexpr \@Vspacing - \@Coverheight}
+
+\setlength\@Coverwidth{\dimexpr \paperwidth - \@Hspacing + \@Shiftratio\@tempdima + \@Shiftratio\@Coverheight}
+
+
 
 
 %%%
@@ -636,8 +643,8 @@
 			%%% Draw left white overlay for the cover
 			\pgfsetcolor{white}
 			\pgfpathmoveto{\pgfpoint{0mm}{\@Vspacing}}
-			\pgfpathlineto{\pgfpoint{\@Hspacing-\Shiftratio*85mm}{\@Vspacing}}
-			\pgfpathlineto{\pgfpoint{\@Hspacing-\Shiftratio*\paperheight}{0cm}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\@Shiftratio*85mm}{\@Vspacing}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\@Shiftratio*\paperheight}{0cm}}
 			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
 			\pgfusepath{fill}
 		\fi
