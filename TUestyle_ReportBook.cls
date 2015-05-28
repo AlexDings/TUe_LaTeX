@@ -88,18 +88,9 @@
 \ifthenelse{\equal{#1}{}}{\def\covername{cover}}{\def\covername{#1}}
 \def\drawcover{true}}
 
-
 %%%	Option for cover ratio
-\newdimen\@Coverwidth
-\newdimen\@Coverbottom
-
-\def\@Coverratio{1333} % (4:3)*1000
-
 \DeclareOptionX{coverratio}{
-\def\@lala{\numexpr 1000*#1}
-\ClassWarning{tuestyle_aLeX}{\the\@lala}{}
-\def\@Coverratio{\the\@lala}
-\def\drawcover{true}}
+\def\@coverratio{\pgfmathparse{#1}\pgfmathresult}}
 
 %%%	Option for showing margins
 \DeclareOptionX{margins}{\def\drawmargins{true}}
@@ -267,60 +258,69 @@
     \hbox{}\newpage\if@twocolumn\hbox{}\newpage\fi\fi}
 
 
-
-
-
+	
 %%%
 % Define lengths
 %%%
 
-\newdimen\@Vspacing
-\setlength\@Vspacing\paperheight
-\addtolength\@Vspacing{-8.5cm}
+%%% Sets cover image ratio
+\newcommand{\setCoverRatio}[2]{
+\pgfmathsetmacro{\@coverratio}{#1/2}}
+\setCoverRatio{3}{2} % 3:2 by default
 
+%%% Vertical spacing
+\newdimen\@Vspacing
+\setlength\@Vspacing{8.5cm}
+
+%%% Horizontal spacing
 \newdimen\@Hspacing
 \setlength\@Hspacing{0.5\paperwidth}
 \addtolength\@Hspacing{-1.12cm}
 
-\newdimen\@Axiswidth
-\setlength\@Axiswidth{.2mm}
+%%% Axis width
+\newdimen\@axiswidth
+\setlength\@axiswidth{.2mm}
 
-\def\@Shiftratio{0.287} %0.287
-\def\@ShiftratioB{287} %0.287*1000
+%%% Axis height
+\newdimen\@axisheight
+\setlength\@axisheight\paperheight
+\addtolength\@axisheight{-\@Vspacing}
 
+%%% Axis shift ratio
+\def\@shiftratio{0.287}
+
+%%% Axis horizontal shift
 \newdimen\@Hshift
-\setlength{\@Hshift}{\@Shiftratio\paperheight}
+\setlength{\@Hshift}{\@shiftratio\paperheight}
 
-\newdimen\@Leftcolumn
-\setlength\@Leftcolumn{1.55cm}
+%%% Table of Contents spacing
+\newdimen\@leftcolumn
+\setlength\@leftcolumn{1.55cm}
 
-\newdimen\@Covertop
-\setlength\@Covertop{\dimexpr \@Vspacing-0.1mm}
+\newlength{\@tocleftspace}
+\setlength{\@tocleftspace}{\@Hspacing}
+\addtolength{\@tocleftspace}{-1.88cm}
 
-\newlength{\tocleftspace}
-\setlength{\tocleftspace}{\@Hspacing}
-\addtolength{\tocleftspace}{-1.88cm}
+\newlength{\@toctopspace}
+\setlength{\@toctopspace}{\@Vspacing}
+\addtolength{\@toctopspace}{\@axiswidth}
+\addtolength{\@toctopspace}{0.48cm}
 
-\newlength{\toctopspace}
-\setlength{\toctopspace}{\paperheight}
-\addtolength{\toctopspace}{-\@Vspacing}
-\addtolength{\toctopspace}{\@Axiswidth}
-\addtolength{\toctopspace}{0.48cm}
-
+%%% Paper dimensions
 \setlength\paperheight{297mm}
 \setlength\paperwidth{210mm}
 
-\def\@Tempnum{\numexpr \@Coverratio - \@ShiftratioB \relax}
-\setlength\@tempdima{8.5cm}
+%%% Cover image lengths
+\newlength{\@coverheight}
+\newlength{\@coverwidth}
+\newlength{\@covertop}
+\newlength{\@coverbottom}
 
-\newlength{\@Coverheight}
-\setlength{\@Coverheight}{\dimexpr (\paperwidth - \@Hspacing + \@Shiftratio\@tempdima)/\@Tempnum}
-\setlength{\@Coverheight}{1000\@Coverheight}
-\ClassWarning{tuestyle_aLeX}{\the\@Coverheight}{}
-
-\setlength\@Coverbottom{\dimexpr \@Vspacing - \@Coverheight}
-
-\setlength\@Coverwidth{\dimexpr \paperwidth - \@Hspacing + \@Shiftratio\@tempdima + \@Shiftratio\@Coverheight}
+%%% Calculate cover image dimension and position based on the image ratio and the axes lengths
+\pgfmathsetlength{\@coverheight}{(\paperwidth - \@Hspacing + \@shiftratio * \@Vspacing)/(\@coverratio - \@shiftratio)}
+\pgfmathsetlength{\@coverwidth}{\paperwidth - \@Hspacing + \@shiftratio * \@Vspacing + \@shiftratio * \@coverheight}
+\setlength\@covertop{\dimexpr \@axisheight-0.5\@axiswidth}
+\setlength\@coverbottom{\dimexpr \@axisheight - \@coverheight}
 
 
 
@@ -330,7 +330,7 @@
 %%%
 
 %%% Set change margin command
-%%% Useage: 	\beginchangemargin{left}{right}
+%%% Usage: 	\beginchangemargin{left}{right}
 %%%				\endchangemargin
 %%%				Where "left" and "right" are units of length
 \def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
@@ -630,21 +630,21 @@
 			\fi
  %%% HEREEE
 			%%% Draw the cover 
-			\pgftext[at=\pgfpoint{\paperwidth-\@Coverwidth}{\@Covertop},left,top]{\includegraphics[width={\@Coverwidth}]{\definedpath \covername}}%             
+			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%             
 
 			 %%% Draw bottom white overlay for the cover
 			\pgfsetcolor{white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\@Coverbottom}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@Coverbottom}}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@coverbottom}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@coverbottom}}
 			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
 			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
 			\pgfusepath{fill}
 			
 			%%% Draw left white overlay for the cover
 			\pgfsetcolor{white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\@Vspacing}}
-			\pgfpathlineto{\pgfpoint{\@Hspacing-\@Shiftratio*85mm}{\@Vspacing}}
-			\pgfpathlineto{\pgfpoint{\@Hspacing-\@Shiftratio*\paperheight}{0cm}}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*85mm}{\@axisheight}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*\paperheight}{0cm}}
 			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
 			\pgfusepath{fill}
 		\fi
@@ -654,7 +654,7 @@
 		
 		%%% From name and address
 		\pgfsetcolor{black}
-		\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing+0.35cm},left,bottom]{%
+		\pgftext[at=\pgfpoint{\@leftcolumn}{\@axisheight+0.35cm},left,bottom]{%
 			\parbox[b][3.5cm]{5cm}%
 			{\meta%
 				\raggedright\textbf{\theadministrativeunit}
@@ -672,7 +672,7 @@
 		}
 		
 		%%% Left column with info
-		\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing-\@Axiswidth-0.48cm},left,top]{%
+		\pgftext[at=\pgfpoint{\@leftcolumn}{\@axisheight-\@axiswidth-0.48cm},left,top]{%
 			\parbox[t]{5cm}{%
 				\hbadness=10000
 					\frontpagehead{\theauthorlabel}
@@ -699,13 +699,13 @@
 
 		%%% Title and subtitle at normal position
 		\ifx\drawcover\undefined
-			\pgftext[at=\pgfpoint{\@Hspacing-1.88cm}{\@Vspacing-\@Axiswidth-0.48cm},left,top]{%
+			\pgftext[at=\pgfpoint{\@Hspacing-1.88cm}{\@axisheight-\@axiswidth-0.48cm},left,top]{%
 				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
 			}
 
 		%%% Title and subtitle positioned underneath cover
 		\else           
-			\pgftext[at=\pgfpoint{\paperwidth-\@Coverwidth+0.5cm}{\@Coverbottom-0.5cm},left,top]{%
+			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth+0.5cm}{\@coverbottom-0.5cm},left,top]{%
 				\parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
 			}
 		\fi
@@ -956,16 +956,16 @@
 	% The table of contents needs different margins. The package geometry is used to
 	% change the margins of certain pages within a document.
 	% After the table of contents, they will be reset.
-	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\tocleftspace, top=\toctopspace, headheight=0cm, headsep=0cm,footskip=0cm,marginpar=0cm,marginparsep=0cm}
+	\newgeometry{bottom=\bottomspecified, twoside=false, right=\rightspecified, left=\@tocleftspace, top=\@toctopspace, headheight=0cm, headsep=0cm,footskip=0cm,marginpar=0cm,marginparsep=0cm}
 
 	\fancyhf{}
 	\setlength{\oldheadrulewidth}{\headrulewidth}
 	\renewcommand{\headrulewidth}{0.0pt}
 
 	\fancyfoot[L]{%
-	\vspace{\dimexpr-\toctopspace-\textheight}%
+	\vspace{\dimexpr-\@toctopspace-\textheight}%
 	\makebox[\textwidth][l]{%
-		\hspace{-\tocleftspace}%
+		\hspace{-\@tocleftspace}%
 			\begin{pgfpicture}{0mm}{0mm}{\paperwidth}{\paperheight}
 				\drawtuetableofcontents
 			\end{pgfpicture}
@@ -1050,7 +1050,7 @@
 	\color{black}
 	
 	%%% Draw "Table of contents" or "Inhoudsopgave" title
-	\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing+0.35cm},left,bottom]{%
+	\pgftext[at=\pgfpoint{\@leftcolumn}{\@axisheight+0.35cm},left,bottom]{%
 		\parbox[b][3.5cm]{5cm}{
 			\Large\ifx\nederlands\undefined 
 				Table of contents
@@ -1061,7 +1061,7 @@
 	}
 
 	%%% Draw title and subtitle
-	\pgftext[at=\pgfpoint{\@Leftcolumn}{\@Vspacing-\@Axiswidth-0.48cm},left,top]{%
+	\pgftext[at=\pgfpoint{\@leftcolumn}{\@axisheight-\@axiswidth-0.48cm},left,top]{%
 		\parbox[t]{4.9cm}{%
 			\ifx\nederlands\undefined
 				\frontpagehead{Title}
@@ -1094,17 +1094,17 @@
 
 	%%%	Draw horizontal axis
 	\pgfsetcolor{tuered}
-	\pgfpathmoveto{\pgfpoint{0mm}			{\@Vspacing}}
-	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@Vspacing}}
-	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@Vspacing-\@Axiswidth}}
-	\pgfpathlineto{\pgfpoint{0cm}			{\@Vspacing-\@Axiswidth}}
+	\pgfpathmoveto{\pgfpoint{0mm}			{\@axisheight}}
+	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight}}
+	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight-\@axiswidth}}
+	\pgfpathlineto{\pgfpoint{0cm}			{\@axisheight-\@axiswidth}}
 	\pgfusepath{fill}
 
 	%%%	Draw diagonal axis
 	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\paperheight}}
 	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Axiswidth-\@Hshift}	{0cm}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Axiswidth}			{\paperheight}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth-\@Hshift}	{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth}			{\paperheight}}
 	\pgfusepath{fill}
 
 	%%%	If innovation is not set to false, by the "noinnovation" option
