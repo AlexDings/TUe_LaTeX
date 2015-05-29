@@ -65,6 +65,13 @@
 %%%	Require package used for options
 \RequirePackage{xkeyval}
 \RequirePackage{ifthen}
+\RequirePackage{pgf}
+
+%%% Sets cover image ratio
+\newcommand{\setCoverRatio}[2]{
+\pgfmathsetmacro{\@coverratio}{#1/#2}
+}
+\setCoverRatio{3}{2} % 3:2 by default
 
 %%%	Option for the language used
 \DeclareOptionX{english}{\def\lang{english}\let\nederlands\undefined}
@@ -90,7 +97,8 @@
 
 %%%	Option for cover ratio
 \DeclareOptionX{coverratio}{
-\def\@coverratio{\pgfmathparse{#1}\pgfmathresult}}
+\def\@coverratio{#1}
+}
 
 %%%	Option for showing margins
 \DeclareOptionX{margins}{\def\drawmargins{true}}
@@ -209,8 +217,6 @@
 
 %%%	Option for faded header and footer
 %	Default is black
-\RequirePackage{pgf}
-%\RequirePackage{color}
 
 \ifx\makefadehf\undefined
 	\definecolor{hfcolor}{gray}{0}
@@ -263,11 +269,6 @@
 % Define lengths
 %%%
 
-%%% Sets cover image ratio
-\newcommand{\setCoverRatio}[2]{
-\pgfmathsetmacro{\@coverratio}{#1/2}}
-\setCoverRatio{3}{2} % 3:2 by default
-
 %%% Vertical spacing
 \newdimen\@Vspacing
 \setlength\@Vspacing{8.5cm}
@@ -305,10 +306,6 @@
 \setlength{\@toctopspace}{\@Vspacing}
 \addtolength{\@toctopspace}{\@axiswidth}
 \addtolength{\@toctopspace}{0.48cm}
-
-%%% Paper dimensions
-\setlength\paperheight{297mm}
-\setlength\paperwidth{210mm}
 
 %%% Cover image lengths
 \newlength{\@coverheight}
@@ -490,7 +487,6 @@
 \RequirePackage[T1]{fontenc}
 \RequirePackage{fancyhdr}
 \RequirePackage{graphicx}
-%%%%\RequirePackage{pgf}
 \RequirePackage{titletoc}
 \RequirePackage{titlesec}
 
