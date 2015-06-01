@@ -239,6 +239,8 @@
 
 %%% Set basic file margins using the geometry package
 %%%	Use user specified margins
+\pgfmathsetlength{\marginparsep}{1cm}
+\pgfmathsetlength{\marginparwidth}{\rightspecified - 2 * \marginparsep}
 \RequirePackage[a4paper,layout=a4paper, headsep=30pt, bindingoffset=0cm,top=\topspecified, left=\leftspecified, right=\rightspecified, bottom=\bottomspecified, headheight=16pt]{geometry}
 
 %%%%%%%%%%%%%%%% CATCH THE GEOMETRY OPTIONS
