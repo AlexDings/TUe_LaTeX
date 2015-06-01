@@ -68,10 +68,11 @@
 \RequirePackage{pgf}
 
 %%% Sets cover image ratio
-\newcommand{\setCoverRatio}[2]{
-\pgfmathsetmacro{\@coverratio}{#1/#2}
+%	Ratio has to be bigger than 4:3
+\newcommand{\setCoverRatio}[1]{
+\pgfmathsetmacro{\@coverratio}{ifthenelse(#1>=4/3,#1,4/3)}
 }
-\setCoverRatio{3}{2} % 3:2 by default
+\setCoverRatio{4/3} % 4:3 by default
 
 %%%	Option for the language used
 \DeclareOptionX{english}{\def\lang{english}\let\nederlands\undefined}
@@ -97,7 +98,7 @@
 
 %%%	Option for cover ratio
 \DeclareOptionX{coverratio}{
-\def\@coverratio{#1}
+\setCoverRatio{#1}
 }
 
 %%%	Option for showing margins
