@@ -333,8 +333,16 @@
 %%% Usage: 	\beginchangemargin{left}{right}
 %%%				\endchangemargin
 %%%				Where "left" and "right" are units of length
-\def\changemargin#1#2{\list{}{\rightmargin#2\leftmargin#1}\item[]}
-\let\endchangemargin=\endlist 
+\newenvironment{changemargin}[2]{%
+\begin{list}{}{%
+\setlength{\topsep}{0pt}%
+\setlength{\leftmargin}{#1}%
+\setlength{\rightmargin}{#2}%
+\setlength{\listparindent}{\parindent}%
+\setlength{\itemindent}{\parindent}%
+\setlength{\parsep}{\parskip}%
+}%
+\item[]}{\end{list}}
 
 %%%	Define the instructions command if the "instructions" option is used
 \ifx\drawinstructions\undefined
@@ -356,14 +364,17 @@
 \def\etc/{etc.}
 \def\etal/{{\emph{et al.}}}
 
-\newcommand{\tue}{TU/e}
-\newcommand{\tuesite}{www.tue.nl}
-\newcommand{\tuefull}{Technische Universiteit \textbf{Eindhoven} University of Technology}
-\ifx\nederlands\undefined
-	\newcommand{\tuename}{Eindhoven University of Technology}	% english
-\else
-	\newcommand{\tuename}{Technische Universiteit Eindhoven}	% dutch
-\fi
+%%%	Define color rule command
+\newcommand\crule[3][black]{%
+\textcolor{#1}{\rule{#2}{#3}}%
+}
+
+%%%	Define color hrule command
+\newcommand\chrule[2][black]{%
+\begingroup
+\leavevmode\color{#1}\leaders\hrule height #2\hfill\kern\z@
+\endgroup
+}
 
 
 
@@ -412,6 +423,28 @@
 
 
 
+
+
+%%%
+% Define names used in the document
+%%%
+
+\newcommand{\tue}{TU/e}
+\newcommand{\tuesite}{www.tue.nl}
+\newcommand{\tuefull}{Technische Universiteit \textbf{Eindhoven} University of Technology}
+\ifx\nederlands\undefined
+	\newcommand{\tuename}{Eindhoven University of Technology}	% english
+\else
+	\newcommand{\tuename}{Technische Universiteit Eindhoven}	% dutch
+\fi
+
+
+
+
+
+%%%
+% Define setting author command
+%%%
 
 \newcounter{authorCounter}
 \newcounter{maxAuthorCounter}
@@ -1193,7 +1226,7 @@
 %%%	Define left side footer
 \newcommand{\leftsidefoot}{
 	\small \footnumber\hspace{0.1cm}\color{hfcolor} - 
-	\@title \ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel \theversionnum }\\ 
+	\@title \ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel\space\theversionnum }\\ 
 	\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 	\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
 }
@@ -1201,7 +1234,7 @@
 %%%	Define right side footer
 \newcommand{\rightsidefoot}{
 		\small \color{hfcolor} \@title
-		\ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel \theversionnum } - \color{black}
+		\ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel\space\theversionnum } - \color{black}
 		\hspace{0.1cm}\footnumber\color{hfcolor} \\ 
 		\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 		\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
@@ -1210,7 +1243,7 @@
 %%%	Define copyholder footer
 \newcommand{\copyfoot}{
 	\ifx\makecopyf\undefined\relax\else
-		\frontpagehead{\copyholderlabel}\meta\thecopyholder
+		\frontpagehead{\thecopyholderlabel}\meta\thecopyholder
 	\fi
 }
 
@@ -1494,8 +1527,9 @@
 %	Command \refdef
 %	References a definition
 %%
+\newcommand{\reducedstrut}{\vrule width 0pt height .9\ht\strutbox depth .9\dp\strutbox\relax}
 \newcommand{\refdef}[1]{%
-	\colorbox{linkpink}{\strut\hyperref[def:#1]{#1}}
+	\colorbox{linkpink}{\reducedstrut\hyperref[def:#1]{#1}\/}
 }
 
 %%
