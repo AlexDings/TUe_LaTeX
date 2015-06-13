@@ -143,8 +143,7 @@
 
 %%%	Option for custom top margin
 \newlength{\topspecified}
-\setlength{\topspecified}{0.55in}
-\addtolength{\topspecified}{40pt}
+\setlength{\topspecified}{1.6in}
 \DeclareOptionX{top}{%
 	\setlength{\topspecified}{#1}
 }
@@ -159,7 +158,6 @@
 %%%	Option for custom bottom margin
 \newlength{\bottomspecified}
 \setlength{\bottomspecified}{1.3in}
-\addtolength{\topspecified}{37pt}
 \DeclareOptionX{bottom}{%
 	\setlength{\bottomspecified}{#1}
 }
@@ -552,6 +550,7 @@
 \renewcommand{\ttdefault}{pcr}
 \def\meta{\normalfont\fontsize{8pt}{8.5pt}\selectfont}
 \def\metasmall{\normalfont\fontsize{6.5pt}{8pt}\selectfont}
+\def\metanormal{\normalfont\fontsize{10pt}{12pt}\selectfont}
 
 %%% Set TU/e colors
 
@@ -649,22 +648,20 @@
 		\ifx\drawcover\undefined\relax
 			\else
 
-			%%% If margins are to be displayed then display area to be filled by the cover image
-			\ifx\drawmargins\undefined\relax
-			\else
-				\pgfsetcolor{black!20!white}
-				\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
-				\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperwidth + .2cm}}
-				\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
-				\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-				\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
-				\pgfusepath{fill}  
-			\fi
- %%% HEREEE
-			%%% Draw the cover 
-			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%             
+			%%% Display area to be filled by the cover image
+			\pgfsetcolor{black!20!white}
+			\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperwidth + .2cm}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
+			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
+			\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
+			\pgfusepath{fill}  
 
-			 %%% Draw bottom white overlay for the cover
+
+			%%% Draw the cover 
+			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%
+
+			%%% Draw bottom white overlay for the cover
 			\pgfsetcolor{white}
 			\pgfpathmoveto{\pgfpoint{0mm}{\@coverbottom}}
 			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@coverbottom}}
@@ -1203,7 +1200,7 @@
 %%%	Using the fancyhdr package to set the TU/e headings.
 %%%	Define left side header
 \newcommand{\leftsidehead}{
-	\small\color{hfcolor} 
+	\metanormal\color{hfcolor} 
 	\ifx\makeshorth\undefined 
 		\tuefull
 	\else
@@ -1214,7 +1211,7 @@
 
 %%%	Define right side header
 \newcommand{\rightsidehead}{
-	\small\color{hfcolor} 
+	\metanormal\color{hfcolor} 
 	\ifthenelse{\equal{\extraheader}{}}{}{\extraheader\space-}
 	\ifx\makeshorth\undefined 
 		\tuefull
@@ -1225,7 +1222,7 @@
 
 %%%	Define left side footer
 \newcommand{\leftsidefoot}{
-	\small \footnumber\hspace{0.1cm}\color{hfcolor} - 
+	\metanormal\footnumber\hspace{0.1cm}\color{hfcolor} - 
 	\@title \ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel\space\theversionnum }\\ 
 	\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
 	\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
@@ -1233,11 +1230,11 @@
 
 %%%	Define right side footer
 \newcommand{\rightsidefoot}{
-		\small \color{hfcolor} \@title
-		\ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel\space\theversionnum } - \color{black}
-		\hspace{0.1cm}\footnumber\color{hfcolor} \\ 
-		\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
-		\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
+	\metanormal\color{hfcolor} \@title
+	\ifthenelse{\equal{\theversionnum}{}}{}{ / \theversionlabel\space\theversionnum } - \color{black}
+	\hspace{0.1cm}\footnumber\color{hfcolor} \\ 
+	\ifx\makechapterf\undefined\relax\else{\itshape\nouppercase{\leftmark}}\fi
+	\ifthenelse{\equal{\extrafooter}{}}{}{\\\extrafooter}
 }
 
 %%%	Define copyholder footer
@@ -1335,10 +1332,10 @@
 			\setheadersOne
 		\else
 			\ifx\onesidehf\undefined
-				%%%	Set oneside headers
+				%%%	Set twoside headers
 				\setheadersTwo
 			\else
-				%%%	Set twoside headers
+				%%%	Set oneside headers
 				\setheadersOne
 			\fi
 		\fi
