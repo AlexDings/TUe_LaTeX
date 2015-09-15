@@ -162,6 +162,20 @@
 	\setlength{\bottomspecified}{#1}
 }
 
+%%%	Option for custom marginpar left
+\newlength{\marginparL}
+\setlength{\marginparL}{1cm}
+\DeclareOptionX{marginparL}{%
+	\setlength{\marginparL}{#1}
+}
+
+%%%	Option for custom marginpar right
+\newlength{\marginparR}
+\setlength{\marginparR}{1cm}
+\DeclareOptionX{marginparR}{%
+	\setlength{\marginparR}{#1}
+}
+
 %%%	Set the graphicspath, the path where images are found
 \def\definedpath{}
 \DeclareOptionX{graphicspath}{% 
@@ -237,8 +251,8 @@
 
 %%% Set basic file margins using the geometry package
 %%%	Use user specified margins
-\pgfmathsetlength{\marginparsep}{1cm}
-\pgfmathsetlength{\marginparwidth}{\rightspecified - 2 * \marginparsep}
+\pgfmathsetlength{\marginparsep}{\marginparL}
+\pgfmathsetlength{\marginparwidth}{\dimexpr \rightspecified - \marginparL - \marginparR \relax}
 \RequirePackage[a4paper,layout=a4paper, headsep=30pt, bindingoffset=0cm,top=\topspecified, left=\leftspecified, right=\rightspecified, bottom=\bottomspecified, headheight=16pt]{geometry}
 
 %%%%%%%%%%%%%%%% CATCH THE GEOMETRY OPTIONS
@@ -529,7 +543,7 @@
 %%%	Package for linkstyling
 %	Enable PDF bookmarks
 %	Make index page numbers clickable
-\usepackage[bookmarks=true,linktocpage=true,bookmarksnumbered=true,breaklinks=true]{hyperref}
+\RequirePackage[bookmarks=true,linktocpage=true,bookmarksnumbered=true,breaklinks=true]{hyperref}
 
 %%%	Set link colors
 \hypersetup{
@@ -1256,10 +1270,12 @@
 
 %%%	Define footer number
 \newcommand{\footnumber}{
-	\thepage%
-	\ifx\drawendf\undefined\relax\else
-		/\pageref*{lastdocpage}
-	\fi
+	\textbf{%
+		\thepage%
+		\ifx\drawendf\undefined\relax\else
+			/\pageref*{lastdocpage}
+		\fi
+	}
 }
 
 %%%	Define headers and footers for twoside design
