@@ -16,7 +16,7 @@
 
 \NeedsTeXFormat{LaTeX2e}
 \def\fileversion{v.2.0}
-\def\filedate{2015/05/14}
+\def\filedate{2015/03/29}
 \ProvidesClass{TUestyle_ReportBook}[\filedate\space\fileversion\space  TU/e style report & book 2008]
 
 
@@ -524,8 +524,8 @@
 \extrah{}
 
 
-\newcommand{\frontpagehead}[1]{\metasmall\textbf{#1} \\[.5ex]}
-\newcommand{\frontpagebody}[1]{\parbox[t]{\linewidth}{\meta#1} \\[2ex]}
+\newcommand{\frontpagehead}[1]{{\metasmall\textbf{#1} \\[.5ex]}}
+\newcommand{\frontpagebody}[1]{{\parbox[t]{\linewidth}{\meta#1} \\[2ex]}}
 
 %%%
 % 	Set the required packages
@@ -766,20 +766,6 @@
 	\end{pgfpicture}%
 \end{titlepage}%
 
-
-%%% Reset global variables
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% why?
-\setcounter{footnote}{0}
-\global\let\thanks\relax
-\global\let\maketitle\relax
-\global\let\@thanks\@empty
-%\global\let\@author\@empty
-\global\let\@date\@empty
-%	\global\let\@title\@empty
-%	\global\let\title\relax
-%\global\let\author\relax
-\global\let\date\relax
-\global\let\and\relax
 \hfuzz=0pt
 
 %%%	Reset the original values of all margins
@@ -841,16 +827,15 @@
 
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%not only pars
 %%%
-% 	Redefine paragraph style 
+% 	Redefine subsubsection, paragraph and subparagraph style 
 %%%
 
-%%% Change the paragraph indent and paragraph skip
+%%% Null the paragraph indent and change paragraph skip
 \setlength{\parindent}{0cm}
 \setlength{\parskip}{1ex}
 
+%%% Set counter depth to only exclude (sub)paragraphs 
 \setcounter{secnumdepth}{2}
 
 \ifx\notuepars\undefined
@@ -1068,11 +1053,11 @@
 \newcommand{\setmargins}{
 	%%%	If the document uses the "oneside" option
 	\ifx\drawtwoside\undefined
-		\newgeometry{headsep=30pt,twoside=false, bindingoffset=0cm,top=\topspecified, left=\leftspecified,right=\rightspecified,bottom=\bottomspecified,headheight=16pt}
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\topspecified,left=\leftspecified,right=\rightspecified,bottom=\bottomspecified,headheight=16pt,twoside=false}
 
 	%%%	If the document uses the "twoside" option
 	\else
-		\newgeometry{headsep=30pt,twoside=true, bindingoffset=0cm,top=\topspecified, left=\leftspecified,right=\rightspecified,bottom=\bottomspecified,headheight=16pt}
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\topspecified,left=\leftspecified,right=\rightspecified,bottom=\bottomspecified,headheight=16pt,twoside=true}
 	\fi
 }
 
@@ -1208,7 +1193,7 @@
 
 
 %%%
-% Declare regular header and footers
+% Declare TU/e header and footers
 %%%
 
 %%%	Using the fancyhdr package to set the TU/e headings.
@@ -1409,7 +1394,7 @@
 % \CaTeX
 %%%
 
-%%%%%%%%%%%% Needs to be made
+%%%%%%%%%%%% Needs to be created
 
 
 
@@ -1418,6 +1403,8 @@
 %%%
 
 \AtBeginDocument{
+	%%%	Set footnote counter
+	\setcounter{footnote}{0}
 	%%%	Generate authors
 	\GenerateAllAuthorM
 	%%%	Set meta data
@@ -1514,7 +1501,7 @@
 %%
 \newcommand{\definedef}[2]{%
 	\refstepcounter{definition}%
-	\refdef{#1}%
+	\drawdef{#1}{}%
 	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}#2}%
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
@@ -1525,7 +1512,7 @@
 %%
 \newcommand{\defineabbr}[2]{%
 	\refstepcounter{definition}%
-	\refdef{#1}%
+	\drawdef{#1}{#2}%
 	\addcontentsline{lod}{definition}{\numberline{\string\definitionstyle{#1}}#2}%
 	\addtocontents{lod}{\string\label{def:#1}}%
 }
@@ -1537,13 +1524,27 @@
 }
 
 %%
+%	Command \drawdef
+%	Draws a definition
+%%
+\newcommand{\reducedstrut}{\vrule width 0pt height .9\ht\strutbox depth .9\dp\strutbox\relax}
+\newcommand{\drawdef}[2]{%
+	\ifx&#2&%
+		\colorbox{linkpink}{\reducedstrut\hyperref[def:#1]{#1}\/}
+	\else
+		\colorbox{linkpink}{\reducedstrut\hyperref[def:#1]{#1 (#2)}\/}
+	\fi
+}
+
+%%
 %	Command \refdef
 %	References a definition
 %%
-\newcommand{\reducedstrut}{\vrule width 0pt height .9\ht\strutbox depth .9\dp\strutbox\relax}
+
 \newcommand{\refdef}[1]{%
 	\colorbox{linkpink}{\reducedstrut\hyperref[def:#1]{#1}\/}
 }
+
 
 %%
 %	Variable \listdefinitionname
@@ -1578,6 +1579,16 @@
 	 {#2}% % Page number
 }
 
+%%
+%	Command \stoptocentries
+%	Stops any entries from being added to the ToC
+%	Command \starttocentries
+%	Re-enables any entries being added to the ToC
+%% 
+
+\let\oldaddcontentsline\addcontentsline
+\newcommand{\stoptocentries}{\renewcommand{\addcontentsline}[3]{}}
+\newcommand{\starttocentries}{\let\addcontentsline\oldaddcontentsline}
 
 
 
