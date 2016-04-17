@@ -9,13 +9,149 @@
 \NeedsTeXFormat{LaTeX2e}
 \def\fileversion{v.2.0}
 \def\filedate{2015/03/29}
-\ProvidesClass{TUestyle}[\filedate\space\fileversion\space  TU/e style report & book 2008]
+\ProvidesClass{TUestyle_ReportBook}[\filedate\space\fileversion\space  TU/e style report & book 2008]
+
+
+
+%%%
+%   Used Packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
 \RequirePackage{pgf}
 \RequirePackage{xkeyval}
 \RequirePackage{pgf}  % loads also »xcolor«
+\RequirePackage[dutch, english]{babel}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+%\RequirePackage{titletoc}
+%\RequirePackage{titlesec}
+
+
+
+
+
+%%%
+%   Definitions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Switch between book/report
+%%  (report by default)
+\newif\ifbook\bookfalse
+
+%%% Switch between english/dutch
+%%  (english by default)
+\newif\ifenglish\englishtrue
+
+%%% Draft mode
+%%  (false by default)
+\newif\ifdraft\draftfalse
+
+%%% Use Meta OT fonts
+%%  (false by default)
+\newif\iftuefonts\tuefontsfalse
+
+%%% Sectioning shift
+\def\sectioningshift{0}
+
+
+
+
+
+%%%
+%   Class options
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Report class option error
+\def\ClassErrorNotSupported#1#2{\ClassError{TUestyle_ReportBook}{Sorry, only #1 is supported!}{Remove the #2 class option}}
+\def\DeclareBooleanOptionX#1{\define@boolkey{TUestyle_Development.cls}[]{#1}{}}
+
+% document options
+\DeclareOptionX{report}{\bookfalse}
+\DeclareOptionX{book}{\booktrue}
+
+% throw error on not supported paper sizes
+\DeclareOptionX{a5paper}{\ClassErrorNotSupported{a4paper}{a5paper}}
+\DeclareOptionX{b5paper}{\ClassErrorNotSupported{a4paper}{b5paper}}
+\DeclareOptionX{letterpaper}{\ClassErrorNotSupported{a4paper}{letterpaper}}
+\DeclareOptionX{executivepaper}{\ClassErrorNotSupported{a4paper}{executivepaper}}
+\DeclareOptionX{legalpaper}{\ClassErrorNotSupported{a4paper}{legalpaper}}
+\DeclareOptionX{landscape}{\ClassErrorNotSupported{portrait}{landscape}}
+
+% custom layout margins
+\DeclareOptionX{left}{\setlength{\layoutleftmargin}{#1}}
+\DeclareOptionX{right}{\setlength{\layoutrightmargin}{#1}}
+\DeclareOptionX{top}{\setlength{\layouttopmargin}{#1}}
+\DeclareOptionX{bottom}{\setlength{\layoutbottommargin}{#1}}
+
+% language options
+\DeclareOptionX{english}{\englishtrue}
+\DeclareOptionX{engels}{\englishtrue}
+\DeclareOptionX{dutch}{\englishfalse}
+\DeclareOptionX{nederlands}{\englishfalse}
+
+% draft mode
+\DeclareOptionX{draft}{\drafttrue}
+
+
+%%% TU/e style options
+
+% draw TU/e slogan
+\DeclareBooleanOptionX{slogan}
+\slogantrue
+
+% draw the innovation mark
+\DeclareBooleanOptionX{innovation}
+\innovationtrue
+
+% draw the TU/e logo mark
+\DeclareBooleanOptionX{logo}
+\logotrue
+
+% draw TU/e address
+\DeclareBooleanOptionX{address}
+\addresstrue
+
+% draw the author
+\DeclareBooleanOptionX{author}
+\authortrue
+
+% draw the date
+\DeclareBooleanOptionX{date}
+\datetrue
+
+
+%%% Sectioning options
+
+% use sectioning style
+\DeclareBooleanOptionX{sectioningstyling}
+\sectioningstylingtrue
+
+% use paragraph style
+\DeclareBooleanOptionX{paragraphstyling}
+\paragraphstylingtrue
+
+% start sectioning counters at zero
+\DeclareOptionX{zeroindexed}{\def\sectioningshift{-1}}
+
+% use auto labeling
+\DeclareBooleanOptionX{autolabel}
+\autolabeltrue
+
+
+% pass options to underlying classes
+\DeclareOptionX*{%
+  \PassOptionsToClass{\CurrentOption}{book}%
+  \PassOptionsToClass{\CurrentOption}{report}%
+}
+
+% fonts options
+\DeclareOptionX{tuefonts}{\tuefontstrue}
+
+\ProcessOptionsX
+
+
 
 
 
@@ -236,8 +372,6 @@
     }
     \long\def\cs@to@str@aux@ii#1{\z@}
 
-%%%	Report class option error
-\def\ClassErrorNotSupported#1#2{\ClassError{TUestyle_ReportBook}{Sorry, only #1 is supported!}{Remove the #2 class option}}
 
 %%% \textlcsc{<string>}
 %% Make all LowerCase Small Caps
@@ -260,7 +394,7 @@
 %%  saves data in \data:<name>:<range>
 \newcommand{\adddata}[1]{% Use a declaration
   \edef\tempname{\string#1}
-  \edef\tmp@sum{\string#1@sum}  
+  \edef\tmp@sum{\string#1@sum}
   \@ifundefined{c@\expandafter\cs@to@str\tmp@sum}{%
     \expandafter\newcount\csname c@\expandafter\cs@to@str\tmp@sum\endcsname % define counter c@<name>@sum if it doesn't exist yet
   }{}
@@ -272,7 +406,7 @@
     }
 
     \newcommand{\gobblenext}[1]{%
-      \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax 
+      \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax
       \let\tempname@sum\tempname
       \expandafter\def\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}%
       \@ifnextchar\bgroup{\gobblenext}{}% Gobble next "argument"
@@ -338,14 +472,14 @@
     \csname Gin@isotrue\endcsname% = "keepaspectratio"
     \resizebox*{.8\ht0}{.8\ht0}{% Scale down (the height is also used for the width to avoid the surrounding spaces)
     \parbox{10em}{% Allow line breaks
-            \color{black!90}%  
+            \color{black!90}%
             %%%% TODO authorlist and actual copyholder
             This PDF was created by \@author\ for COPYHOLDER.
         }%
     }}}}%
 }
 
-  
+
 %%% \storeoldenv{\<name>}
 %%  Stores the environment \begin{<name>}\end{<name>} to \begin{old<name>}\end{old<name>}
 \newcommand{\storeoldenv}[1]{
@@ -397,13 +531,13 @@
 \newcommand{\labelselector}[2]{%
   \@ifequal{#1}{\part}{%
     \label{[part:#2]}
-  }{\@ifequal{#1}{\chapter}{%  
+  }{\@ifequal{#1}{\chapter}{%
 		\label{ch:#2}%
-  }{\@ifequal{#1}{\chapter}{%  
-		\label{sec:#2}    
-  }{\@ifequal{#1}{\chapter}{%  
+  }{\@ifequal{#1}{\chapter}{%
+		\label{sec:#2}
+  }{\@ifequal{#1}{\chapter}{%
 		\label{subsec:#2}%
-  }{\@ifequal{#1}{\chapter}{%  
+  }{\@ifequal{#1}{\chapter}{%
 		\label{sssec:#2}%
   }}}}}
 }
@@ -430,15 +564,6 @@
 %   Document
 %%%
 
-%%% book / report
-%   report by default
-
-\newif\ifbook
-\bookfalse
-\DeclareOption{report}{\bookfalse}
-\DeclareOption{book}{\booktrue}
-\ProcessOptions
-
 % load underlying class
 \ifbook
   \LoadClass{book}
@@ -446,15 +571,9 @@
   \LoadClass{report}
 \fi
 
-%%% Not supported paper options
-
-\DeclareOption{a5paper}{\ClassErrorNotSupported{a4paper}{a5paper}}
-\DeclareOption{b5paper}{\ClassErrorNotSupported{a4paper}{b5paper}}
-\DeclareOption{letterpaper}{\ClassErrorNotSupported{a4paper}{letterpaper}}
-\DeclareOption{executivepaper}{\ClassErrorNotSupported{a4paper}{executivepaper}}
-\DeclareOption{legalpaper}{\ClassErrorNotSupported{a4paper}{legalpaper}}
-\DeclareOption{landscape}{\ClassErrorNotSupported{portrait}{landscape}}
-\ProcessOptions
+% depending packages
+\RequirePackage{hyperref}
+\RequirePackage{geometry}
 
 
 
@@ -463,31 +582,15 @@
 %%%
 
 \setnewlength{\layoutleftmargin}{15mm}
-\DeclareOptionX{left}{\setlength{\layoutleftmargin}{#1}}
-
 \setnewlength{\layoutrightmargin}{15mm}
-\DeclareOptionX{right}{\setlength{\layoutrightmargin}{#1}}
-
 \setnewlength{\layouttopmargin}{\dimexpr 40.5mm\relax} % 2*20.25mm
-\DeclareOptionX{top}{\setlength{\layouttopmargin}{#1}}
-
 \setnewlength{\layoutbottommargin}{\dimexpr 31.5mm\relax} % 2*15.75mm
-\DeclareOptionX{bottom}{\setlength{\layoutbottommargin}{#1}}
 
+% TODO implement marginparL & marginparR
 
-%%%	Option for custom marginpar left
-\setnewlength{\marginparL}{\columnsep}
-\DeclareOptionX{marginparL}{%
-	\setlength{\marginparL}{#1} % was 1 cm
+\newcommand{\resetlayout}{
+  \geometry{a4paper,layout=a4paper, headsep=30pt, bindingoffset=0cm, top=\layouttopmargin, left=\layoutleftmargin, right=\layoutrightmargin, bottom=\layoutbottommargin, headheight=16pt}
 }
-
-%%%	Option for custom marginpar right
-\setnewlength{\marginparR}{\layoutrightmargin} % was 1 cm
-\DeclareOptionX{marginparR}{%
-	\setlength{\marginparR}{#1}
-}
-
-
 
 %%%
 %   Grid
@@ -504,8 +607,8 @@
 \setnewlength{\gridcolumnwidth}{\dimexpr (\paperwidth - \layoutleftmargin - \layoutrightmargin - \numexpr\gridcolumns-1\relax\columnsep) / \gridcolumns \relax}
 
 \setnewlength{\headeroffset}{5.25mm}
-\setnewlength{\footeroffset}{6.75mm}     
-\setnewlength{\gridheight}{12.75bp} 
+\setnewlength{\footeroffset}{6.75mm}
+\setnewlength{\gridheight}{12.75bp}
 
 %%% command \drawgrid
 %%  draws document grid
@@ -523,10 +626,6 @@
 %   Draft
 %%%
 
-\newif\ifdraft
-\draftfalse
-\DeclareOption{draft}{\drafttrue}
-\ProcessOptions
 
 
 
@@ -540,26 +639,18 @@
 %   Language
 %%%
 
-% babel package
-\RequirePackage{babel}
-
-% english by default
-\newif\ifenglish
-\englishtrue
-\DeclareOptionX{english}{\englishtrue\PassOptionsToPackage{english}{babel}}
-\DeclareOptionX{engels}{\englishtrue\PassOptionsToPackage{english}{babel}}
-\DeclareOptionX{dutch}{\englishfalse\PassOptionsToPackage{dutch}{babel}}
-\DeclareOptionX{nederlands}{\englishfalse\PassOptionsToPackage{dutch}{babel}}
-
-\ExecuteOptionsX{english}
-\ProcessOptionsX
+\ifenglish
+  %\selectlanguage{english}
+\else
+  %\selectlanguage{dutch}
+\fi
 
 
 %%%
 %   TU/e
 %%%
 
-\newvariable{website}{www.tue.nl}
+\newvariable{tuesite}{www.tue.nl}
 \newvariable{phonenumber}{+31 (0)40 247 9111}
 \newvariable{phonenumberlabel}{Tel.}
 \newvariable{fullname}{Technische Universiteit \textbf{Eindhoven} University of Technology}
@@ -635,90 +726,26 @@
 
 
 %%%
-%   DISABLE TU/e style
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%
-%   Titlepage options
-%%%
-
-%%%	Option for leaving out the innovation mark
-\newif\ifslogan
-\slogantrue
-\DeclareOptionX{noslogan}{\sloganfalse}
-
-%%%	Option for leaving out the TU/e logo
-\newif\iflogo
-\logotrue
-\DeclareOptionX{nologo}{\logofalse}
-
-%%%	Option for leaving out the TU/e address
-\newif\ifaddress
-\addresstrue
-\DeclareOptionX{noaddress}{\addressfalse}
-
-%%%	Option for leaving out the author
-\newif\ifauthor
-\authortrue
-\DeclareOptionX{noauthor}{\authorfalse}
-
-%%%	Option for leaving out the date
-\newif\ifdate
-\datetrue
-\DeclareOptionX{nodate}{\datefalse}
-
-%%%
-%   Sectioning options
-%%%
-
-%%%	Option for using standard sectioning style
-\newif\ifoldsectioning
-\oldsectioningtrue
-\DeclareOptionX{oldsectioning}{\oldsectioningfalse}
-
-%%%	Option for using standard paragraph style
-\newif\ifoldparagraphs
-\oldparagraphstrue
-\DeclareOptionX{oldparagraphs}{\oldparagraphsfalse}
-
-%%% Option to translate sectioning counters
-\def\sectioningshift{0}
-\DeclareOptionX{startatzero}{
-  \def\sectioningshift{-1}
-}
-
-%%%	Option to disable auto-labeling
-\newif\ifautolabel
-\autolabeltrue
-\DeclareOptionX{noautolabel}{\autolabelfalse}
-
-
-
-%%%
-%   Other options
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%
 %   Drafting options
 %%%
 
 %%%	Option for showing margins
 \newif\ifshowmargins
 \showmarginsfalse
-\DeclareOptionX{margins}{
-  \showmarginstrue
-  \Gm@showframetrue
-}
+%\DeclareOptionX{margins}{
+%  \showmarginstrue
+%  \Gm@showframetrue
+%}
 
 %%%	Option for displaying notes
 \newif\ifdrawnotes
 \drawnotesfalse
-\DeclareOptionX{drawnotes}{\drawnotestrue}
+%\DeclareOptionX{drawnotes}{\drawnotestrue}
 
 %%%	Option for displaying instructions
 \newif\ifdrawinstructions
 \drawinstructionstrue
-\DeclareOptionX{drawinstructions}{\drawinstructionsfalse}
+%\DeclareOptionX{drawinstructions}{\drawinstructionsfalse}
 
 
 %%%
@@ -729,19 +756,19 @@
 %	Catch it
 \newif\ifdrawtwoside
 \drawtwosidefalse
-\DeclareOptionX{twoside}{\drawtwosidetrue}
+%\DeclareOptionX{twoside}{\drawtwosidetrue}
 
 %%%	Option for using oneside mode
 %	Catch it
 \newif\ifdrawoneside
 \drawonesidefalse
-\DeclareOptionX{oneside}{\drawonesidetrue}
+%\DeclareOptionX{oneside}{\drawonesidetrue}
 
 %%%	Option for using twocolumn mode
 %	Catch it
 \newif\iftwocolumn
 \twocolumnfalse
-\DeclareOptionX{twocolumn}{\twocolumntrue}
+%\DeclareOptionX{twocolumn}{\twocolumntrue}
 
 
 %%%
@@ -752,41 +779,41 @@
 %%%	for book class
 \newif\ifonesidehf
 \onesidehffalse
-\DeclareOptionX{onesidehf}{\onesidehftrue}
+%\DeclareOptionX{onesidehf}{\onesidehftrue}
 
 %%%	Option for faded header and footer
 \newif\iffadehf
 \fadehffalse
 \definecolor{hfcolor}{gray}{0}
-\DeclareOptionX{fadehf}{
-  \fadehftrue
-  \definecolor{hfcolor}{gray}{0}
-}
+%\DeclareOptionX{fadehf}{
+%  \fadehftrue
+%  \definecolor{hfcolor}{gray}{0}
+%}
 
 %%%	Option for chapter in footer
 \newif\ifchapterf
 \chapterffalse
-\DeclareOptionX{chapterf}{\chapterftrue}
+%\DeclareOptionX{chapterf}{\chapterftrue}
 
 %%%	Option for chapter in footer
 \newif\ifcopyf
 \copyffalse
-\DeclareOptionX{copyf}{\copyftrue}
+%\DeclareOptionX{copyf}{\copyftrue}
 
 %%%	Option for last page number in footer
 \newif\ifendf
 \endffalse
-\DeclareOptionX{endf}{\endftrue}
+%\DeclareOptionX{endf}{\endftrue}
 
 %%%	Option to shorter header
 \newif\ifshorth
 \shorthfalse
-\DeclareOptionX{shorth}{\shorthtrue}
+%\DeclareOptionX{shorth}{\shorthtrue}
 
 %%%	Option for draftmark over document pages
 \newif\ifdraftmark
 \draftmarkfalse
-\DeclareOptionX{draftmark}{\draftmarktrue}
+%\DeclareOptionX{draftmark}{\draftmarktrue}
 
 %%% command \extraf{<string>} & \extrah{<string>}
 %%  Adds custom footer and header  data
@@ -807,30 +834,30 @@
 \def\autocentercap{}
 
 %%%	Option for not-centering images
-\DeclareOptionX{align}{
-  \@ifequal{#1}{left}{%
-    \def\autocenter{\raggedright}%
-    \def\autocentercap{\raggedright}%
-    \def\autocentershort{l}%
-  }{
-  \@ifequal{#1}{center}{%
-    \def\autocenter{\centering}%
-    \def\autocentercap{\centering}%
-    \def\autocentershort{c}%
-  }{
-  \@ifequal{#1}{right}{%
-    \def\autocenter{\raggedleft}%
-    \def\autocentercap{\raggedleft}%
-    \def\autocentershort{r}%
-  }{
-  \@ifequal{#1}{none}{%
-    \def\autocenter{\raggedright}%
-    \def\autocentercap{\centering}%
-    \def\autocentershort{c}%
-  }{}}}}
-}
+%\DeclareOptionX{align}{
+%  \@ifequal{#1}{left}{%
+%    \def\autocenter{\raggedright}%
+%    \def\autocentercap{\raggedright}%
+%    \def\autocentershort{l}%
+%  }{
+%  \@ifequal{#1}{center}{%
+%    \def\autocenter{\centering}%
+%    \def\autocentercap{\centering}%
+%    \def\autocentershort{c}%
+%  }{
+%  \@ifequal{#1}{right}{%
+%    \def\autocenter{\raggedleft}%
+%    \def\autocentercap{\raggedleft}%
+%    \def\autocentershort{r}%
+%  }{
+%  \@ifequal{#1}{none}{%
+%    \def\autocenter{\raggedright}%
+%    \def\autocentercap{\centering}%
+%    \def\autocentershort{c}%
+%  }{}}}}
+%}
 
-\ExecuteOptionsX{align=center}
+%\ExecuteOptionsX{align=center}
 
 \def\captionwidth{.8}
 
@@ -887,17 +914,17 @@
     \oldlistoftables
 	\endgroup
 }
-  
+
 %%%
 %   Graphicspath
 %%%
 
 %%%	Set the graphicspath, the path where images are found
 \def\definedpath{}
-\DeclareOptionX{graphicspath}{% 
-	\def\definedpath{#1}
-  \graphicspath{{\definedpath}}
-}
+%\DeclareOptionX{graphicspath}{%
+%	\def\definedpath{#1}
+%  \graphicspath{{\definedpath}}
+%}
 
 
 
@@ -915,10 +942,6 @@
 \renewcommand{\ttdefault}{pcr}
 
 % Meta OT
-\newif\iftuefonts
-\tuefontsfalse
-\DeclareOption{tuefonts}{\tuefontstrue}
-\ProcessOptions
 
 \newcommand{\fontdefault}{
   \normalfont\selectfont
@@ -1379,49 +1402,17 @@
 
 %%%	Option for cover ratio
 %%  Ratio has to be bigger than 4:3
-\DeclareOptionX{coverratio}{
-    \ifrealnum{#1}{4/3}{%
-      \def\@coverratio{#1}
-    }{
-	  \def\@coverratio{4/3}    
-    }{}
-}
+%\DeclareOptionX{coverratio}{
+%    \ifrealnum{#1}{4/3}{%
+%      \def\@coverratio{#1}
+%    }{
+%	  \def\@coverratio{4/3}
+%    }{}
+%}
 
 % Set default cover ratio
-\def\@coverratio{4/3} 
+\def\@coverratio{4/3}
 
-
-%% TODO move
-%%%%%%%%
-
-%%%	Set the classfile used as a base
-%	Standard class used is report
-\def\classtype{report}
-%	If the book option is specified, set book class
-\DeclareOptionX{book}{%
-	\def\classtype{book}
-	\def\drawbook{true}
-}
-
-%%%	Declare what happens to undefined and uncaught options
-%	These get passed to the loaded class: report or book
-\DeclareOptionX*{%
-\PassOptionsToClass{\CurrentOption}{book}%
-\PassOptionsToClass{\CurrentOption}{report}%
-}
-
-\ProcessOptionsX
-
-%%%%%%%%
-
-
-
-%%%
-%   Execute code directly related to the options
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%% Load the geometry package with specified options
-\RequirePackage[a4paper,layout=a4paper, headsep=30pt, bindingoffset=0cm, top=\layouttopmargin, left=\layoutleftmargin, right=\layoutrightmargin, bottom=\layoutbottommargin, headheight=16pt]{geometry}
 
 %%%	Use twoside standard for book type base class
 %	If book is defined and oneside is not then set twoside
@@ -1501,7 +1492,7 @@
     \hbox{}\newpage\if@twocolumn\hbox{}\newpage\fi\fi}
 
 %%%
-% 	Redefine titlepage so it does not reset page counter 
+% 	Redefine titlepage so it does not reset page counter
 %%%
 
 \if@compatibility
@@ -1554,7 +1545,7 @@
 	\fi
 }
 
-    
+
 
 %%%
 %   Document data
@@ -1586,29 +1577,18 @@
 }
 
 
-
-
-
-%%%
-% 	Set the required packages
-%%%
-\RequirePackage{fancyhdr}
-
-\RequirePackage{graphicx}
-
-%\RequirePackage{titletoc}
-
-%\RequirePackage{titlesec}
-
-
+\RequirePackage{hyperref}
 
 %%%	Package for linkstyling
 %	Enable PDF bookmarks
 %	Make index page numbers clickable
-\RequirePackage[bookmarks=true,linktocpage=true,bookmarksnumbered=true,breaklinks=true]{hyperref}
 
 %%%	Set link colors
 \hypersetup{
+  bookmarks=true,
+  linktocpage=true,
+  %bookmarksnumbered=true,
+  breaklinks=true,
 	colorlinks,
 	linkcolor={tuered},
 	citecolor={tuedarkblue},
@@ -1725,8 +1705,7 @@
 
 
 
-\renewcommand\maketitle{\clearpage\begin{titlepage}%
+%\renewcommand\maketitle{\clearpage\begin{titlepage}%
 %%% TODO make
-\end{titlepage}%
-
-}
+%\end{titlepage}%
+%}
