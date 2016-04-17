@@ -84,6 +84,8 @@
 \DeclareOptionX{right}{\setlength{\layoutrightmargin}{#1}}
 \DeclareOptionX{top}{\setlength{\layouttopmargin}{#1}}
 \DeclareOptionX{bottom}{\setlength{\layoutbottommargin}{#1}}
+\DeclareOptionX{marginparL}{\setlength{\marginparL}{#1}}
+\DeclareOptionX{marginparR}{\setlength{\marginparL}{#1}}
 
 % language options
 \DeclareOptionX{english}{\englishtrue}
@@ -546,6 +548,7 @@
 %   Internal debug commands
 %%%
 
+\newcommand{\stripmacro}[1]{\expandafter\begingroup\escapechar=-1\edef\x{\endgroup\string#1}\x}
 
 %%% Define showlength command
 \def\convertto#1#2{\strip@pt\dimexpr #2*65536/\number\dimexpr 1#1}
@@ -577,46 +580,32 @@
 
 
 
-%%%
-%   Layout
-%%%
 
-\setnewlength{\layoutleftmargin}{15mm}
-\setnewlength{\layoutrightmargin}{15mm}
-\setnewlength{\layouttopmargin}{\dimexpr 40.5mm\relax} % 2*20.25mm
-\setnewlength{\layoutbottommargin}{\dimexpr 31.5mm\relax} % 2*15.75mm
-
-% TODO implement marginparL & marginparR
-
-%%%
-% Set original margins
-%%%
-
-\newcommand{\resetlayout}{
-	%%%	If the document uses the "oneside" option
-	\ifx\drawtwoside\undefined
-		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\layoutleftmargin,right=\layoutrightmargin,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
-
-	%%%	If the document uses the "twoside" option
-	\else
-		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\layoutleftmargin,right=\layoutrightmargin,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
-	\fi
-}
 
 
 %%%
 %   Grid
 %%%
 
+\setnewlength{\layoutleftmargin}{15mm}
+\setnewlength{\layoutrightmargin}{15mm}
+\setnewlength{\layouttopmargin}{\dimexpr 40.5mm\relax} % 2*20.25mm
+\setnewlength{\layoutbottommargin}{\dimexpr 31.5mm\relax} % 2*15.75mm
+\setnewlength{\marginparL}{\columnsep}
+\setnewlength{\marginparR}{\layoutrightmargin}
+
 \def\gridcolumns{12}
 \def\gridleftcolumns{1}
 \def\gridrightcolumns{2}
-\def\gridbodycolumns{\numexpr\gridcolumns-\gridleftmargin-\gridrightmargin\relax}
+\def\gridbodycolumns{\numexpr\gridcolumns-\gridleftcolumns-\gridrightcolumns\relax}
 
 \setnewlength{\gridgutterwidth}{3.853mm}
 \setlength{\columnsep}{\gridgutterwidth}
 
-\setnewlength{\gridcolumnwidth}{\dimexpr (\paperwidth - \layoutleftmargin - \layoutrightmargin - \numexpr\gridcolumns-1\relax\columnsep) / \gridcolumns \relax}
+\setnewlength{\gridcolumnwidth}{\dimexpr (\paperwidth - \layoutleftmargin - \layoutrightmargin - \numexpr\gridcolumns-1\relax\gridcolumnwidth) / \gridcolumns \relax}
+
+\setnewlength{\frameleft}{\dimexpr \layoutleftmargin + \gridleftcolumns\gridcolumnwidth \relax}
+\setnewlength{\frameright}{\dimexpr \layoutrightmargin + \gridrightcolumns\gridcolumnwidth \relax}
 
 \setnewlength{\headeroffset}{5.25mm}
 \setnewlength{\footeroffset}{6.75mm}
@@ -631,6 +620,45 @@
 %%% Tab size
 \newlength{\tabsize}
 \setlength{\tabsize}{\dimexpr \gridcolumnwidth + \gridgutterwidth}
+
+
+%%%
+%   Layout
+%%%
+
+%%% TODO implement \sethf \pagestyle{fancy}
+\newcommand{\sethf}{\pagestyle{plain}}
+
+%%%
+% Set original margins
+%%%
+
+\newcommand{\resetrightmargin}{
+  \setlength{\marginparsep}{\marginparL}
+  \setlength{\marginparwidth}{\dimexpr \frameright - \marginparL - \marginparR \relax}
+  \setnewlength{\rightmargincalculated}{\dimexpr \layoutrightmargin + \marginparL + \marginparwidth \relax}
+}
+
+
+\newcommand{\resetlayout}{
+  \disablepageskip
+  \sethf
+  
+	%%%	If the document uses the "oneside" option
+	\ifx\drawtwoside\undefined
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
+
+	%%%	If the document uses the "twoside" option
+	\else
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
+	\fi
+  \resetrightmargin
+  \enablepageskip
+}
+
+\AtBeginDocument{
+\resetlayout
+}
 
 
 
@@ -689,6 +717,7 @@
 	\newvariable{PObox}{P.O. Box}
   \newvariable{visitingaddresslabel}{Visiting adress}
   \newvariable{postaladdresslabel}{Postal adress}
+  \newvariable{titlelabel}{Title}
 \else
 	\newvariable{copyholderlabel}{Kopiehouder}
 	\newvariable{authorlabel}{Auteur}
@@ -700,6 +729,7 @@
 	\newvariable{PObox}{Postbus}
   \newvariable{visitingaddresslabel}{Bezoekadres}
   \newvariable{postaladdresslabel}{Postadres}
+  \newvariable{titlelabel}{Titel}
 \fi
 
 
@@ -1080,163 +1110,163 @@
 
 % heading small
 \def\styling@headingsmall{%
-  \color{colorheading}%
   \setfontsize{10bp}{12.75bp}%
 	\fontbold%
+  \leavevmode\color{colorheading}%
 }
 
 % heading normal
 \def\styling@headingnormal{%
-  \color{colorheading}%
   \setfontsize{24bp}{32bp}%
 	\fontbold%
+  \leavevmode\color{colorheading}%
 }
 
 % heading large
 \def\styling@headinglarge{%
-  \color{colorheading}%
   \setfontsize{30bp}{40bp}%
 	\fontbold%
+  \leavevmode\color{colorheading}%
 }
 
 % heading Large
 \def\styling@headingLarge{%
-  \color{colorheading}%
   \setfontsize{36bp}{48bp}%
 	\fontbold%
+  \leavevmode\color{colorheading}%
 }
 
 % heading LARGE
 \def\styling@headingLARGE{%
-  \color{colorheading}%
   \setfontsize{42bp}{54bp}%
 	\fontbold%
+  \leavevmode\color{colorheading}%
 }
 
 % heading huge
 \def\styling@headinghuge{%
-  \color{colorheading}%
   \setfontsize{48bp}{58bp}%
 	\fontbold%
+  \leavevmode\color{colorheading}%
 }
 
 % sub heading large
 \def\styling@subheadinglarge{%
-  \color{colorheading}%
   \setfontsize{18bp}{24bp}%
 	\fontmedium%
+  \leavevmode\color{colorheading}%
 }
 
 % sub heading normal
 \def\styling@subheadingnormal{%
-  \color{colorsubheading}%
   \setfontsize{12.25bp}{16bp}%
 	\fontmedium%
+  \leavevmode\color{colorsubheading}%
 }
 
 % sub heading small
 \def\styling@subheadingsmall{%
-  \color{colorsubheading}%
   \setfontsize{9.25bp}{12.75bp}%
 	\fontnormal%
+  \leavevmode\color{colorsubheading}%
 }
 
 % intro normal
 \def\styling@intronormal{%
-  \color{colorintro}%
   \setfontsize{10.75bp}{14.35bp}%
 	\fontmedium%
+  \leavevmode\color{colorintro}%
 }
 
 % intro large
 \def\styling@introlarge{%
-  \color{colorintro}%
   \setfontsize{12.25bp}{16bp}%
 	\fontmedium%
+  \leavevmode\color{colorintro}%
 }
 
 % body text
 \def\styling@body{%
-  \color{colorbody}%
   \setfontsize{9.25bp}{12.75bp}%
 	\fontdefault%
+  \leavevmode\color{colorbody}%
 }
 
 % promotional text
 \def\styling@promotional{%
-  \color{colorpromotional}%
   \setfontsize{10.75bp}{14.35bp}%
 	\fontnormal%
+  \leavevmode\color{colorpromotional}%
 }
 
 % promotional heading
 \def\styling@promotionalheading{%
-  \color{colorsubheading}%
   \setfontsize{11bp}{14.35bp}%
 	\fontbold%
+  \leavevmode\color{colorsubheading}%
 }
 
 % quote normal
 \def\styling@quotenormal{%
-  \color{colorquote}%
   \setfontsize{15bp}{20bp}%
 	\fontmedium%
+  \leavevmode\color{colorquote}%
 }
 
 % quote large
 \def\styling@quotelarge{%
-  \color{colorquote}%
   \setfontsize{18bp}{24bp}%
 	\fontmedium%
+  \leavevmode\color{colorquote}%
 }
 
 % accent text
 \def\styling@accent{%
-  \color{coloraccent}%
   \setfontsize{9.25bp}{12.75bp}%
 	\fontmedium%
+  \leavevmode\color{coloraccent}%
 }
 
 % info text
 \def\styling@info{%
-  \color{colorinfo}%
   \setfontsize{9.25bp}{12.75bp}%
 	\fontnormal%
+  \leavevmode\color{colorinfo}%
 }
 
 % caption
 \def\styling@caption{%
-  \color{colorcaption}%
   \setfontsize{9.25bp}{12.75bp}%
 	\fontbold%
+  \leavevmode\color{colorcaption}%
 }
 
 % note
 \def\styling@note{%
-  \color{colornote}%
   \setfontsize{7.75bp}{12.75bp}%
 	\fontnormal%
+  \leavevmode\color{colornote}%
 }
 
 % quote normal
 \def\styling@payoffnormal{%
-  \color{colorpayoff}%
   \setfontsize{10bp}{12.75bp}%
 	\fontmedium%
+  \leavevmode\color{colorpayoff}%
 }
 
 % quote large
 \def\styling@payofflarge{%
-  \color{colorpayoff}%
   \setfontsize{15bp}{12.75bp}%
 	\fontmedium%
+  \leavevmode\color{colorpayoff}%
 }
 
 % tiny (self-defined)
 \def\styling@tiny{%
-  \color{colorbody}%
   \setfontsize{6,25bp}{8bp}%
 	\fontmedium%
+  \leavevmode\color{colorbody}%
 }
 
 %%% command \style[<size>]{<type>}
@@ -1834,37 +1864,37 @@
 		
 		%%% From name and address
 		\pgfsetcolor{black}
-		\pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\baselineskip+\@axiswidth+\@axispadding},left,bottom]{%
-			\parbox[b][3.5cm]{5cm}%
-			{\meta%
-				\raggedright\textbf{\theadministrativeunit}\\[2ex]
+		\pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\@axiswidth+\@axispadding},left,bottom]{%
+			\fbox{\parbox[b]{5cm}%
+			{\meta %
+				\raggedright\textbf{\theadministrativeunit}\vspace{2ex}
 				\ifx\thedepartment\empty
         \else
-          \textit{\textbf{\thedepartment}}\\
+          \\\textit{\textbf{\thedepartment}}
         \fi
 				\ifx\theaddress\empty
         \else
-          \theaddress ,\\%
+          \\\theaddress ,%
         \fi
 				\ifaddress
-					5612 AZ Eindhoven\\
-					\thePObox\space513, 5600 MB Eindhoven\\
+					\\5612 AZ Eindhoven\\
+					\thePObox\space513, 5600 MB Eindhoven
 					\ifx\theNetherlands\empty
           \else
-            \theNetherlands\\
+            \\\theNetherlands
           \fi
 				\fi
 				\ifx\thewebsite\empty
         \else
-					\hypersetup{urlcolor={black}}
+					\\\hypersetup{urlcolor={black}}
 					{\urlstyle{same}\url{\thewebsite}}
-					\hypersetup{urlcolor={tuewarmred}}\\
+					\hypersetup{urlcolor={tuewarmred}}
 				\fi
-			}%
+			}}%
     }
     %%% Left column with info
     \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding},left,top]{%
-      \parbox[t]{5cm}{%
+      \fbox{\parbox[t]{5cm}{%
         \hbadness=10000%
         \ifauthor%
           \frontpagehead{\theauthorlabel}%
@@ -1891,7 +1921,7 @@
           \frontpagehead{\theversionlabel}%
           \frontpagebody{\theversionnum}%
         \fi%
-      }%
+      }}%
     }%
     \ifcover
     %%% Title and subtitle positioned underneath cover
@@ -1910,17 +1940,143 @@
 \hfuzz=0pt
 
 %%%	Reset the original values of all margins
-\disablepageskip
 \resetlayout
-\enablepageskip
+}
 
-%%%% TODO add back
-%%%	Set header and footers
-%\sethf
-%
-\iftwocolumn
-	\twocolumn
-\else
-	\relax
+%%%
+% 	Redefine chapter heading style 
+%%%
+
+\ifsectioningstyling
+  % Redefining the \chapter command from the report and book class
+  % to make sure that headings are also printed on pages
+  % that start a new chapter. The "Chapter" word is also removed.
+  % Most of the modifications are lines being commented out.
+  \renewcommand\chapter
+  {
+    \if@openright
+      \cleardoublepage
+    \else
+      \clearpage
+    \fi
+  %	\thispagestyle{plain}%
+    \global\@topnum\z@
+    \@afterindentfalse
+    \secdef
+    \@chapter
+    \@schapter
+  }
+
+  \def\@makechapterhead#1{%
+    \vspace*{50\p@}%
+    {
+      \parindent \z@ \raggedright \normalfont
+      \ifnum \c@secnumdepth >\m@ne
+      \LARGE\bfseries \thechapter
+  %		\par\nobreak
+  %		\vskip 20\p@
+    \fi
+  %		\interlinepenalty\@M
+      \LARGE \bfseries \hspace{1em} #1\par\nobreak
+      \vskip 40\p@
+    }
+  }
+    
+  \def\@makeschapterhead#1{%
+    \vspace*{50\p@}%
+    {
+      \parindent \z@ \raggedright
+      \normalfont
+      \interlinepenalty\@M
+      \LARGE \bfseries  #1\par\nobreak
+      \vskip 40\p@
+    }
+  }
 \fi
+
+
+
+%%%
+% 	Redefine table of contents
+%%%
+
+\newlength{\oldheadrulewidth}
+% Completely redefine the \tableofcontents command.
+% It shows the TU/e logo and draws the axes.
+% It also needs to redefine the margins temporarily,
+% for which the geometry package is used.
+
+\let\oldtableofcontents\tableofcontents
+\renewcommand\tableofcontents{%
+	\if@openright
+		\cleardoublepage
+	\else\relax\fi
+
+	% The table of contents needs different margins. The package geometry is used to
+	% change the margins of certain pages within a document.
+	% After the table of contents, they will be reset.
+	\newgeometry{bottom=\layoutbottommargin, twoside=false, right=\rightmargincalculated, left=\@tocleftspace, top=\@toctopspace, headheight=0cm, headsep=0cm,footskip=0cm,marginpar=0cm,marginparsep=0cm}
+
+	\fancyhf{}
+	\setlength{\oldheadrulewidth}{\headrulewidth}
+	\renewcommand{\headrulewidth}{0.0pt}
+
+	\fancyfoot[L]{%
+	\vspace{\dimexpr-\@toctopspace-\textheight}%
+	\makebox[\textwidth][l]{%
+		\hspace{-\@tocleftspace}%
+			\begin{pgfpicture}{0mm}{0mm}{\paperwidth}{\paperheight}
+				\drawtuetableofcontents
+			\end{pgfpicture}
+		}
+	}
+	
+	\pagestyle{fancy}
+		%%%	Draw TOC (Table of Contents)
+		{
+		\@starttoc{toc} 
+	 }%
+	
+	%%%	Begin new page to start layout-change
+	\newpage
+
+	%%%	Reset the original values of all margins
+	\resetlayout
+	
+	\renewcommand{\headrulewidth}{\oldheadrulewidth}
+	
+	\ifx\drawtwocolumn\undefined
+		\relax
+	\else
+		\twocolumn
+	\fi
+}
+
+%%%
+% Defining command for the TU/e logo, innovation, axes, text and title
+% for the table of contents
+%%%
+
+%%%	Use this command only INSIDE a pgfpicture environment
+\newcommand{\drawtuetableofcontents}{
+
+	%%%	Draw TU/e logo, innovation and axes
+	\drawtuelogoandaxes
+	\color{black}
+	
+	%%% Draw "Table of contents" or "Inhoudsopgave" title
+  \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\@axiswidth+\@axispadding},left,bottom]{%
+    \fbox{\parbox[b]{5cm}%
+    {\setlength{\baselineskip}{0pt}\setlength{\parskip}{0pt}\Large %
+      \raggedright\contentsname
+    }}%
+  }
+
+	%%% Draw title and subtitle
+    \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding},left,top]{% %%%% TODO make macro, also used in maketitle
+      \fbox{\parbox[t]{5cm}{%
+				\frontpagehead{\thetitlelabel}%
+				\frontpagebody{\@title\\\style{tiny}\textit{\thesubtitle}}%
+		}}%
+	}
 }
