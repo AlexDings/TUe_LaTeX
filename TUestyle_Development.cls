@@ -588,9 +588,21 @@
 
 % TODO implement marginparL & marginparR
 
+%%%
+% Set original margins
+%%%
+
 \newcommand{\resetlayout}{
-  \geometry{a4paper,layout=a4paper, headsep=30pt, bindingoffset=0cm, top=\layouttopmargin, left=\layoutleftmargin, right=\layoutrightmargin, bottom=\layoutbottommargin, headheight=16pt}
+	%%%	If the document uses the "oneside" option
+	\ifx\drawtwoside\undefined
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\layoutleftmargin,right=\layoutrightmargin,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
+
+	%%%	If the document uses the "twoside" option
+	\else
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\layoutleftmargin,right=\layoutrightmargin,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
+	\fi
 }
+
 
 %%%
 %   Grid
@@ -1413,6 +1425,10 @@
 % Set default cover ratio
 \def\@coverratio{4/3}
 
+%%%% TODO make option
+\newif\ifcover
+\covertrue
+\def\covername{cover}
 
 %%%	Use twoside standard for book type base class
 %	If book is defined and oneside is not then set twoside
@@ -1704,8 +1720,207 @@
 
 
 
+%%%
+%   Titlepage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%\renewcommand\maketitle{\clearpage\begin{titlepage}%
-%%% TODO make
-%\end{titlepage}%
-%}
+
+\setnewlength{\@axispadding}{2mm}
+
+%%%
+% Defining command for the TU/e logo, innovation and axes
+%%%
+
+%%% Use this command only INSIDE a pgfpicture environment
+\newcommand{\drawtuelogoandaxes}{
+	%%%	If drawtuelogo is not set to false, by the "notuelogo" option
+	\iflogo
+		 % TU/e logo and red lines
+		 \pgftext[at=\pgfpoint{\@Hspacing-2.31cm}{\the\paperheight-5.25mm},left,top]{\includegraphics[width=7cm]{tuelogo}}%
+		
+		\newvariable{logoname}{}
+		\if\theadministrativeunit\empty
+      \relax
+    \else	
+			\logoname{\theadministrativeunit}
+		\if\thedepartment\empty
+      \relax
+    \else
+			\logoname{\thedepartment}
+		\ifprofilingtouched
+			\logoname{\theprofilingvalue}
+		\fi\fi\fi
+		\pgfsetcolor{tuedarkblue}
+		\pgftext[at=\pgfpoint{\@Hspacing-.5cm}{\the\paperheight-2.3cm},left,top]{\bfseries \thelogoname}%		
+	\else
+		\relax
+	\fi
+
+	%%%	Draw horizontal axis
+	\pgfsetcolor{tuered}
+	\pgfpathmoveto{\pgfpoint{0mm}			{\@axisheight}}
+	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight}}
+	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight-\@axiswidth}}
+	\pgfpathlineto{\pgfpoint{0cm}			{\@axisheight-\@axiswidth}}
+	\pgfusepath{fill}
+
+	%%%	Draw diagonal axis
+	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\paperheight}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth-\@Hshift}	{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth}			{\paperheight}}
+	\pgfusepath{fill}
+
+	%%%	If innovation is not set to false, by the "noinnovation" option
+	\ifx\innovation\undefined
+		\pgfsetcolor{tuedarkblue}
+		\pgftext[at=\pgfpoint{\@Hspacing-\@Hshift+420mm}{6.75mm},left,bottom]{\bfseries Where innovation starts}%
+	\fi
+
+	%%%	Reset colour to black
+	\pgfsetcolor{black}
+}
+
+%%%
+% 	Create the TU/e style titlepage
+%%%
+
+\renewcommand\maketitle{
+\clearpage%
+\begin{titlepage}
+
+  %%%% TODO footnotesize and settings
+	\let\footnotesize\small%
+	\let\footnoterule\relax%
+	\let\footnote\thanks%
+	%\hfuzz=1000pt
+
+	\newgeometry{left=0cm,top=0cm,bottom=0cm, right=0cm, ignoreall}
+	\begin{pgfpicture}{0cm}{0cm}{\paperwidth}{\paperheight}
+  
+		%%%	If the cover option is set, then draw cover and white overlays
+    \ifcover
+			%%% Display area to be filled by the cover image
+			\pgfsetcolor{black!20!white}
+			\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperwidth + .2cm}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
+			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
+			\pgfusepath{fill}
+
+
+			%%% Draw the cover 
+			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%
+
+			%%% Draw bottom white overlay for the cover
+			\pgfsetcolor{white}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@coverbottom}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@coverbottom}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
+			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
+			\pgfusepath{fill}
+			 
+			%%% Draw left white overlay for the cover
+			\pgfsetcolor{white}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*85mm}{\@axisheight}}
+			\pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*\paperheight}{0cm}}
+			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
+			\pgfusepath{fill}
+		\fi
+		
+		%%%	Drawing of the TU/e axes and logo
+		\drawtuelogoandaxes
+		
+		%%% From name and address
+		\pgfsetcolor{black}
+		\pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\baselineskip+\@axiswidth+\@axispadding},left,bottom]{%
+			\parbox[b][3.5cm]{5cm}%
+			{\meta%
+				\raggedright\textbf{\theadministrativeunit}\\[2ex]
+				\ifx\thedepartment\empty
+        \else
+          \textit{\textbf{\thedepartment}}\\
+        \fi
+				\ifx\theaddress\empty
+        \else
+          \theaddress ,\\%
+        \fi
+				\ifaddress
+					5612 AZ Eindhoven\\
+					\thePObox\space513, 5600 MB Eindhoven\\
+					\ifx\theNetherlands\empty
+          \else
+            \theNetherlands\\
+          \fi
+				\fi
+				\ifx\thewebsite\empty
+        \else
+					\hypersetup{urlcolor={black}}
+					{\urlstyle{same}\url{\thewebsite}}
+					\hypersetup{urlcolor={tuewarmred}}\\
+				\fi
+			}%
+    }
+    %%% Left column with info
+    \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding},left,top]{%
+      \parbox[t]{5cm}{%
+        \hbadness=10000%
+        \ifauthor%
+          \frontpagehead{\theauthorlabel}%
+          \frontpagebody{\@author}%
+        \fi%
+        \ifx\theorderissuer\empty
+        \else%
+          \frontpagehead{\theorderissuerlabel}%
+          \frontpagebody{\theorderissuer}%
+        \fi%
+        \ifx\thereference\empty
+        \else%
+          \frontpagehead{\thereferencelabel}%
+          \frontpagebody{\thereference}%
+        \fi%
+        \theaddfrontpage%
+        \ifx\thedate\empty
+        \else%
+          \frontpagehead{\thedatelabel}%
+          \frontpagebody{\thedate}%
+        \fi%
+        \ifx\theversionnum\empty
+        \else%
+          \frontpagehead{\theversionlabel}%
+          \frontpagebody{\theversionnum}%
+        \fi%
+      }%
+    }%
+    \ifcover
+    %%% Title and subtitle positioned underneath cover
+      \pgftext[at=\pgfpoint{\paperwidth-\@coverwidth+0.5cm}{\@coverbottom-0.5cm},left,top]{%
+        \parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
+      }
+    \else 
+    %%% Title and subtitle at normal position
+      \pgftext[at=\pgfpoint{\@Hspacing-1.88cm}{\@axisheight-\@axiswidth-0.48cm},left,top]{%
+        \parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
+      }
+    \fi
+	\end{pgfpicture}%
+\end{titlepage}
+
+\hfuzz=0pt
+
+%%%	Reset the original values of all margins
+\disablepageskip
+\resetlayout
+\enablepageskip
+
+%%%% TODO add back
+%%%	Set header and footers
+%\sethf
+%
+\iftwocolumn
+	\twocolumn
+\else
+	\relax
+\fi
+}
