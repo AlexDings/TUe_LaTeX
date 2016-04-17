@@ -183,20 +183,20 @@
    }%
 }
 
-\newcommand{\lengthcheck@checkforlength}[1]{%
-  % get the first five characters from \meaning#1
-  \edef\lengthcheck@temp{\expandafter\lengthcheck@getfive\meaning#1TTTTT$}%
-  % compare with the string "\skip"
-  \ifx\lengthcheck@temp\lengthcheck@skipstring
-    \typeout{\string\providelength: \string#1 already a length}%
-  \else
-    \@latex@error
-      {\string#1 illegal in \string\providelength}
-      {\string#1 is defined, but not with \string\newlength}%
-  \fi
-}
-\def\lengthcheck@getfive#1#2#3#4#5#6${#1#2#3#4#5}
-\edef\lengthcheck@skipstring{\string\skip}
+    \newcommand{\lengthcheck@checkforlength}[1]{%
+      % get the first five characters from \meaning#1
+      \edef\lengthcheck@temp{\expandafter\lengthcheck@getfive\meaning#1TTTTT$}%
+      % compare with the string "\skip"
+      \ifx\lengthcheck@temp\lengthcheck@skipstring
+        \typeout{\string\providelength: \string#1 already a length}%
+      \else
+        \@latex@error
+          {\string#1 illegal in \string\providelength}
+          {\string#1 is defined, but not with \string\newlength}%
+      \fi
+    }
+    \def\lengthcheck@getfive#1#2#3#4#5#6${#1#2#3#4#5}
+    \edef\lengthcheck@skipstring{\string\skip}
 
 %%%	command \setnewlength{\<name>}{<value>}
 %%	defines new length and sets it
@@ -231,10 +231,10 @@
   \romannumeral\if\string\ \cs@to@str@aux@i\fi
     \expandafter\cs@to@str@aux@ii\string
 }
-\long\def\cs@to@str@aux@i#1\cs@to@str@aux@ii{%
-  -\number\fi\expandafter\z@
-}
-\long\def\cs@to@str@aux@ii#1{\z@}
+    \long\def\cs@to@str@aux@i#1\cs@to@str@aux@ii{%
+      -\number\fi\expandafter\z@
+    }
+    \long\def\cs@to@str@aux@ii#1{\z@}
 
 %%%	Report class option error
 \def\ClassErrorNotSupported#1#2{\ClassError{TUestyle_ReportBook}{Sorry, only #1 is supported!}{Remove the #2 class option}}
@@ -267,16 +267,16 @@
   \csname decl@\endcsname\checknextarg
 }
 
-\newcommand{\checknextarg}{
-  \@ifnextchar\bgroup{\gobblenext}{}% Check if another "argument" exists
-}
+    \newcommand{\checknextarg}{
+      \@ifnextchar\bgroup{\gobblenext}{}% Check if another "argument" exists
+    }
 
-\newcommand{\gobblenext}[1]{%
- 	\advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax 
-  \let\tempname@sum\tempname
-  \expandafter\def\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}%
-  \@ifnextchar\bgroup{\gobblenext}{}% Gobble next "argument"
-}
+    \newcommand{\gobblenext}[1]{%
+      \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax 
+      \let\tempname@sum\tempname
+      \expandafter\def\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}%
+      \@ifnextchar\bgroup{\gobblenext}{}% Gobble next "argument"
+    }
 
 
 %%% \getdata[<index>]\<name>
@@ -292,41 +292,60 @@
   \@ifnextchar\bgroup{\firstdelim}{\initiateprint{\tempname}}% If delimiter: set it, else, print
 }
 
-\def\seconddelim #1 {%
-  \def\delimii{#1}%
-  \initiateprint{\tempname}% Print
+    \def\seconddelim #1 {%
+      \def\delimii{#1}%
+      \initiateprint{\tempname}% Print
+    }
+
+    \def\firstdelim #1{%
+      \def\delimi{#1}%
+      \def\delimii{#1}%
+      \@ifnextchar\bgroup{\seconddelim}{\initiateprint{\tempname}}% If second delimiter: set it, else, print
+    }
+
+    \newcommand{\initiateprint}[1]{%
+      \edef\tmp@sum{#1@sum}%
+      \edef\tmp{#1}%
+      \newcount\tempcount%
+      \advance\tempcount 1\relax%
+      \printdatainternal#1%
+    }
+
+    \newcommand{\printdatainternal}[1]{%
+      \ifnum \the\tempcount < \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax%
+        \ifnum \the\tempcount > 1% Use first delimiter in front of values, after the first value
+          \delimi%
+        \fi%
+        \csname data:\tmp:\the\tempcount\endcsname% Print current value
+        \advance\tempcount 1\relax%
+        \printdatainternal#1% % Loop
+      \else%
+        \ifnum \the\tempcount = \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax% % Use second delimiter in front of the last value
+          \delimii%
+          \csname data:\tmp:\the\tempcount\endcsname% Print last value
+        \fi
+      \fi
+    }
+
+%%% \watermark
+%%  Creates tiny watermark inside the following character, intended use: \watermark.
+\newcommand\watermark[1]{%
+    #1%
+    \sbox0{#1}%
+    \llap{%
+    \makebox[\wd0][c]{%  hor. centering
+    \raisebox{.5\ht0}{%  approx. vert. centering
+    \csname Gin@isotrue\endcsname% = "keepaspectratio"
+    \resizebox*{.8\ht0}{.8\ht0}{% Scale down (the height is also used for the width to avoid the surrounding spaces)
+    \parbox{10em}{% Allow line breaks
+            \color{black!90}%  
+            %%%% TODO authorlist and actual copyholder
+            This PDF was created by \@author\ for COPYHOLDER.
+        }%
+    }}}}%
 }
 
-\def\firstdelim #1{%
-  \def\delimi{#1}%
-  \def\delimii{#1}%
-  \@ifnextchar\bgroup{\seconddelim}{\initiateprint{\tempname}}% If second delimiter: set it, else, print
-}
-
-\newcommand{\initiateprint}[1]{%
-  \edef\tmp@sum{#1@sum}%
-  \edef\tmp{#1}%
-  \newcount\tempcount%
-  \advance\tempcount 1\relax%
-  \printdatainternal#1%
-}
-
-\newcommand{\printdatainternal}[1]{%
-  \ifnum \the\tempcount < \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax%
-    \ifnum \the\tempcount > 1% Use first delimiter in front of values, after the first value
-      \delimi%
-    \fi%
-    \csname data:\tmp:\the\tempcount\endcsname% Print current value
-    \advance\tempcount 1\relax%
-    \printdatainternal#1% % Loop
-  \else%
-    \ifnum \the\tempcount = \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax% % Use second delimiter in front of the last value
-      \delimii%
-      \csname data:\tmp:\the\tempcount\endcsname% Print last value
-    \fi
-  \fi
-}
-
+  
 %%% \storeoldenv{\<name>}
 %%  Stores the environment \begin{<name>}\end{<name>} to \begin{old<name>}\end{old<name>}
 \newcommand{\storeoldenv}[1]{
@@ -335,13 +354,46 @@
     \csname end\expandafter\cs@to@str\string#1\endcsname
 }
 
+%%% \storeoldrelaxenv{\<name>}
+%%  Stores the environment \begin{<name>}\end{<name>} to \begin{old<name>}\end{old<name>} and relaxes \begin{<name>}\end{<name>}
+\newcommand{\storeoldrelaxenv}[1]{
+    \storeoldenv{#1}
+    \let#1\relax
+    \expandafter\let\csname end\expandafter\cs@to@str\string#1\endcsname\relax
+}
+
 %%% \storeold{\<name>}
 %%  Stores \<name> to \old<name>
 \newcommand{\storeold}[1]{
   \expandafter\let\csname old\expandafter\cs@to@str\string#1\endcsname#1
 }
 
+%%% \storeoldrelax{\<name>}
+%%  Stores \<name> to \old<name>, and relaxes \<name>
+\newcommand{\storeoldrelax}[1]{
+  \storeold{#1}
+  \let#1\relax
+}
 
+%%% command \disablepageskip
+%%	Store and disable clearpage, cleardoublepage & newpage commands
+\newcommand{\disablepageskip}{
+  \storeoldrelax{\clearpage}
+	\storeoldrelax{\cleardoublepage}
+	\storeoldrelax{\newpage}
+}
+
+%%% command \enablepageskip
+%%  Re-enable clearpage, cleardoublepage & newpage commands
+\newcommand{\enablepageskip}{
+	\let\clearpage\oldclearpage
+	\let\cleardoublepage\oldcleardoublepage
+	\let\newpage\oldnewpage
+}
+
+
+%%% \labelselector{\<name of sectioning>}{<content>}
+%%  Creates label for sectioning
 \newcommand{\labelselector}[2]{%
   \@ifequal{#1}{\part}{%
     \label{[part:#2]}
@@ -1162,48 +1214,48 @@
     {\@ifequal{#1}{large}{\styling@headinglarge}%
     {\@ifequal{#1}{normal}{\styling@headingnormal}%
     {\@ifequal{#1}{small}{\styling@headingsmall}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}}}}}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}}}}%
   }{\@ifequal{#2}{subheading}{%
     \@ifequal{#1}{large}{\styling@subheadinglarge}%
     {\@ifequal{#1}{normal}{\styling@subheadingnormal}%
     {\@ifequal{#1}{small}{\styling@subheadingsmall}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}%
   }{\@ifequal{#2}{intro}{%
     \@ifequal{#1}{large}{\styling@introlarge}%
     {\@ifequal{#1}{normal}{\styling@intronormal}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
   }{\@ifequal{#2}{body}{%
     \@ifequal{#1}{normal}{\styling@body}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{promotional}{%
     \@ifequal{#1}{normal}{\styling@promotional}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{promotional-heading}{%
     \@ifequal{#1}{normal}{\styling@promotionalheading}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{quote}{%
     \@ifequal{#1}{normal}{\styling@quotenormal}%
     {\@ifequal{#1}{large}{\styling@quotelarge}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
   }{\@ifequal{#2}{accent}{%
     \@ifequal{#1}{normal}{\styling@accent}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{info}{%
     \@ifequal{#1}{normal}{\styling@info}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{caption}{%
     \@ifequal{#1}{normal}{\styling@caption}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{note}{%
     \@ifequal{#1}{normal}{\styling@note}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{payoff}{%
     \@ifequal{#1}{normal}{\styling@payoffnormal}%
     {\@ifequal{#1}{large}{\styling@payofflarge}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
   }{\@ifequal{#2}{tiny}{%
     \@ifequal{#1}{normal}{\styling@tiny}%
-    {\ClassWarning{TUestyle}{Not a valid size for style <#2>: #1}}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }%
   }}}}}}}}}}}}%
 }
@@ -1448,6 +1500,60 @@
 \def\cleardoublepage{\clearpage\ifodd\c@page\else
     \hbox{}\newpage\if@twocolumn\hbox{}\newpage\fi\fi}
 
+%%%
+% 	Redefine titlepage so it does not reset page counter 
+%%%
+
+\if@compatibility
+\renewenvironment{titlepage}
+    {%
+      \cleardoublepage
+      \if@twocolumn
+        \@restonecoltrue\onecolumn
+      \else
+        \@restonecolfalse\newpage
+      \fi
+      \thispagestyle{empty}%
+      %\setcounter{page}\z@
+    }%
+    {\if@restonecol\twocolumn \else \newpage \fi
+    }
+\else
+\renewenvironment{titlepage}
+    {%
+      \cleardoublepage
+      \if@twocolumn
+        \@restonecoltrue\onecolumn
+      \else
+        \@restonecolfalse\newpage
+      \fi
+      \thispagestyle{empty}%
+      %\setcounter{page}\@ne
+    }%
+    {\if@restonecol\twocolumn \else \newpage \fi
+     \if@twoside\else
+       % \setcounter{page}\@ne
+     \fi
+    }
+\fi
+
+%%%
+% 	Redefine part style, no empty page behind it
+%%%
+
+\renewcommand\@endpart
+{
+	\vfil
+	\if@twoside
+		\null
+		\thispagestyle{empty}%
+		\newpage
+	\fi
+		\if@tempswa
+		\twocolumn
+	\fi
+}
+
     
 
 %%%
@@ -1490,9 +1596,9 @@
 
 \RequirePackage{graphicx}
 
-\RequirePackage{titletoc}
+%\RequirePackage{titletoc}
 
-\RequirePackage{titlesec}
+%\RequirePackage{titlesec}
 
 
 
@@ -1543,6 +1649,70 @@
 		\refstepcounter{build}
     \@writeto{\buildfile}{\string\setcounter{build}{\number\value{build}}}
 }
+
+
+
+
+
+%%%
+% Reset sectioning counters
+%%%
+
+\newcommand{\resetcounters}[1]{
+	\ifnum #1 < 2	
+		\setcounter{part}{1}
+	\fi
+	\ifnum #1 < 3	
+		\setcounter{chapter}{1}
+		\setcounter{figure}{1}
+		\setcounter{table}{1}
+	\fi
+	\ifnum #1 < 4	
+		\setcounter{section}{1}
+	\fi
+	\setcounter{subsection}{1}
+	\setcounter{subsubsection}{1}
+	\setcounter{paragraph}{1}
+	\setcounter{subparagraph}{1}
+}
+
+%%% Set counter depth to only exclude subsubsection and (sub)paragraph
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+
+\def\thepart{\the\numexpr\value{part}+\sectioningshift\relax}
+
+\def\thechapter{%
+\ifnum\value{chapter} < 1%
+	\addtocounter{chapter}{1}%
+\fi
+\ifnum\the\numexpr\value{chapter}+\sectioningshift\relax < 10
+	0\the\numexpr\value{chapter}+\sectioningshift
+\else
+	\the\numexpr\value{chapter}+\sectioningshift
+\fi\space
+}
+
+\def\thesection{\thechapter\relax%
+\texorpdfstring{\protect\watermark{.}}{.}%
+\ifnum\value{section} < 1%
+	\addtocounter{section}{1}%
+\fi%
+\the\numexpr\value{section}+\sectioningshift\relax}
+
+\def\thesubsection{\thesection\relax%
+\texorpdfstring{\protect\watermark{.}}{.}%
+\ifnum\value{subsection} < 1%
+	\addtocounter{subsection}{1}%
+\fi%
+\the\numexpr\value{subsection}+\sectioningshift\relax}
+
+\def\thesubsubsection{\thesubsection\relax%
+\texorpdfstring{\protect\watermark{.}}{.}%
+\ifnum\value{subsubsection} < 1%
+	\addtocounter{subsubsection}{1}%
+\fi%
+\the\numexpr\value{subsubsection}+\sectioningshift\relax}
 
 
 
