@@ -36,11 +36,11 @@
 %   Definitions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Switch between book/report
+%%% Switch between book / report
 %%  (report by default)
 \newif\ifbook\bookfalse
 
-%%% Switch between english/dutch
+%%% Switch between english / dutch
 %%  (english by default)
 \newif\ifenglish\englishtrue
 
@@ -48,15 +48,81 @@
 %%  (false by default)
 \newif\ifdraft\draftfalse
 
+%%% Draw draft mark
+%%  (false by default)
+\newif\ifdraftmark
+\draftmarkfalse
+
 %%% Use Meta OT fonts
 %%  (false by default)
 \newif\iftuefonts\tuefontsfalse
 
+%%% Show margins
+%%  (false by default)
+\newif\ifmargins
+\marginsfalse
+
+%%% Draw notes
+%%  (false by default)
+\newif\ifnotes
+\notesfalse
+
+%%% Draw instructions
+%%  (false by default)
+\newif\ifinstructions
+\instructionsfalse
+
+%%% Switch between one-sided / two-sided mode
+%%  (one-sided by default)
+\newif\iftwosided
+\twosidedfalse
+
+%%% Switch between one-column / two-column mode
+%%  (one-column by default)
+\newif\iftwocolumn
+\twocolumnfalse
+
+%%% Switch between one-sided / two-sided header and footer
+%%  (two-sided by default)
+\newif\ifonesidehf
+\onesidehffalse
+
+%%% Draw chapter in footer
+%%  (false by default)
+\newif\ifchapterf
+\chapterffalse
+
+%%% Draw copyholder in footer
+%%  (false by default)
+\newif\ifcopyf
+\copyffalse
+
+%%% Draw last page number in footer
+%%  (false by default)
+\newif\ifendf
+\endffalse
+
+%%% Draw shorter header
+%%  (false by default)
+\newif\ifshorth
+\shorthfalse
+
+%%% Cover ratio
+%%  (4/3 by default)
+\def\@coverratio{4/3}
+
 %%% Sectioning shift
-\def\sectioningshift{0}
+%%  (0 by default)
+\def\@sectioningshift{0}
 
+%%% Align options
+%%  (centered by default)
+\def\autocentershort{c}
+\def\autocenter{\centering}
+\def\autocentercap{\centering}
 
-
+%% header and footer color
+\definecolor{hfcolor}{gray}{0}
 
 
 %%%
@@ -93,6 +159,9 @@
 
 % draft mode
 \DeclareOptionX{draft}{\drafttrue}
+
+% draw draft mark
+\DeclareOptionX{draftmark}{\draftmarktrue}
 
 
 %%% TU/e style options
@@ -133,11 +202,32 @@
 \paragraphstylingtrue
 
 % start sectioning counters at zero
-\DeclareOptionX{zeroindexed}{\def\sectioningshift{-1}}
+\DeclareOptionX{zeroindexed}{\def\@sectioningshift{-1}}
 
 % use auto labeling
 \DeclareBooleanOptionX{autolabel}
 \autolabeltrue
+
+% show margins
+\DeclareOptionX{margins}{\marginstrue}
+
+% draw notes
+\DeclareOptionX{notes}{\notestrue}
+
+% draw instructions
+\DeclareOptionX{instructions}{\instructionsfalse}
+
+% draw one-sided / two-sided
+\DeclareOptionX{onesided}{\twosidedfalse}
+\DeclareOptionX{twosided}{\twosidedtrue}
+
+% draw one-column / two-column
+\DeclareOptionX{onecolumn}{\twocolumnfalse}
+\DeclareOptionX{twocolumn}{\twocolumntrue}
+
+% cover ratio (min 4/3)
+\DeclareOptionX{coverratio}{\def\@coverratio{\@nummin{4/3}{#1}}}
+
 
 
 % pass options to underlying classes
@@ -148,6 +238,55 @@
 
 % fonts options
 \DeclareOptionX{tuefonts}{\tuefontstrue}
+
+% Alligning options
+\DeclareOptionX{align}{
+  \@ifequal{#1}{left}{%
+    \def\autocenter{\raggedright}%
+    \def\autocentercap{\raggedright}%
+    \def\autocentershort{l}%
+  }{
+  \@ifequal{#1}{center}{%
+    \def\autocenter{\centering}%
+    \def\autocentercap{\centering}%
+    \def\autocentershort{c}%
+  }{
+  \@ifequal{#1}{right}{%
+    \def\autocenter{\raggedleft}%
+    \def\autocentercap{\raggedleft}%
+    \def\autocentershort{r}%
+  }{
+  \@ifequal{#1}{none}{%
+    \def\autocenter{\raggedright}%
+    \def\autocentercap{\centering}%
+    \def\autocentershort{c}%
+  }{}}}}
+}
+
+
+% header options
+
+% draw one-sided / two-sided header and footer
+\DeclareOptionX{onesidehf}{\onesidehftrue}
+\DeclareOptionX{twosidehf}{\onesidehffalse}
+
+% draw faded header and footer
+\DeclareOptionX{fadehf}{
+  \definecolor{hfcolor}{gray}{0}
+}
+
+% draw chapter in footer
+\DeclareOptionX{chapterf}{\chapterftrue}
+
+% draw chapter in footer
+\DeclareOptionX{copyf}{\copyftrue}
+
+% draw last page number in footer
+\DeclareOptionX{endf}{\endftrue}
+
+% draw shorter header
+\DeclareOptionX{shorth}{\shorthtrue}
+
 
 \ProcessOptionsX
 
@@ -235,11 +374,11 @@
 
 %%%%% TODO move
 %%%	Define the instructions command if the "instructions" option is used
-\ifx\drawinstructions\undefined
-		\newcommand{\instruction}[1]{}
-	\else
-		\newcommand{\instruction}[1]{\textit{\textcolor{tueblue}{\textbf{[INSTRUCTION:} #1\textbf{]}}}}
-	\fi
+\ifinstructions
+  \newcommand{\instruction}[1]{}
+\else
+  \newcommand{\instruction}[1]{\textit{\textcolor{tueblue}{\textbf{[INSTRUCTION:} #1\textbf{]}}}}
+\fi
 
 
 %%%
@@ -341,9 +480,9 @@
   \setlength{#1}{#2}
 }
 
-%%%	command \ifrealnum{<number1>}{<number2>}{<on 1 > 2>}{<on 1 < 2>}{<on 1 = 2>}
+%%% command \@numcompare{<number1>}{<number2>}{<on 1 > 2>}{<on 1 < 2>}{<on 1 = 2>}
 %%	compares two (non) integer numbers (real numbers)
-\def\ifrealnum #1#2#3#4#5 {%
+\def\@numcompare #1#2#3#4#5 {%
   \def\@tempa{\numexpr #1 \relax} % allow for fractions (and calculations)
   \def\@tempb{\numexpr #2 \relax} % allow for fractions (and calculations)
   \ifdim\@tempa pt>\@tempb pt % on 1 > 2
@@ -355,6 +494,14 @@
       #5
     \fi
   \fi
+}
+
+\def\@nummin #1#2 {%
+  \@numcompare{#1}{#2}{#2}{#1}{#1}
+}
+
+\def\@nummax #1#2 {%
+  \@numcompare{#1}{#2}{#2}{#1}{#1}
 }
 
 %%% command \cs@to@str{\<command>}
@@ -603,7 +750,6 @@
 	\fi
 }
 
-
 %%%
 %   Grid
 %%%
@@ -635,14 +781,6 @@
 
 
 %%%
-%   Draft
-%%%
-
-
-
-
-
-%%%
 %   Localization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -652,9 +790,9 @@
 %%%
 
 \ifenglish
-  %\selectlanguage{english}
+  \selectlanguage{english}
 \else
-  %\selectlanguage{dutch}
+  \selectlanguage{dutch}
 \fi
 
 
@@ -731,101 +869,20 @@
 \fi
 
 
-
-%%%
-%   Metadata
-%%%
-
-
 %%%
 %   Drafting options
 %%%
 
-%%%	Option for showing margins
-\newif\ifshowmargins
-\showmarginsfalse
-%\DeclareOptionX{margins}{
-%  \showmarginstrue
-%  \Gm@showframetrue
-%}
+\ifmargins
+  \Gm@showframetrue
+\fi
 
-%%%	Option for displaying notes
-\newif\ifdrawnotes
-\drawnotesfalse
-%\DeclareOptionX{drawnotes}{\drawnotestrue}
-
-%%%	Option for displaying instructions
-\newif\ifdrawinstructions
-\drawinstructionstrue
-%\DeclareOptionX{drawinstructions}{\drawinstructionsfalse}
-
-
-%%%
-%   Oneside/twoside & twocolumn options
-%%%
-
-%%%	Option for using twoside mode
-%	Catch it
-\newif\ifdrawtwoside
-\drawtwosidefalse
-%\DeclareOptionX{twoside}{\drawtwosidetrue}
-
-%%%	Option for using oneside mode
-%	Catch it
-\newif\ifdrawoneside
-\drawonesidefalse
-%\DeclareOptionX{oneside}{\drawonesidetrue}
-
-%%%	Option for using twocolumn mode
-%	Catch it
-\newif\iftwocolumn
-\twocolumnfalse
-%\DeclareOptionX{twocolumn}{\twocolumntrue}
 
 
 %%%
 %   Header/footer options
 %%%
 
-%%%	Option for using oneside header and footer
-%%%	for book class
-\newif\ifonesidehf
-\onesidehffalse
-%\DeclareOptionX{onesidehf}{\onesidehftrue}
-
-%%%	Option for faded header and footer
-\newif\iffadehf
-\fadehffalse
-\definecolor{hfcolor}{gray}{0}
-%\DeclareOptionX{fadehf}{
-%  \fadehftrue
-%  \definecolor{hfcolor}{gray}{0}
-%}
-
-%%%	Option for chapter in footer
-\newif\ifchapterf
-\chapterffalse
-%\DeclareOptionX{chapterf}{\chapterftrue}
-
-%%%	Option for chapter in footer
-\newif\ifcopyf
-\copyffalse
-%\DeclareOptionX{copyf}{\copyftrue}
-
-%%%	Option for last page number in footer
-\newif\ifendf
-\endffalse
-%\DeclareOptionX{endf}{\endftrue}
-
-%%%	Option to shorter header
-\newif\ifshorth
-\shorthfalse
-%\DeclareOptionX{shorth}{\shorthtrue}
-
-%%%	Option for draftmark over document pages
-\newif\ifdraftmark
-\draftmarkfalse
-%\DeclareOptionX{draftmark}{\draftmarktrue}
 
 %%% command \extraf{<string>} & \extrah{<string>}
 %%  Adds custom footer and header  data
@@ -836,40 +893,6 @@
 \extraf{}
 \extrah{}
 
-
-%%%
-%   Align options
-%%%
-
-\def\autocenter{}
-\def\autocentershort{}
-\def\autocentercap{}
-
-%%%	Option for not-centering images
-%\DeclareOptionX{align}{
-%  \@ifequal{#1}{left}{%
-%    \def\autocenter{\raggedright}%
-%    \def\autocentercap{\raggedright}%
-%    \def\autocentershort{l}%
-%  }{
-%  \@ifequal{#1}{center}{%
-%    \def\autocenter{\centering}%
-%    \def\autocentercap{\centering}%
-%    \def\autocentershort{c}%
-%  }{
-%  \@ifequal{#1}{right}{%
-%    \def\autocenter{\raggedleft}%
-%    \def\autocentercap{\raggedleft}%
-%    \def\autocentershort{r}%
-%  }{
-%  \@ifequal{#1}{none}{%
-%    \def\autocenter{\raggedright}%
-%    \def\autocentercap{\centering}%
-%    \def\autocentershort{c}%
-%  }{}}}}
-%}
-
-%\ExecuteOptionsX{align=center}
 
 \def\captionwidth{.8}
 
@@ -1414,32 +1437,6 @@
 
 %%%	Option for cover ratio
 %%  Ratio has to be bigger than 4:3
-%\DeclareOptionX{coverratio}{
-%    \ifrealnum{#1}{4/3}{%
-%      \def\@coverratio{#1}
-%    }{
-%	  \def\@coverratio{4/3}
-%    }{}
-%}
-
-% Set default cover ratio
-\def\@coverratio{4/3}
-
-%%%% TODO make option
-\newif\ifcover
-\covertrue
-\def\covername{cover}
-
-%%%	Use twoside standard for book type base class
-%	If book is defined and oneside is not then set twoside
-\ifx\drawbook\undefined\relax
-	\else
-		\ifx\drawoneside\undefined
-			\def\drawtwoside{true}
-		\else
-			\def\drawoneside{true}
-		\fi
-\fi
 
 %%%
 %   Titlepage lengths
@@ -1603,7 +1600,7 @@
 \hypersetup{
   bookmarks=true,
   linktocpage=true,
-  %bookmarksnumbered=true,
+  bookmarksnumbered=true,
   breaklinks=true,
 	colorlinks,
 	linkcolor={tuered},
@@ -1676,16 +1673,16 @@
 \setcounter{secnumdepth}{2}
 \setcounter{tocdepth}{2}
 
-\def\thepart{\the\numexpr\value{part}+\sectioningshift\relax}
+\def\thepart{\the\numexpr\value{part}+\@sectioningshift\relax}
 
 \def\thechapter{%
 \ifnum\value{chapter} < 1%
 	\addtocounter{chapter}{1}%
 \fi
-\ifnum\the\numexpr\value{chapter}+\sectioningshift\relax < 10
-	0\the\numexpr\value{chapter}+\sectioningshift
+\ifnum\the\numexpr\value{chapter}+\@sectioningshift\relax < 10
+	0\the\numexpr\value{chapter}+\@sectioningshift
 \else
-	\the\numexpr\value{chapter}+\sectioningshift
+	\the\numexpr\value{chapter}+\@sectioningshift
 \fi\space
 }
 
@@ -1694,7 +1691,7 @@
 \ifnum\value{section} < 1%
 	\addtocounter{section}{1}%
 \fi%
-\the\numexpr\value{section}+\sectioningshift\relax}
+\the\numexpr\value{section}+\@sectioningshift\relax}
 
 \def\thesubsection{\thesection\relax%
 \texorpdfstring{\protect\watermark{.}}{.}%
@@ -1708,16 +1705,7 @@
 \ifnum\value{subsubsection} < 1%
 	\addtocounter{subsubsection}{1}%
 \fi%
-\the\numexpr\value{subsubsection}+\sectioningshift\relax}
-
-
-
-
-
-
-
-
-
+\the\numexpr\value{subsubsection}+\@sectioningshift\relax}
 
 
 %%%
