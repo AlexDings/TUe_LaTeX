@@ -9,7 +9,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \def\fileversion{v.2.0}
 \def\filedate{2015/03/29}
-\ProvidesClass{TUestyle_ReportBook}[\filedate\space\fileversion\space  TU/e style report & book 2008]
+\ProvidesClass{TUestyleReportBook}[\filedate\space\fileversion\space  TU/e style report & book 2008]
 
 
 
@@ -38,22 +38,90 @@
 
 %%% Switch between book/report
 %%  (report by default)
-\newif\ifbook\bookfalse
+\newif\ifbook
+\bookfalse
 
 %%% Switch between english/dutch
 %%  (english by default)
-\newif\ifenglish\englishtrue
+\newif\ifenglish
+\englishtrue
 
 %%% Draft mode
 %%  (false by default)
-\newif\ifdraft\draftfalse
+\newif\ifdraft
+\draftfalse
 
 %%% Use Meta OT fonts
 %%  (false by default)
-\newif\iftuefonts\tuefontsfalse
+\newif\iftuefonts
+\tuefontsfalse
 
 %%% Sectioning shift
 \def\sectioningshift{0}
+
+
+
+
+
+%%%
+%   Commands used in class options 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% command \ifequal{<stringA>}}{<stringB>}{<on true>}{<on false>}
+%%  compares two strings for equality
+\newcommand{\@ifequal}[4]{%
+  \def\string@a{#1}%
+  \def\string@b{#2}%
+  \ifx\string@a\string@b%
+    #3%
+  \else%
+    #4%
+  \fi%
+}
+
+\def\instring#1#2{TT\fi\begingroup
+  \edef\x{\endgroup\noexpand\in@{#1}{#2}}\x\ifin@}
+  
+\def\stringtonum#1{
+  \edef\@tempa{#1}%
+  \expandafter\expandfraction\@tempa\relax
+} %%%TODO check if fraction
+
+\newlength{\lengthc}
+  \def\expandfraction#1/#2\relax{%  
+  \setlength{\lengthc}{\dimexpr #1pt / #2 \relax}
+}
+
+
+%%%	command \ifrealnum{<number1>}{<number2>}{<on 1 > 2>}{<on 1 < 2>}{<on 1 = 2>}
+%%	compares two (non) integer numbers (real numbers)
+%%  Note: in order to avoid rounding off errors, compare fractions to fractions and real numbers X.XX to real numbers
+%%%% TODO DOESN'T WORK WHEN USING TWO FRACTIONS
+\newlength{\lengtha}
+\newlength{\lengthb}
+\def\ifrealnum #1#2#3#4#5 {%
+  \if\instring{/}{#1}
+    \stringtonum{#1}
+    \setlength{\lengtha}{\the\lengthc} % allow for fractions (and calculations)  
+  \else
+    \setlength{\lengtha}{#1 pt}
+  \fi
+  \if\instring{/}{#2}
+    \stringtonum{#2}
+    \setlength{\lengthb}{\lengthc} % allow for fractions (and calculations) 
+  \else
+    \setlength{\lengthb}{#2 pt}
+  \fi
+  \ifdim\the\lengtha >\the\lengthb % on 1 > 2
+    #3
+  \else
+    \ifdim\the\lengtha <\the\lengthb % on 1 < 2
+      #4
+    \else % on 1 = 2
+      #5
+    \fi
+  \fi
+}
 
 
 
@@ -136,6 +204,39 @@
 
 % start sectioning counters at zero
 \DeclareOptionX{zeroindexed}{\def\sectioningshift{-1}}
+
+%%% Grahics/cover options
+
+%%	Set image path
+\def\definedpath{}
+\DeclareOptionX{graphicspath}{%
+	\def\definedpath{#1}
+  \graphicspath{{\definedpath}}
+}
+
+%%	Option for cover ratio
+%   Ratio has to be bigger than 4:3
+\def\@coverratio{4/3}
+\DeclareOptionX{coverratio}{
+  \ifrealnum{#1}{4/3}{%
+    \def\@coverratio{#1} %%%TODO doesn't work
+  }{
+    \def\@coverratio{4/3}
+  }{}
+}
+
+%%%% TODO make option
+\newif\ifcover
+\coverfalse
+\def\covername{cover}
+\DeclareOptionX{cover}{%
+  \@ifequal{#1}{}{}{
+    \def\covername{#1}
+  }
+  \covertrue
+}
+
+%%% Miscelanious options
 
 % use auto labeling
 \DeclareBooleanOptionX{autolabel}
@@ -287,18 +388,6 @@
 	\immediate\closein\@in%
 }
 
-%%% command \ifequal{<stringA>}}{<stringB>}{<on true>}{<on false>}
-%%  compares two strings for equality
-\newcommand{\@ifequal}[4]{%
-  \def\string@a{#1}%
-  \def\string@b{#2}%
-  \ifx\string@a\string@b%
-    #3%
-  \else%
-    #4%
-  \fi%
-}
-
 %%% command \setfontsize{<fontsize>}}{<linespacing>}
 %%  correctly sets the font size and spacing
 \newcommand{\setfontsize}[2]{%
@@ -341,22 +430,6 @@
 \def\setnewlength #1#2 {
   \providelength{#1}
   \setlength{#1}{#2}
-}
-
-%%%	command \ifrealnum{<number1>}{<number2>}{<on 1 > 2>}{<on 1 < 2>}{<on 1 = 2>}
-%%	compares two (non) integer numbers (real numbers)
-\def\ifrealnum #1#2#3#4#5 {%
-  \def\@tempa{\numexpr #1 \relax} % allow for fractions (and calculations)
-  \def\@tempb{\numexpr #2 \relax} % allow for fractions (and calculations)
-  \ifdim\@tempa pt>\@tempb pt % on 1 > 2
-    #3
-  \else
-    \ifdim\@tempa pt<\@tempb pt % on 1 < 2
-      #4
-    \else % on 1 = 2
-      #5
-    \fi
-  \fi
 }
 
 %%% command \cs@to@str{\<command>}
@@ -543,6 +616,59 @@
 		\label{sssec:#2}%
   }}}}}
 }
+
+%%% \DivideLengths{\<name>}{\<name>}
+%%  Divides two given lengths
+\newcommand*{\DivideLengths}[2]{%
+  \strip@pt\dimexpr\number\numexpr\number\dimexpr#1\relax*65536/\number\dimexpr#2\relax\relax sp\relax
+}
+
+%%% command \slantedpar{<integer #lines>}{<paragraph width>}
+%%  initiates parshape settings
+\newcommand{\slantedpar}[2]{
+  \setnewlength{\interval}{\@shiftratio\baselineskip}
+  %\rightskip=0pt plus 2em\relax
+  \raggedright
+  \slantedparvalues{#1}{#1}{#2}
+  \parshape=#1
+  \temphold
+}
+
+    %%  Command to calculate current line width
+    \newcommand{\axislinewidth}[3]{%
+      \expandafter\dimexpr #3-#2\interval+#1\interval \relax%
+    }
+
+    % Definition to hold the result calculations as strings
+    \long\def\temphold{}
+
+    \newcounter{templine}
+
+    %%  loop command, also expanding \temphold with string result
+    \newcommand{\slantedparvalues}[3]{
+      \long\edef\temphold{%
+        \temphold%
+        0cm \axislinewidth{#1}{#2}{#3}%
+      }
+      \setcounter{templine}{#1}
+      \addtocounter{templine}{-1}
+      \ifnum #1 > 0 %loop if we are not out of lines
+        \slantedparvalues{\thetempline}{#2}{#3}
+      \else\fi
+    }
+
+    
+%%% command \axispositionlength{<y-position from bottom>}
+%%  initiates parshape settings
+\newlength{\axispositionlength}
+\newcommand{\axisposition}[1]{%
+  \setlength{\axispositionlength}{\dimexpr #1 \relax}%
+  \setlength{\axispositionlength}{\dimexpr \@Hspacing-\@Hshift + \@shiftratio\axispositionlength -\@axiswidth \relax}%
+}
+
+
+
+
 
 %%%
 %   Internal debug commands
@@ -957,16 +1083,7 @@
 	\endgroup
 }
 
-%%%
-%   Graphicspath
-%%%
 
-%%%	Set the graphicspath, the path where images are found
-\def\definedpath{}
-%\DeclareOptionX{graphicspath}{%
-%	\def\definedpath{#1}
-%  \graphicspath{{\definedpath}}
-%}
 
 
 
@@ -985,31 +1102,31 @@
 
 % Meta OT
 
-\newcommand{\fontdefault}{
-  \normalfont\selectfont
+\newcommand{\fontdefault}{%
+  \normalfont\selectfont%
 }
 
-\newcommand{\fontnormal}{
-  \iftuefonts
-    \usefont{T1}{meta}{m}{n}
-  \else
-    \normalfont\fontseries{m}\selectfont
+\newcommand{\fontnormal}{%
+  \iftuefonts%
+    \usefont{T1}{meta}{m}{n}%
+  \else%
+    \normalfont\fontseries{m}\selectfont%
   \fi
 }
 
-\newcommand{\fontmedium}{
-  \iftuefonts
-    \usefont{T1}{zmb}{m}{n}
-  \else
-    \normalfont\fontseries{sb}\selectfont
+\newcommand{\fontmedium}{%
+  \iftuefonts%
+    \usefont{T1}{zmb}{m}{n}%
+  \else%
+    \normalfont\fontseries{sb}\selectfont%
   \fi
 }
 
-\newcommand{\fontbold}{
-  \iftuefonts
-    \usefont{T1}{zmw}{m}{n}
-  \else
-    \normalfont\fontseries{b}\selectfont
+\newcommand{\fontbold}{%
+  \iftuefonts%
+    \usefont{T1}{zmw}{m}{n}%
+  \else%
+    \normalfont\fontseries{b}\selectfont%
   \fi
 }
 
@@ -1264,7 +1381,7 @@
 
 % tiny (self-defined)
 \def\styling@tiny{%
-  \setfontsize{6,25bp}{8bp}%
+  \setfontsize{6,25bp}{12.75bp}%
 	\fontmedium%
   \leavevmode\color{colorbody}%
 }
@@ -1331,8 +1448,17 @@
 \def\metanormal{\style{body}}
 
 %%% titlepage styling
-\newcommand{\frontpagehead}[1]{{\style{tiny}\textbf{#1}\\[.5ex]}}
-\newcommand{\frontpagebody}[1]{{\parbox[t]{\linewidth}{\style{note}#1}\\[2ex]}}
+\def\frontpagehead#1{
+  \iffirsthead
+    \firstheadfalse
+  \else
+    \hfill\break% Leave a blank space
+  \fi
+  \leavevmode\style{tiny}\textbf{#1}\hfill\break 
+} %leavevmode because \style breaks 
+
+\newcommand{\frontpagebody}[1]{
+\style{note}#1\hfill\break}
 
 
 
@@ -1437,29 +1563,6 @@
   \oldfigure[#1]\autocenter}%
   {\endoldfigure}
 
-
-%%%
-%   Cover drawing
-%%%
-
-%%%	Option for cover ratio
-%%  Ratio has to be bigger than 4:3
-%\DeclareOptionX{coverratio}{
-%    \ifrealnum{#1}{4/3}{%
-%      \def\@coverratio{#1}
-%    }{
-%	  \def\@coverratio{4/3}
-%    }{}
-%}
-
-% Set default cover ratio
-\def\@coverratio{4/3}
-
-%%%% TODO make option
-\newif\ifcover
-\covertrue
-\def\covername{cover}
-
 %%%	Use twoside standard for book type base class
 %	If book is defined and oneside is not then set twoside
 \ifx\drawbook\undefined\relax
@@ -1496,7 +1599,7 @@
 \setnewlength{\@Hshift}{\@shiftratio\paperheight}
 
 %%% Table of Contents spacing
-\setnewlength{\@tocleftpadding}{1.55cm}
+\setnewlength{\@tocleftpadding}{\layoutleftmargin}
 
 \setnewlength{\@tocleftspace}{\@Hspacing}
 \addtolength{\@tocleftspace}{-1.88cm}
@@ -1747,6 +1850,35 @@
 
 
 
+\newif\iffirsthead
+\newcommand{\infobox}[2][bottom]{%
+  \begingroup
+  \firstheadtrue
+  \setlength{\fboxsep}{0pt}
+    \@ifequal{#1}{top}{%
+      %%% Left top column
+      \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\@axiswidth+\@axispadding},left,bottom]{%
+        \axisposition{\@axisheight+\@axispadding}%
+        \begin{minipage}[b][\dimexpr \paperheight-\@axisheight-\@axispadding \relax]{\dimexpr \axispositionlength - \@tocleftpadding -\@axispadding \relax}%
+      
+          \raggedright%
+          \style{note}#2\vspace{-\baselineskip}\end{minipage}}
+    }{%
+      %%% Left bottom column
+      \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding-\@axiswidth},left,top]{%
+        \axisposition{\@axisheight-\@axiswidth-\@axispadding}%
+        \begin{minipage}[t][\dimexpr \@axisheight-\@axispadding \relax]{\dimexpr \axispositionlength - \@tocleftpadding -\@axispadding \relax}%
+          \raggedright%
+          \slantedpar{40}{\linewidth}%
+          #2\end{minipage}}
+    }
+  \endgroup
+}
+
+
+
+
+
 
 
 
@@ -1815,6 +1947,15 @@
 % 	Create the TU/e style titlepage
 %%%
 
+\ifcover
+  %%% Get actual cover image dimensions
+  \newlength{\actual@coverheight}
+  \settoheight\actual@coverheight{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}
+      % Calculate actual cover image ratio
+      \def\actual@coverratio{\DivideLengths{\@coverwidth}{\actual@coverheight}}
+     
+\fi
+      
 \renewcommand\maketitle{
 \clearpage%
 \begin{titlepage}
@@ -1832,16 +1973,25 @@
     \ifcover
 			%%% Display area to be filled by the cover image
 			\pgfsetcolor{black!20!white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\the\paperwidth + .2cm}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\the\paperwidth + .2cm}}
+			\pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
+			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@axisheight}}
 			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
 			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
 			\pgfusepath{fill}
-
-
+      
 			%%% Draw the cover 
 			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%
-
+       
+      %%% Compare the cover ratio to the actual ratio and draw if wrong
+      \pgfsetcolor{red}
+      \pgftext[at=\pgfpoint{\paperwidth-.5\@coverwidth}{\@coverbottom},center,bottom]{
+      \ifrealnum{\@coverratio}{\actual@coverratio}{}{
+        \parbox[b]{\@coverwidth}{
+          \huge \centering WARNING: Cover-image doesn't fill set coverratio.
+        }
+      }{}
+      }%
+      
 			%%% Draw bottom white overlay for the cover
 			\pgfsetcolor{white}
 			\pgfpathmoveto{\pgfpoint{0mm}{\@coverbottom}}
@@ -1864,38 +2014,33 @@
 		
 		%%% From name and address
 		\pgfsetcolor{black}
-		\pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\@axiswidth+\@axispadding},left,bottom]{%
-			\fbox{\parbox[b]{5cm}%
-			{\meta %
-				\raggedright\textbf{\theadministrativeunit}\vspace{2ex}
+      \infobox[top]{%
+				\frontpagebody{\textbf{\theadministrativeunit}\vspace{\baselineskip}}
 				\ifx\thedepartment\empty
         \else
-          \\\textit{\textbf{\thedepartment}}
+          \frontpagebody{\textit{\textbf{\thedepartment}}}
         \fi
 				\ifx\theaddress\empty
         \else
-          \\\theaddress ,%
+          \frontpagebody{\theaddress ,}%
         \fi
-				\ifaddress
-					\\5612 AZ Eindhoven\\
-					\thePObox\space513, 5600 MB Eindhoven
+        \ifaddress
+					\frontpagebody{5612 AZ Eindhoven}
+					\frontpagebody{\thePObox\space513, 5600 MB Eindhoven}
 					\ifx\theNetherlands\empty
           \else
-            \\\theNetherlands
+            \frontpagebody{\theNetherlands}
           \fi
 				\fi
 				\ifx\thewebsite\empty
         \else
-					\\\hypersetup{urlcolor={black}}
-					{\urlstyle{same}\url{\thewebsite}}
+					\hypersetup{urlcolor={black}}
+					\frontpagebody{\urlstyle{same}\url{\thewebsite}}
 					\hypersetup{urlcolor={tuewarmred}}
 				\fi
-			}}%
-    }
+			}%
     %%% Left column with info
-    \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding},left,top]{%
-      \fbox{\parbox[t]{5cm}{%
-        \hbadness=10000%
+      \infobox[bottom]{%
         \ifauthor%
           \frontpagehead{\theauthorlabel}%
           \frontpagebody{\@author}%
@@ -1921,7 +2066,6 @@
           \frontpagehead{\theversionlabel}%
           \frontpagebody{\theversionnum}%
         \fi%
-      }}%
     }%
     \ifcover
     %%% Title and subtitle positioned underneath cover
@@ -2052,6 +2196,7 @@
 	\fi
 }
 
+
 %%%
 % Defining command for the TU/e logo, innovation, axes, text and title
 % for the table of contents
@@ -2065,18 +2210,14 @@
 	\color{black}
 	
 	%%% Draw "Table of contents" or "Inhoudsopgave" title
-  \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\@axiswidth+\@axispadding},left,bottom]{%
-    \fbox{\parbox[b]{5cm}%
-    {\setlength{\baselineskip}{0pt}\setlength{\parskip}{0pt}\Large %
-      \raggedright\contentsname
-    }}%
+  \infobox[top]{%
+      \Large\contentsname\hfill\break%
   }
 
 	%%% Draw title and subtitle
-    \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding},left,top]{% %%%% TODO make macro, also used in maketitle
-      \fbox{\parbox[t]{5cm}{%
-				\frontpagehead{\thetitlelabel}%
-				\frontpagebody{\@title\\\style{tiny}\textit{\thesubtitle}}%
-		}}%
-	}
+  \infobox[bottom]{%
+    \frontpagehead{\thetitlelabel}%
+    \frontpagebody{\@title}%
+    \frontpagebody{\thesubtitle}%
+  }
 }
