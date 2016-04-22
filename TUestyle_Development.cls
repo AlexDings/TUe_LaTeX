@@ -526,6 +526,7 @@
 \newcommand{\@readfrom}[2]{%
   \immediate\openin\@in=#1%
 	\read\@in to #2%
+  #2
 	\immediate\closein\@in%
 }
 
@@ -1780,9 +1781,9 @@
 
 \AtBeginDocument{%
 	\IfFileExists{\buildfile}{
-		\def\@input{}
-    \@readfrom{\buildfile}{\@input}
-    \@input
+		\def\@transfer{}
+    \@readfrom{\buildfile}{\@transfer}
+    \@transfer
 	}{
 		\refstepcounter{build}
     \@writeto{\buildfile}{\string\setcounter{build}{\number\value{build}}}
