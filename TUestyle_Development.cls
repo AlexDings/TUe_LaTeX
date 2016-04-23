@@ -163,8 +163,7 @@
 
 %%%	command \ifrealnum{<number1>}{<number2>}{<on 1 > 2>}{<on 1 < 2>}{<on 1 = 2>}
 %%	compares two (non) integer numbers (real numbers)
-%%  Note: in order to avoid rounding off errors, compare fractions to fractions and real numbers X.XX to real numbers
-%%%% TODO DOESN'T WORK WHEN USING TWO FRACTIONS
+%%  Note: fractions can only contain integers
 \newlength{\lengtha}
 \newlength{\lengthb}
 \def\ifrealnum #1#2#3#4#5 {%
@@ -311,7 +310,7 @@
 \def\@coverratio{4/3}
 \DeclareOptionX{coverratio}{
   \ifrealnum{#1}{4/3}{%
-    \def\@coverratio{#1} %%%TODO doesn't work
+    \def\@coverratio{#1}
   }{
     \def\@coverratio{4/3}
   }{}
@@ -479,11 +478,11 @@
 
 %%%%% TODO move
 %%%	Define the instructions command if the "instructions" option is used
-\ifx\drawinstructions\undefined
-		\newcommand{\instruction}[1]{}
-	\else
-		\newcommand{\instruction}[1]{\textit{\textcolor{tueblue}{\textbf{[INSTRUCTION:} #1\textbf{]}}}}
-	\fi
+\ifinstructions
+  \newcommand{\instruction}[1]{}
+\else
+  \newcommand{\instruction}[1]{\textit{\textcolor{tueblue}{\textbf{[INSTRUCTION:} #1\textbf{]}}}}
+\fi
 
 
 %%%
@@ -604,7 +603,15 @@
   \fi%
 }
 
-
+\let\oldauthor\author
+\let\author\relax
+%%% \author\<name>{<value 1}...{<value n-1}{<value n}
+%%  saves data in \data:<name>:<range>
+\newcommand{\author}{% Use a declaration
+  \edef\tempname{\string\author}
+  \edef\tmp@sum{\string\author@sum}
+  \initadddata
+}
 
 
 %%% \adddata\<name>{<value 1}...{<value n-1}{<value n}
@@ -612,6 +619,10 @@
 \newcommand{\adddata}[1]{% Use a declaration
   \edef\tempname{\string#1}
   \edef\tmp@sum{\string#1@sum}
+  \initadddata
+}
+
+\newcommand{\initadddata}{
   \@ifundefined{c@\expandafter\cs@to@str\tmp@sum}{%
     \expandafter\newcount\csname c@\expandafter\cs@to@str\tmp@sum\endcsname % define counter c@<name>@sum if it doesn't exist yet
   }{}
@@ -625,7 +636,7 @@
     \newcommand{\gobblenext}[1]{%
       \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax
       \let\tempname@sum\tempname
-      \expandafter\def\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}%
+      \expandafter\def\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}% Add value to numbered variable
       \@ifnextchar\bgroup{\gobblenext}{}% Gobble next "argument"
     }
 
@@ -636,8 +647,20 @@
 
 %%% \printdata{\<name>}{<global delimiter optional>}{<last delimiter optional>}
 %%  prints data contained in \data:<name>:<range>
+\newif\ifprint
 \newcommand{\printdata}[1]{%
+  \printtrue
   \def\tempname{\string#1}%
+  \def\delimi{, }%
+  \def\delimii{ \& }%
+  \@ifnextchar\bgroup{\firstdelim}{\initiateprint{\tempname}}% If delimiter: set it, else, print
+}
+
+%%% \preprintdata{\<name>}{<global delimiter optional>}{<last delimiter optional>}
+%%  prints data contained in \data:<name>:<range> to \all:<name>
+\newcommand{\preprintdata}[1]{%
+  \def\tempname{\string#1}%
+  \printfalse
   \def\delimi{, }%
   \def\delimii{ \& }%
   \@ifnextchar\bgroup{\firstdelim}{\initiateprint{\tempname}}% If delimiter: set it, else, print
@@ -659,24 +682,41 @@
       \edef\tmp{#1}%
       \newcount\tempcount%
       \advance\tempcount 1\relax%
+      \expandafter\def\csname all:\expandafter\cs@to@str\tmp\endcsname{} % define counter all:<name> if it doesn't exist yet, otherwise clear
       \printdatainternal#1%
     }
 
     \newcommand{\printdatainternal}[1]{%
       \ifnum \the\tempcount < \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax%
         \ifnum \the\tempcount > 1% Use first delimiter in front of values, after the first value
-          \delimi%
+          \printandwritedata[\delimi]% Print current value
+        \else%
+          \printandwritedata% Print first value
         \fi%
-        \csname data:\tmp:\the\tempcount\endcsname% Print current value
         \advance\tempcount 1\relax%
-        \printdatainternal#1% % Loop
+        \printdatainternal#1% Loop
       \else%
         \ifnum \the\tempcount = \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax% % Use second delimiter in front of the last value
-          \delimii%
-          \csname data:\tmp:\the\tempcount\endcsname% Print last value
+          \printandwritedata[\delimii]% Print last value
         \fi
       \fi
     }
+    
+    \newcommand{\printandwritedata}[1][]{%
+      \ifprint
+        #1\csname data:\tmp:\the\tempcount\endcsname%
+      \fi
+      \expandafter\edef\csname all:\expandafter\cs@to@str\tmp\expandafter\endcsname{%
+        \csname all:\expandafter\cs@to@str\tmp\expandafter\endcsname%
+        #1\csname data:\tmp:\the\tempcount\endcsname%
+      }%
+    }
+    
+%%% \printstring{\<name>}
+%%  prints data contained in \all:<name> as a string, needed when commands can't be expanded
+\newcommand{\printstring}[1]{%
+  \csname all:\cs@to@str#1\endcsname
+}
 
 %%% \watermark
 %%  Creates tiny watermark inside the following character, intended use: \watermark.
@@ -822,6 +862,16 @@
 \def\convertto#1#2{\strip@pt\dimexpr #2*65536/\number\dimexpr 1#1}
 \newcommand{\showlength}[2]{\textbf{\stripmacro{#2}}:\space\convertto{#1}{#2}\space#1}
 
+%%%	command \printmacro{\<name>}
+%%	prints macro definition to \<name>.txt
+\def\printmacro #1{%
+    \begingroup\escapechar=-1
+    % better as .txt file
+    \immediate\openout\definition=\jobname-meaning-\string#1.txt
+    \endgroup
+    \immediate\write\definition{\meaning#1}%
+    \immediate\closeout\definition
+}
 
 
 
@@ -913,7 +963,7 @@
   \sethf
   
 	%%%	If the document uses the "oneside" option
-	\ifx\drawtwoside\undefined
+	\if@twoside
 		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
 
 	%%%	If the document uses the "twoside" option
@@ -924,7 +974,12 @@
   \enablepageskip
 }
 
+
 \AtBeginDocument{
+\preprintdata\author{, }{ \& }
+\def\@author{\printstring\author} %%% Todo, command doesn't work for pdf
+	\hypersetup{pdftitle = {\@title},pdfauthor = {\@author},pdfsubject={\thesubtitle},pdfkeywords={Version \theversionnum} {Eindhoven University of Technology},pdfcreator={aLeX TU/e template}}
+\preprintdata\author{,\hfill\break}{ \&\hfill\break}
 \resetlayout
 }
 
