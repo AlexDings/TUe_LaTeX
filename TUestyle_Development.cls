@@ -19,17 +19,14 @@
 
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
-\RequirePackage{pgf}
 \RequirePackage{xkeyval}
 \RequirePackage{pgf}  % loads also »xcolor«
 \RequirePackage[dutch, english]{babel}
 \RequirePackage{fancyhdr}
 \RequirePackage{graphicx}
+\RequirePackage{anyfontsize}
 %\RequirePackage{titletoc}
 %\RequirePackage{titlesec}
-
-
-
 
 
 %%%
@@ -289,8 +286,8 @@
 \DeclareOptionX{instructions}{\instructionsfalse}
 
 % draw one-sided / two-sided
-\DeclareOptionX{onesided}{\twosidedfalse}
-\DeclareOptionX{twosided}{\twosidedtrue}
+\DeclareOptionX{oneside}{\twosidedfalse}
+\DeclareOptionX{twoside}{\twosidedtrue}
 
 % draw one-column / two-column
 \DeclareOptionX{onecolumn}{\twocolumnfalse}
@@ -799,6 +796,21 @@
   }}}}}
 }
 
+\newcommand{\counterselector}[1]{%
+  \@ifequal{#1}{\part}{%
+	\thepart
+  }{\@ifequal{#1}{\part}{%
+	\thechapter
+  }{\@ifequal{#1}{\part}{%
+	\thesection
+  }{\@ifequal{#1}{\part}{%
+	\thesubsection
+  }{\@ifequal{#1}{\part}{%
+	\thesubsubsection
+  }}}}}
+}
+
+
 %%% \DivideLengths{\<name>}{\<name>}
 %%  Divides two given lengths
 \newcommand*{\DivideLengths}[2]{%
@@ -945,7 +957,7 @@
 %%%
 
 %%% TODO implement \sethf \pagestyle{fancy}
-\newcommand{\sethf}{\pagestyle{plain}}
+
 
 %%%
 % Set original margins
@@ -962,13 +974,12 @@
   \disablepageskip
   \sethf
   
-	%%%	If the document uses the "oneside" option
-	\if@twoside
-		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
-
 	%%%	If the document uses the "twoside" option
-	\else
+	\iftwosided
 		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
+	%%%	If the document uses the "oneside" option
+	\else
+		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
 	\fi
   \resetrightmargin
   \enablepageskip
@@ -1019,9 +1030,9 @@
 \newvariable{fullname}{Technische Universiteit \textbf{Eindhoven} University of Technology}
 
 \ifenglish
-  \newvariable{university}{Eindhoven University of Technology}
+  \newvariable{shortname}{Eindhoven University of Technology}
 \else
-  \newvariable{university}{Technische Universiteit Eindhoven}
+  \newvariable{shortname}{Technische Universiteit Eindhoven}
 \fi
 
 %%%
@@ -1100,12 +1111,8 @@
 
 %%% command \extraf{<string>} & \extrah{<string>}
 %%  Adds custom footer and header  data
-\newcommand*{\extraf}[1]{\def\extrafooter{#1}}
-\newcommand*{\extrah}[1]{\def\extraheader{#1}}
-
-%%% Initialisation of the above commands
-\extraf{}
-\extrah{}
+\newvariable{extraf}{}
+\newvariable{extrah}{}
 
 
 \def\captionwidth{.8}
@@ -1176,10 +1183,11 @@
 %   Fonts
 %%%
 
-% Helvetica
+% Arial
 \renewcommand{\sfdefault}{phv}
 \renewcommand{\rmdefault}{phv}
 \renewcommand{\ttdefault}{pcr}
+\renewcommand{\familydefault}{\sfdefault}
 
 % Meta OT
 
@@ -1299,6 +1307,7 @@
 %%% extra colors
 \colorlet{colorextra}{tuedarkblue}
 \colorlet{colorpayoff}{colorextra}
+\colorlet{colorlink}{tuered!20!white}
 
 
 
@@ -1558,7 +1567,7 @@
 \renewcommand{\labelitemiv}{\labelstyle{-}}
 
 \setnewlength{\labelindent}{7pt}
-\setlength{\labelsep}{\tabsize}
+\setlength{\labelsep}{.5\tabsize}
 
 \settowidth{\leftmargini}{\labelitemi}
 \addtolength{\leftmargini}{\labelsep}
@@ -1700,8 +1709,10 @@
 \bigskipamount=3\baselineskip plus 1\baselineskip minus 1\baselineskip
 
 %%% List indent
-\newlength{\listindent}
-\setlength{\listindent}{2\tabsize}
+\setnewlength{\listindent}{\tabsize}
+
+%%% Paragraph indent
+\setlength{\parindent}{0pt}
 
 %%%
 %   Fixes
@@ -1812,7 +1823,7 @@
 	colorlinks,
 	linkcolor={tuered},
 	citecolor={tuedarkblue},
-	urlcolor={tuewarmred}
+	urlcolor={tuescarlet}
 }
 
 \urlstyle{allbreak} % set as default
@@ -1917,11 +1928,129 @@
 
 
 
+%%%
+% Declare commands for parts, chapters and sections without number
+% Also autolabel them
+%%%
+
+\newcommand{\autolabeling}[2]{
+	\ifautolabel\label{#1:#2}\else\relax\fi
+}
+
+%%%	Part no number command
+\storeold{\part}
+
+\def\part{\@ifstar\@partC\@@partC}
+\def\@partC#1{
+	\resetcounters{3}
+	\oldpart*{#1}
+	\addcontentsline{toc}{part}{#1}
+	\markboth{#1}{\rightmark}
+}
+\def\@@partC#1{
+	\oldpart{#1}
+}
+
+%%%	Chapter no number command
+\storeold{\chapter}
+
+\def\chapter{\@ifstar\@chapterC\@@chapterC}
+\def\@chapterC#1{
+	\resetcounters{3}
+	\oldchapter*{#1}
+	\addcontentsline{toc}{chapter}{#1}
+	\markboth{#1}{\rightmark}
+	%%%	Set footnote counter
+	\autolabeling{ch}{#1}
+}
+\newcommand{\@@chapterC}[2][\@empty]{
+	\ifx\@empty#1
+		\oldchapter{#2}
+		\autolabeling{ch}{#2}
+	\else
+		\oldchapter[#1]{#2}
+		\autolabeling{ch}{#1}	
+	\fi
+}
+
+%%%	Section no number command
+\storeold{\section}
+
+\def\section{\@ifstar\@sectionC\@@sectionC}
+\def\@sectionC#1{
+	\resetcounters{4}
+	\oldsection*{#1}
+	\addcontentsline{toc}{section}{#1}
+	\markboth{#1}{\rightmark}
+	\autolabeling{sec}{#1}
+}
+\newcommand{\@@sectionC}[2][\@empty]{
+	\ifx\@empty#1
+    \oldsection{#2}
+    \autolabeling{sec}{#2}
+	\else
+    \oldsection[#1]{#2}
+    \autolabeling{sec}{#1}	
+	\fi
+}
+
+\storeold{\subsection}
+
+\def\subsection{\@ifstar\@subsectionC\@@subsectionC}
+\def\@subsectionC#1{
+	\resetcounters{5}
+	\oldsubsection*{#1}
+	\addcontentsline{toc}{subsection}{#1}
+	\markboth{#1}{\rightmark}
+	\autolabeling{subsec}{#1}
+}
+\newcommand{\@@subsectionC}[2][\@empty]{
+	\ifx\@empty#1
+    \oldsubsection{#2}
+    \autolabeling{sec}{#2}
+	\else
+    \oldsubsection[#1]{#2}
+    \autolabeling{subsec}{#1}	
+	\fi
+}
+
+%%%
+% Auto labeling of sectioning
+%%%
+
+\storeold{\subsubsection}
+\renewcommand{\subsubsection}[2][\@empty]{%
+\ifx\@empty#1%
+	\oldsubsubsection{#2}\autolabeling{ssec}{#2}%
+\else%
+	\oldsubsubsection[#1]{#2}\autolabeling{ssec}{#1}%
+\fi}
+
+\storeold{\paragraph}
+\renewcommand{\paragraph}[2][\@empty]{%
+\ifx\@empty#1%
+	\oldparagraph{#2}\autolabeling{par}{#2}%
+\else%
+	\oldparagraph[#1]{#2}\autolabeling{par}{#1}%
+\fi}
+
+\storeold{\subparagraph}
+\renewcommand{\subparagraph}[2][\@empty]{%
+\ifx\@empty#1%
+	\oldsubparagraph{#2}\autolabeling{subpar}{#2}%
+\else%
+	\oldsubparagraph[#1]{#2}\autolabeling{subpar}{#1}%
+\fi}
+
+
+
+
 
 
 
 
 \newif\iffirsthead
+%
 \newcommand{\infobox}[2][bottom]{%
   \begingroup
   \firstheadtrue
@@ -2107,7 +2236,7 @@
         \else
 					\hypersetup{urlcolor={black}}
 					\frontpagebody{\urlstyle{same}\url{\thewebsite}}
-					\hypersetup{urlcolor={tuewarmred}}
+					\hypersetup{urlcolor={tuescarlet}}
 				\fi
 			}%
     %%% Left column with info
@@ -2292,3 +2421,375 @@
     \frontpagebody{\thesubtitle}%
   }
 }
+
+
+
+
+
+
+
+
+%%%
+% Declare TU/e header and footers
+%%%
+
+%%%	Using the fancyhdr package to set the TU/e headings.
+%%%	Define left side header
+\newcommand{\leftsidehead}{
+	\style{body}\color{hfcolor} 
+	\ifshorth 
+		\thefullname
+	\else
+		\theshortname
+	\fi
+	\ifx\theextrah\empty\relax\else
+    -\space\theextrah
+  \fi
+}
+
+%%%	Define right side header
+\newcommand{\rightsidehead}{
+	\style{body}\color{hfcolor} 
+	\ifx\theextrah\empty\relax\else
+    \theextrah\space-
+  \fi
+	\ifshorth
+		\thefullname
+	\else
+		\theshortname
+	\fi
+}
+
+%%%	Define left side footer
+\newcommand{\leftsidefoot}{
+	\style{body}\color{black}\footnumber\hspace{0.1cm}\color{hfcolor}\space- 
+	\@title 
+  	\ifx\theversionnum\empty\relax\else
+      { / \theversionlabel\space\theversionnum }
+    \fi
+	\ifchapterf
+    \itshape\nouppercase{\leftmark}
+  \fi
+	\ifx\theextraf\empty\relax\else
+    \\\theextraf
+  \fi
+}
+
+%%%	Define right side footer
+\newcommand{\rightsidefoot}{
+	\style{body}\color{hfcolor}
+  \@title
+  \ifx\theversionnum\empty\relax\else
+    { / \theversionlabel\space\theversionnum }
+  \fi - 
+	\hspace{0.1cm}\color{black}\footnumber\color{hfcolor}
+	\ifchapterf
+    \itshape\nouppercase{\leftmark}
+  \fi
+	\ifx\theextraf\empty\relax\else
+    \\\theextraf
+  \fi
+}
+
+%%%	Define copyholder footer
+\newcommand{\copyfoot}{
+	\ifcopyf
+		\frontpagehead{\thecopyholderlabel}\meta\thecopyholder
+	\fi
+}
+
+%%%	Define draft overlay
+\newcommand{\draftmarking}{
+	\ifdraftmark
+		\draftmark%
+		\settoheight{\@tempdima}{\draftmark}%
+		\vspace{-\@tempdima}%
+		\vspace{\dimexpr -.5\paperheight+\layouttopmargin \relax}%
+	\fi
+}
+
+%%%	Define footer number
+\newcommand{\footnumber}{
+	\textbf{%
+		\thepage%
+		\ifendf
+			/\pageref*{lastdocpage}
+		\fi
+	}
+}
+
+%%%	Define headers and footers for twoside design
+\newcommand{\setheadersTwo}{
+	\pagestyle{fancy}
+	\fancyhf{}
+	%	Header in the center of the page
+	\fancyhead[C]{
+		\draftmarking
+	}
+	%	Header for the even pages, header on the left
+	\fancyhead[LE]{
+		\leftsidehead
+	}
+	%	Header for the odd pages, header on the right
+	\fancyhead[RO]{
+		\rightsidehead
+	}
+	%	Header for the even pages, footer on the right
+	\fancyfoot[RE]{
+		\rightsidefoot
+	}
+	%	Header for the odd pages, footer on the left
+	\fancyfoot[LO]{
+		\leftsidefoot
+	}
+	%	Copyholder on other side
+	\fancyfoot[LE]{
+		\copyfoot
+	}
+	%	Copyholder on other side
+	\fancyfoot[RO]{
+		\copyfoot
+	}
+	\renewcommand{\headrulewidth}{0mm}
+}
+
+%%%	Define header and footers for oneside design
+\newcommand{\setheadersOne}{
+	\pagestyle{fancy}
+	\fancyhf{}
+	%	Header in the center of the page
+	\fancyhead[C]{
+		\draftmarking
+	}
+	%	Header only on the right side
+	\fancyhead[R]{
+		\rightsidehead
+	}
+	%	Footer only on the left side
+	\fancyfoot[L]{
+		\leftsidefoot
+	}
+	%	Copyholder on other side
+	\fancyfoot[R]{
+		\copyfoot
+	}
+	\renewcommand{\headrulewidth}{0mm}
+}
+
+%%%	Set defined header/footers, custom, twoside or oneside
+\newcommand{\sethf}{
+	\ifdefined\setheaders
+		\setheaders
+	\else
+		\iftwosided
+      \ifonesidehf
+				%%%	Set oneside headers
+				\setheadersOne
+			\else
+        %%%	Set twoside headers
+				\setheadersTwo
+			\fi
+		\else
+    	%%%	Set oneside headers
+			\setheadersOne
+		\fi
+	\fi
+}
+\sethf
+
+%%%
+%	Set last page label
+%%%
+
+\AtEndDocument{
+	\label{lastdocpage}
+}
+
+
+
+
+
+%%%
+% Define draftmark
+%%%
+
+\newsavebox{\draftBox}
+\savebox{\draftBox}{%
+	\color{colorlink}
+	\rotatebox[origin=c]{-45}{\fontsize{300bp}{0bp} \selectfont \textbf{\textsc{draft}}}%
+}%
+
+%%%	Declare the \draftmark command and scale it to the text
+\newcommand{\draftmark}{%
+	\resizebox{!}{200pt}{\usebox{\draftBox}}%
+}
+
+
+%%%
+% \aLeX command
+%%%
+
+\DeclareRobustCommand{\oldaLeX}{%
+%L\kern-.36em%
+{\sbox\z@ T%
+\vbox to\ht\z@{\hbox{%
+\check@mathfonts
+\fontsize\sf@size\z@
+\math@fontsfalse\selectfont A}%
+\vss}%
+}%
+\kern-.15em%
+\oldLeX}
+
+\DeclareRobustCommand{\aLeX}{%
+\begingroup\fontfamily{crm}\textlatin{\oldaLeX}\endgroup%
+}
+
+\DeclareRobustCommand{\org@LeX}{%
+L\kern -.1667em\lower .5ex\hbox {E}\kern -.125emX\@
+}
+
+\DeclareRobustCommand{\oldLeX}{%
+\org@LeX%
+}
+
+\DeclareRobustCommand{\LeX}{%
+\begingroup\fontfamily{crm}\textlatin{\oldLeX}\endgroup%
+}
+
+
+
+
+
+%%%
+% \CaLaTeX command
+%%%
+
+\DeclareRobustCommand{\oldCaLaTeX}{%
+C\kern-.2em%
+{\sbox\z@ T%
+\vbox to\ht\z@{\hbox{%
+\check@mathfonts
+\fontsize\sf@size\z@
+\math@fontsfalse\selectfont A}%
+\vss}%
+}%
+\kern-.15em%
+\oldLaTeX}
+
+\DeclareRobustCommand{\CaLaTeX}{%
+\begingroup\fontfamily{crm}\textlatin{\oldCaLaTeX}\endgroup%
+}
+
+
+
+
+
+%%%
+% \LaTeX command (ensures fontfamily)
+%%%
+
+\DeclareRobustCommand{\oldLaTeX}{%
+L\kern-.36em%
+{\sbox\z@ T%
+\vbox to\ht\z@{\hbox{%
+\check@mathfonts
+\fontsize\sf@size\z@
+\math@fontsfalse\selectfont A}%
+\vss}%
+}%
+\kern-.15em%
+\oldTeX}
+
+\DeclareRobustCommand{\LaTeX}{%
+\begingroup\fontfamily{crm}\textlatin{\oldLaTeX}\endgroup%
+}
+
+\DeclareRobustCommand{\oldTeX}{%
+\org@TeX%
+}
+
+\DeclareRobustCommand{\TeX}{%
+\begingroup\fontfamily{crm}\textlatin{\oldTeX}\endgroup%
+}
+
+
+
+
+%%%
+% \CaTeX
+%%%
+
+%%%%%%%%%%%% Needs to be created
+
+
+
+
+
+
+%%%
+% Listing styling
+%%%
+
+%%%
+%	Notes
+%%%
+
+%%
+%	Command \note
+%	Declares a new note
+%%
+\ifnotes
+  \newcounter{note} % note counter
+  
+  \newcommand{\note}[1]{%
+    \refstepcounter{note}%
+    \notestyle{\thenote}{#1}%
+    \addcontentsline{lon}{note}{\numberline {\thenote} #1}
+  }
+\else
+  \newcommand{\note}[1]{}
+\fi
+
+
+%% defines the note styling
+\newcommand{\notestyle}[2]{%
+  \textcolor{tuescarlet}{
+    \textbf{[\thenotesname\space #1:}
+    #2%
+    \textbf{]}
+  }
+}
+
+\newcommand{\definelist}[3][1]{
+  \expandafter\def\csname listof#2s\endcsname{%
+    \begin{onecolarea}
+      \chapter*{\csname thelistof#2sname\endcsname}%
+      \@starttoc{#3}%
+    \end{onecolarea}% defines the list of notes' formatting	
+  }
+  \stylelist[#1]{note}
+}
+
+\newcommand{\stylelist}[2][1]{  
+  \expandafter\def\csname l@#2\endcsname##1##2{%
+    \@dottedtocline{1}
+     {0em} % Indent
+     {#1\listindent} % Listing number width
+     {##1} % Entry text
+     {##2}% % Page number
+  }
+}
+
+
+
+
+%%
+%	Command \listofnotes
+%	Produces a list of all notes
+%% 
+\definelist[1]{note}{lon}
+
+
+
+
