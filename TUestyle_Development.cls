@@ -20,6 +20,8 @@
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
 \RequirePackage{xkeyval}
+\RequirePackage[table]{xcolor}    % loads also »colortbl«
+
 \RequirePackage{pgf}  % loads also »xcolor«
 \RequirePackage[dutch, english]{babel}
 \RequirePackage{fancyhdr}
@@ -27,7 +29,6 @@
 \RequirePackage{anyfontsize}
 %\RequirePackage{titletoc}
 %\RequirePackage{titlesec}
-
 
 %%%
 %   Definitions
@@ -52,6 +53,11 @@
 %%  (false by default)
 \newif\ifdraftmark
 \draftmarkfalse
+
+%%% Draw draft line numbering
+%%  (false by default)
+\newif\iflinenum
+\linenumfalse
 
 %%% Use Meta OT fonts
 %%  (false by default)
@@ -89,8 +95,8 @@
 
 %%% Draw chapter in footer
 %%  (false by default)
-\newif\ifchapterf
-\chapterffalse
+\newif\ifsectioningf
+\sectioningffalse
 
 %%% Draw copyholder in footer
 %%  (false by default)
@@ -127,6 +133,9 @@
 %% graphics path
 \def\definedpath{}
 
+%% list of parskip
+\newlength{\listofparskip}
+\setlength{\listofparskip}{0cm}
 
 %%%
 %   Commands used in class options 
@@ -231,6 +240,8 @@
 % draw draft mark
 \DeclareOptionX{draftmark}{\draftmarktrue}
 
+% draw draft line numbering
+\DeclareOptionX{draftmark}{\linenumfalse}
 
 %%% TU/e style options
 
@@ -264,6 +275,10 @@
 % use sectioning style
 \DeclareBooleanOptionX{sectioningstyling}
 \sectioningstylingtrue
+
+% draw "chapter XX" above chaptername
+\DeclareBooleanOptionX{chaptername}
+\chapternamefalse
 
 % use paragraph style
 \DeclareBooleanOptionX{paragraphstyling}
@@ -353,7 +368,7 @@
 }
 
 % draw chapter in footer
-\DeclareOptionX{chapterf}{\chapterftrue}
+\DeclareOptionX{sectioningf}{\sectioningftrue}
 
 % draw chapter in footer
 \DeclareOptionX{copyf}{\copyftrue}
@@ -364,6 +379,9 @@
 % draw shorter header
 \DeclareOptionX{shorth}{\shorthtrue}
 }
+
+\DeclareBooleanOptionX{leadzero}
+\leadzerotrue
 
 %%%% TODO make option
 \newif\ifcover
@@ -382,6 +400,20 @@
 \DeclareBooleanOptionX{autolabel}
 \autolabeltrue
 
+
+% Print optimalization
+\newif\ifprint
+\printfalse
+\DeclareOptionX{print}{%
+  \AtBeginDocument{
+  \storeold{\href}
+  \renewcommand{\href}[2]{\oldhref{##1}{##2}\footnote{\url{##1}}}
+  }
+}
+
+% hide upper sectioning
+\DeclareBooleanOptionX{hideuppersectioning}
+\hideuppersectioningfalse
 
 % pass options to underlying classes
 \DeclareOptionX*{%
@@ -405,8 +437,12 @@
 %%%
 
 %%% command \enquote{<content>}
-%%  correctly enquotes content
-\newcommand{\enquote}[1]{``#1''}
+%%  correctly enquotes content, in the primary quoatation style
+\newcommand{\enquote}[1]{``#1’’}
+
+%%% command \secenquote{<content>}
+%%  correctly enquotes content, in the secondary quoatation style
+\newcommand{\secenquote}[1]{‘#1’}
 
 %%% command \superscript{<content>}
 %%  correctly writes content as superscript
@@ -472,6 +508,33 @@
   \def\UrlBreaks{\do\.\do\@\do\\\do\/\do\!\do\_\do\|\do\;\do\>\do\]%
     \do\)\do\,\do\?\do\'\do+\do\=\do\#}%
 }
+
+%%%
+%	Hide from ToC
+%%% 
+
+%%%	Command \stoplistentries
+%	  Stops any entries from being added to the ToC and other lists
+%%% Command \startlistentries
+%	  Re-enables any entries being added to the ToC and other lists
+\newcommand{\stoplistentries}{\storeoldrelax{\addcontentsline}\def\addcontentsline##1##2##3{}
+}
+\newcommand{\startlistentries}{\restoreold{\addcontentsline}}
+
+%%%	Command \tocless
+%	  Disables adding of the sectioning to the toc, creates label
+%	  Example: \tocless\chapter{Title}
+\newcommand{\tocless}[2]{\bgroup\stoplistentries #1{#2}
+\labelselector{#1}{#2}\egroup}
+
+
+
+%%% TODO needs comments
+\newcommand{\labelless}[2]{\bgroup\storeoldrelax{\label}\def\label##1{}%
+#1{#2}\egroup}
+\newcommand{\stopautolabels}{\autolabelfalse}
+\newcommand{\startautolabels}{\autolabeltrue}
+
 
 %%%%% TODO move
 %%%	Define the instructions command if the "instructions" option is used
@@ -567,7 +630,7 @@
 %%	defines new length and sets it
 \def\setnewlength #1#2 {
   \providelength{#1}
-  \setlength{#1}{#2}
+  \setlength{#1}{#2\relax}
 }
 
 %%% command \cs@to@str{\<command>}
@@ -756,6 +819,12 @@
   \expandafter\let\csname old\expandafter\cs@to@str\string#1\endcsname#1
 }
 
+%%% \restoreold{\<name>}
+%%  Restores \old<name> to \<name>
+\newcommand{\restoreold}[1]{
+  \expandafter\let\expandafter#1\csname old\expandafter\cs@to@str\string#1\endcsname
+}
+
 %%% \storeoldrelax{\<name>}
 %%  Stores \<name> to \old<name>, and relaxes \<name>
 \newcommand{\storeoldrelax}[1]{
@@ -784,30 +853,80 @@
 %%  Creates label for sectioning
 \newcommand{\labelselector}[2]{%
   \@ifequal{#1}{\part}{%
-    \label{[part:#2]}
+    \label{part:#2}
   }{\@ifequal{#1}{\chapter}{%
 		\label{ch:#2}%
-  }{\@ifequal{#1}{\chapter}{%
+  }{\@ifequal{#1}{\section}{%
 		\label{sec:#2}
-  }{\@ifequal{#1}{\chapter}{%
+  }{\@ifequal{#1}{\subsection}{%
 		\label{subsec:#2}%
-  }{\@ifequal{#1}{\chapter}{%
+  }{\@ifequal{#1}{\subsubsection}{%
 		\label{sssec:#2}%
-  }}}}}
+  }{\@ifequal{#1}{\paragraph}{%
+		\label{par:#2}%
+  }{\@ifequal{#1}{\subparagraph}{%
+		\label{subpar:#2}%
+  }{\@ifequal{#1}{\figure}{% Should be used
+		\label{fig:#2}%
+  }{\@ifequal{#1}{\table}{% Should be used
+		\label{tab:#2}%
+  }{\@ifequal{#1}{\lstlisting}{% Should be used
+		\label{lst:#2}%
+  }{\@ifequal{#1}{\equation}{% Should be used
+		\label{eq:#2}%
+  }{\@ifequal{#1}{\item}{% Not used, because adding 1 item to the list would shift manual references
+		\label{itm:#2}%
+  }{\@ifequal{#1}{\appendix}{% Not used
+		\label{app:#2}%
+  }{\@ifequal{#1}{\algorithm}{% Not used
+		\label{alg:#2}%
+  }}}}}}}}}}}}}}
 }
 
+
+%%% TODO Can be removed
 \newcommand{\counterselector}[1]{%
   \@ifequal{#1}{\part}{%
 	\thepart
-  }{\@ifequal{#1}{\part}{%
+  }{\@ifequal{#1}{\chapter}{%
 	\thechapter
-  }{\@ifequal{#1}{\part}{%
+  }{\@ifequal{#1}{\section}{%
 	\thesection
-  }{\@ifequal{#1}{\part}{%
+  }{\@ifequal{#1}{\subsection}{%
 	\thesubsection
-  }{\@ifequal{#1}{\part}{%
+  }{\@ifequal{#1}{\subsubsection}{%
 	\thesubsubsection
   }}}}}
+}
+
+%%% \levelselector{\<name of sectioning>}
+%%  Returns sectioning level
+
+%%  Levels:
+%   Part         -1
+%   Chapter       0
+%   Section       1
+%   Subsection    2
+%   Subsubsection 3
+%   Paragraph     4
+%   Subparagraph  5
+
+\newcommand{\levelselector}[1]{%%%% TODO use in createsectioning
+  \@ifequal{#1}{\part}{%
+   -1
+  }{\@ifequal{#1}{\chapter}{%
+		0
+  }{\@ifequal{#1}{\section}{%
+		1
+  }{\@ifequal{#1}{\subsection}{%
+		2
+  }{\@ifequal{#1}{\subsubsection}{%
+		3
+  }{\@ifequal{#1}{\paragraph}{%
+		4
+  }{\@ifequal{#1}{\subparagraph}{%
+		5
+  }}}}}}}
 }
 
 
@@ -819,50 +938,106 @@
 
 %%% command \slantedpar{<integer #lines>}{<paragraph width>}
 %%  initiates parshape settings
-\newcommand{\slantedpar}[2]{
+\newcommand{\slantedpar}[3][left]{
   \setnewlength{\interval}{\@shiftratio\baselineskip}
-  %\rightskip=0pt plus 2em\relax
-  \raggedright
-  \slantedparvalues{#1}{#1}{#2}
-  \parshape=#1
-  \temphold
+  % Definition to hold the result calculations as strings
+  \long\edef\temphold{}
+  \setcounter{templine}{0}
+  \slantedparvalues{#1}{#2}{#2}{#3}
+  \parshape=#2
+  \temphold 
 }
 
     %%  Command to calculate current line width
-    \newcommand{\axislinewidth}[3]{%
-      \expandafter\dimexpr #3-#2\interval+#1\interval \relax%
+    \newcommand{\axislinewidthleft}[3]{%
+      0cm \dimexpr #3-#2\interval+#1\interval \relax%
     }
-
-    % Definition to hold the result calculations as strings
-    \long\def\temphold{}
+    
+    \newcommand{\axislinewidthright}[3]{%
+      \dimexpr-#2\interval+#1\interval\relax \dimexpr #3+#2\interval-#1\interval \relax%
+    }
 
     \newcounter{templine}
 
     %%  loop command, also expanding \temphold with string result
-    \newcommand{\slantedparvalues}[3]{
+    \newcommand{\slantedparvalues}[4]{
+    \@ifequal{#1}{left}{
       \long\edef\temphold{%
         \temphold%
-        0cm \axislinewidth{#1}{#2}{#3}%
+        \axislinewidthleft{#2}{#3}{#4}%
       }
-      \setcounter{templine}{#1}
+    }{
+      \long\edef\temphold{%
+        \temphold%
+        \axislinewidthright{#2}{#3}{#4}%
+      }
+    }
+      \setcounter{templine}{#2}
       \addtocounter{templine}{-1}
-      \ifnum #1 > 0 %loop if we are not out of lines
-        \slantedparvalues{\thetempline}{#2}{#3}
+      \ifnum #2 > 0 %loop if we are not out of lines
+        \slantedparvalues{#1}{\thetempline}{#3}{#4}
       \else\fi
     }
 
     
-%%% command \axispositionlength{<y-position from bottom>}
+%%% command \axispositionX{<y-position from bottom>}
 %%  initiates parshape settings
-\newlength{\axispositionlength}
+\newlength{\axispositionY}
+\newlength{\axispositionX}
 \newcommand{\axisposition}[1]{%
-  \setlength{\axispositionlength}{\dimexpr #1 \relax}%
-  \setlength{\axispositionlength}{\dimexpr \@Hspacing-\@Hshift + \@shiftratio\axispositionlength -\@axiswidth \relax}%
+  \setlength{\axispositionY}{\dimexpr #1 \relax}%
+  \setlength{\axispositionX}{\dimexpr \@Hspacing-\@Hshift + \@shiftratio\axispositionY -\@axiswidth \relax}%
 }
 
 
+%%% command \getlongestsentence{<string>}
+%%  Splits sentences on \break and outputs longest sentence to \templongest
+\def\getlongestsentence#1{%
+	\setnewlength{\templongest}{0pt}
+	\def\holder{}
+	\def\delim{\break} %Split string at breaks
+    \begingroup
+    \edef\@tempa{\detokenize\expandafter{#1}\space}%
+    \expandafter\endgroup
+    \expandafter\readstring\@tempa\relax
+}
 
+    \long\def\readstring#1 #2\relax{%
+          \partitionstring{#1}{\delim}%  #1 = substr, #2 = rest of string
+          \begingroup%
+          \ifx\relax#2\relax  % is #2 empty?
+            \def\next{\endgroup\endstringpartition}% end-macro
+          \else%
+             \def\next{\endgroup\readstring#2\relax}%
+          \fi%
+          \next%
+    }
 
+    \long\def\partitionstring#1#2{%
+      \expandafter\edef\expandafter\tempa{\detokenize{#1}}%
+      \expandafter\edef\expandafter\tempb{\expandafter\string#2}%
+        \ifx \tempa \tempb%
+          \endstringpartition%
+        \else%
+          \g@addto@macro\holder{\scantokens{#1}}%
+        \fi%
+    }
+
+    \def\endstringpartition{%
+      \settowidth{\@tempdima}{\holder}%
+      \ifnum \@tempdima > \templongest%
+      \setlength{\templongest}{\@tempdima}%
+      \else\fi%
+      \def\holder{}%
+    }
+
+    
+%%% Justify command
+  \newcommand{\justified}{%
+    \rightskip\z@skip%
+    \leftskip\z@skip}
+      
+    
 
 %%%
 %   Internal debug commands
@@ -877,12 +1052,13 @@
 %%%	command \printmacro{\<name>}
 %%	prints macro definition to \<name>.txt
 \def\printmacro #1{%
+    \newwrite\printmacroname
     \begingroup\escapechar=-1
     % better as .txt file
-    \immediate\openout\definition=\jobname-meaning-\string#1.txt
+    \immediate\openout\printmacroname=\jobname-meaning-\string#1.txt
     \endgroup
-    \immediate\write\definition{\meaning#1}%
-    \immediate\closeout\definition
+    \immediate\write\printmacroname{\meaning#1}%
+    \immediate\closeout\printmacroname
 }
 
 
@@ -905,10 +1081,25 @@
 \fi
 
 % depending packages
-\RequirePackage{hyperref}
+\iftuefonts\relax\else
+  \AtBeginDocument{
+    \RequirePackage{uarial}
+  }
+\fi
+\RequirePackage[bookmarks=true,linktocpage=true,bookmarksnumbered=true,breaklinks=true]{hyperref}
 \RequirePackage{geometry}
 
 
+
+%%%
+%	Set last page label
+%%%
+
+%% Has to be the above any writeout AtEndDocument as the "labels have changed warning" will be triggered otherwise.
+
+\AtEndDocument{
+	\label{lastdocpage}
+}
 
 
 
@@ -932,10 +1123,11 @@
 \setnewlength{\gridgutterwidth}{3.853mm}
 \setlength{\columnsep}{\gridgutterwidth}
 
-\setnewlength{\gridcolumnwidth}{\dimexpr (\paperwidth - \layoutleftmargin - \layoutrightmargin - \numexpr\gridcolumns-1\relax\gridcolumnwidth) / \gridcolumns \relax}
+\setnewlength{\gridcolumnwidth}{\dimexpr (\paperwidth - \layoutleftmargin - \layoutrightmargin + \gridgutterwidth) / \gridcolumns \relax}
+\addtolength{\gridcolumnwidth}{-\gridgutterwidth}
 
-\setnewlength{\frameleft}{\dimexpr \layoutleftmargin + \gridleftcolumns\gridcolumnwidth \relax}
-\setnewlength{\frameright}{\dimexpr \layoutrightmargin + \gridrightcolumns\gridcolumnwidth \relax}
+\setnewlength{\frameleft}{\dimexpr \layoutleftmargin + \gridleftcolumns\gridcolumnwidth +\gridleftcolumns\gridgutterwidth \relax}
+\setnewlength{\frameright}{\dimexpr \layoutrightmargin + \gridrightcolumns\gridcolumnwidth + \gridrightcolumns\gridgutterwidth \relax}
 
 \setnewlength{\headeroffset}{5.25mm}
 \setnewlength{\footeroffset}{6.75mm}
@@ -1052,6 +1244,7 @@
   \newvariable{visitingaddresslabel}{Visiting adress}
   \newvariable{postaladdresslabel}{Postal adress}
   \newvariable{titlelabel}{Title}
+  \newvariable{subtitlelabel}{Subtitle}
 \else
 	\newvariable{copyholderlabel}{Kopiehouder}
 	\newvariable{authorlabel}{Auteur}
@@ -1064,6 +1257,7 @@
   \newvariable{visitingaddresslabel}{Bezoekadres}
   \newvariable{postaladdresslabel}{Postadres}
   \newvariable{titlelabel}{Titel}
+  \newvariable{subtitlelabel}{Ondertitel}
 \fi
 
 
@@ -1136,7 +1330,7 @@
 %%% command \tab[<integer>]
 %%  goes to specified tab
 \newcommand{\tab}[1][1]{%
-	\noindent\makebox[0pt][l]{}\\*[-\baselineskip]\hspace*{#1\tabsize}%
+	\noindent\leavevmode\\*[-\baselineskip]\hspace*{#1\tabsize}%
 }
 
 
@@ -1153,8 +1347,6 @@
 	\renewcommand{\listtablename}{#1}
 	\renewcommand*\l@table{\@dottedtocline{1}{0em}{\listindent}}% Default: 1.5em/2.3em
   \begingroup
-    \renewcommand{\addvspace}[1]{}
-    \addcontentsline{toc}{chapter}{\listtablename}
     \oldlistoftables
 	\endgroup
 }
@@ -1165,9 +1357,7 @@
 	\renewcommand{\listfigurename}{#1}
 	\renewcommand*\l@figure{\@dottedtocline{1}{0em}{\listindent}}% Default: 1.5em/2.3em
   \begingroup
-    \renewcommand{\addvspace}[1]{}
-    \addcontentsline{toc}{chapter}{\listfigurename}
-    \oldlistoftables
+    \oldlistoffigures
 	\endgroup
 }
 
@@ -1315,26 +1505,59 @@
 %   Text styles
 %%%
 
-% heading small
-\def\styling@headingsmall{%
+
+
+% heading subparagraph
+\def\styling@headingsubparagraph{%
+  \setfontsize{9.25bp}{12.75bp}%
+	\fontmedium%
+  \leavevmode\color{colorsubheading}\it%
+}
+
+
+% heading paragraph
+\def\styling@headingparagraph{%
   \setfontsize{10bp}{12.75bp}%
+	\fontbold%
+  \leavevmode\color{colorsubheading}%
+}
+
+% heading subsubsection
+\def\styling@headingsubsubsection{%
+  \setfontsize{12.25bp}{16bp}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
-% heading normal
-\def\styling@headingnormal{%
+% heading subsection
+\def\styling@headingsubsection{%
+  \setfontsize{16bp}{21,25bp}%
+	\fontbold%
+  \leavevmode\color{colorheading}%
+}
+
+% heading section
+\def\styling@headingsection{%
+  \setfontsize{20bp}{26,75bp}%
+	\fontbold%
+  \leavevmode\color{colorheading}%
+}
+
+% heading chapter
+\def\styling@headingchapter{%
   \setfontsize{24bp}{32bp}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
-% heading large
-\def\styling@headinglarge{%
+% heading part
+\def\styling@headingpart{%
   \setfontsize{30bp}{40bp}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
+
+%%%%%%%
 
 % heading Large
 \def\styling@headingLarge{%
@@ -1355,27 +1578,6 @@
   \setfontsize{48bp}{58bp}%
 	\fontbold%
   \leavevmode\color{colorheading}%
-}
-
-% sub heading large
-\def\styling@subheadinglarge{%
-  \setfontsize{18bp}{24bp}%
-	\fontmedium%
-  \leavevmode\color{colorheading}%
-}
-
-% sub heading normal
-\def\styling@subheadingnormal{%
-  \setfontsize{12.25bp}{16bp}%
-	\fontmedium%
-  \leavevmode\color{colorsubheading}%
-}
-
-% sub heading small
-\def\styling@subheadingsmall{%
-  \setfontsize{9.25bp}{12.75bp}%
-	\fontnormal%
-  \leavevmode\color{colorsubheading}%
 }
 
 % intro normal
@@ -1478,58 +1680,57 @@
 
 %%% command \style[<size>]{<type>}
 %%  sets the font style
-\newcommand{\style}[2][normal]{%
+\newcommand{\style}[2][1]{%
   \@ifequal{#2}{heading}{%
-    \@ifequal{#1}{huge}{\styling@headinghuge}%
-    {\@ifequal{#1}{LARGE}{\styling@headingLARGE}%
-    {\@ifequal{#1}{Large}{\styling@headingLarge}%
-    {\@ifequal{#1}{large}{\styling@headinglarge}%
-    {\@ifequal{#1}{normal}{\styling@headingnormal}%
-    {\@ifequal{#1}{small}{\styling@headingsmall}%
-    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}}}}%
-  }{\@ifequal{#2}{subheading}{%
-    \@ifequal{#1}{large}{\styling@subheadinglarge}%
-    {\@ifequal{#1}{normal}{\styling@subheadingnormal}%
-    {\@ifequal{#1}{small}{\styling@subheadingsmall}%
-    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}%
+    \@ifequal{#1}{-4}{\styling@headinghuge}%
+    {\@ifequal{#1}{-3}{\styling@headingLARGE}%
+    {\@ifequal{#1}{-2}{\styling@headingLarge}%
+    {\@ifequal{#1}{-1}{\styling@headingpart}%
+    {\@ifequal{#1}{0}{\styling@headingchapter}%
+    {\@ifequal{#1}{1}{\styling@headingsection}%
+    {\@ifequal{#1}{2}{\styling@headingsubsection}%
+    {\@ifequal{#1}{3}{\styling@headingsubsubsection}%
+    {\@ifequal{#1}{4}{\styling@headingparagraph}%
+    {\@ifequal{#1}{5}{\styling@headingsubparagraph}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}}}}}}}}%
   }{\@ifequal{#2}{intro}{%
-    \@ifequal{#1}{large}{\styling@introlarge}%
-    {\@ifequal{#1}{normal}{\styling@intronormal}%
+    \@ifequal{#1}{1}{\styling@introlarge}%
+    {\@ifequal{#1}{2}{\styling@intronormal}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
   }{\@ifequal{#2}{body}{%
-    \@ifequal{#1}{normal}{\styling@body}%
+    \@ifequal{#1}{1}{\styling@body}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{promotional}{%
-    \@ifequal{#1}{normal}{\styling@promotional}%
+    \@ifequal{#1}{1}{\styling@promotional}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{promotional-heading}{%
-    \@ifequal{#1}{normal}{\styling@promotionalheading}%
+    \@ifequal{#1}{1}{\styling@promotionalheading}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{quote}{%
-    \@ifequal{#1}{normal}{\styling@quotenormal}%
-    {\@ifequal{#1}{large}{\styling@quotelarge}%
+    \@ifequal{#1}{1}{\styling@quotelarge}%
+    {\@ifequal{#1}{2}{\styling@quotenormal}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
   }{\@ifequal{#2}{accent}{%
-    \@ifequal{#1}{normal}{\styling@accent}%
+    \@ifequal{#1}{1}{\styling@accent}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{info}{%
-    \@ifequal{#1}{normal}{\styling@info}%
+    \@ifequal{#1}{1}{\styling@info}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{caption}{%
-    \@ifequal{#1}{normal}{\styling@caption}%
+    \@ifequal{#1}{1}{\styling@caption}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{note}{%
-    \@ifequal{#1}{normal}{\styling@note}%
+    \@ifequal{#1}{1}{\styling@note}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{payoff}{%
-    \@ifequal{#1}{normal}{\styling@payoffnormal}%
-    {\@ifequal{#1}{large}{\styling@payofflarge}%
+    \@ifequal{#1}{1}{\styling@payofflarge}%
+    {\@ifequal{#1}{2}{\styling@payoffnormal}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
   }{\@ifequal{#2}{tiny}{%
-    \@ifequal{#1}{normal}{\styling@tiny}%
+    \@ifequal{#1}{1}{\styling@tiny}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }%
-  }}}}}}}}}}}}%
+  }}}}}}}}}}}%
 }
 
 %%% meta shortcuts
@@ -1539,12 +1740,12 @@
 
 %%% titlepage styling
 \def\frontpagehead#1{
-  \iffirsthead
-    \firstheadfalse
-  \else
-    \hfill\break% Leave a blank space
-  \fi
-  \leavevmode\style{tiny}\textbf{#1}\hfill\break 
+  \iffirsthead%
+    \firstheadfalse%
+  \else%
+    \hfill\linebreak% Leave a blank space
+  \fi%
+  \leavevmode\style{tiny}\textbf{#1}\hfill\break %
 } %leavevmode because \style breaks 
 
 \newcommand{\frontpagebody}[1]{
@@ -1605,16 +1806,14 @@
 %   Table styles
 %%%
 
-\PassOptionsToPackage{table}{xcolor}
-
 \def\zapcolorreset{\let\reset@color\relax\ignorespaces}
 \def\colorrows#1{\noalign{\aftergroup\zapcolorreset#1}\ignorespaces}
 
 \edef\endtabular{\unexpanded\expandafter{\endtabular}\noexpand\reset@color}
 
 \storeoldenv{\table}
-\renewenvironment{table}[1][ht]{%
-  \oldtable[#1]}%
+\renewenvironment{table}[1][ht!]{%
+  \oldtable[#1]\autocenter}%
   {\endoldtable}
 
 \storeoldenv{\tabular}
@@ -1718,6 +1917,27 @@
 %   Fixes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+  %% Write out which labels have changed
+  \def\@testdef #1#2#3{%
+    \def\reserved@a{#3}\expandafter \ifx \csname #1@#2\endcsname
+  \reserved@a  \else
+  \typeout{^^Jlabel #2 changed:^^J%
+  \meaning\reserved@a^^J%
+  \expandafter\meaning\csname #1@#2\endcsname^^J}%
+  \@tempswatrue \fi}
+
+
+  % redefine \raggedright to not create with \shapepar:
+  % i i i i i
+  % i i i i i i i i i i i i i i i i i i i i i i i i
+  % i i i i i i i i i i i i i i i i i i i i i i i i
+  \def\raggedright{%
+  \let\\\@centercr\@rightskip \z@ plus\linewidth \rightskip\@rightskip
+  \leftskip\z@skip
+  \parindent\z@}
+
+
 %%%	Set cleardoublepage to also work with the "oneside" option
 \def\cleardoublepage{\clearpage\ifodd\c@page\else
     \hbox{}\newpage\if@twocolumn\hbox{}\newpage\fi\fi}
@@ -1793,6 +2013,7 @@
 \newvariable{department}{}
 \newvariable{website}{\thetuesite}
 \newvariable{subtitle}{}
+\newvariable{subsubtitle}{}
 \newvariable{orderissuer}{}
 \newvariable{reference}{}
 \newvariable{address}{}
@@ -1802,13 +2023,38 @@
 
 \newif\ifprofilingtouched
 \profilingtouchedfalse
-\newcommand\profiling[1]{
-	\profilingtouchedtrue
-	\newvariable{profilingvalue}{#1}
+
+\newif\ifprofilingfilled
+\profilingfilledfalse
+
+\def\profiling{%
+   \@ifnextchar[%
+     {\profiling@i}
+     {\profiling@i[\@empty]}%
+}
+\def\profiling@i[#1]{%
+   \@ifnextchar[%
+     {\profiling@ii{#1}}
+     {\profiling@ii{#1}[\@empty]}%
+}
+\def\profiling@ii#1[#2]#3{%
+  \profilingtouchedtrue
+  \ifx#1\@empty
+    \newvariable{profilingvalue}{#3}
+    \newvariable{profilingcolor}{tuered}
+    \colorlet{profilingcolor}{tuered}
+  \else
+    \newvariable{profilingvalue}{#3}
+    \newvariable{profilingcolor}{#1}
+    \colorlet{profilingcolor}{#1}
+  \fi
+  \@ifequal{#2}{fill}{
+    \profilingfilledtrue
+  }{}
 }
 
 
-\RequirePackage{hyperref}
+
 
 %%%	Package for linkstyling
 %	Enable PDF bookmarks
@@ -1832,8 +2078,6 @@
 %%  styles content as a non-linking url
 %%  affected by restrictedbreak or allbreak
 \DeclareUrlCommand\code{\urlstyle{same}}
-
-
 
 
 
@@ -1868,28 +2112,30 @@
 %%%
 % Reset sectioning counters
 %%%
-
 \newcommand{\resetcounters}[1]{
+	\ifnum #1 < 0
+		\setcounter{chapter}      {0}% Level 0
+	\fi
+	\ifnum #1 < 1
+		\setcounter{section}      {0}% Level 1
+		\setcounter{figure}       {0}% Reset at chapter
+		\setcounter{table}        {0}% Reset at chapter
+    \setcounter{footnote}     {0} %%%% TODO make option
+    \setcounter{equation}     {0} %%%% TODO make option 
+	\fi
 	\ifnum #1 < 2	
-		\setcounter{part}{1}
+		\setcounter{subsection}   {0}% Level 2
 	\fi
-	\ifnum #1 < 3	
-		\setcounter{chapter}{1}
-		\setcounter{figure}{1}
-		\setcounter{table}{1}
-	\fi
-	\ifnum #1 < 4	
-		\setcounter{section}{1}
-	\fi
-	\setcounter{subsection}{1}
-	\setcounter{subsubsection}{1}
-	\setcounter{paragraph}{1}
-	\setcounter{subparagraph}{1}
+	\ifnum #1 < 3
+    \setcounter{subsubsection}{0}% Level 3
+  \fi
+	\ifnum #1 < 4
+    \setcounter{paragraph}    {1}% Level 4, counter not used
+  \fi
+	\ifnum #1 < 5
+    \setcounter{subparagraph} {1}% Level 5, counter not used
+  \fi
 }
-
-%%% Set counter depth to only exclude subsubsection and (sub)paragraph
-\setcounter{secnumdepth}{2}
-\setcounter{tocdepth}{2}
 
 \def\thepart{\the\numexpr\value{part}+\@sectioningshift\relax}
 
@@ -1898,28 +2144,59 @@
 	\addtocounter{chapter}{1}%
 \fi
 \ifnum\the\numexpr\value{chapter}+\@sectioningshift\relax < 10
-	0\the\numexpr\value{chapter}+\@sectioningshift
+	\ifleadzero%
+    0%
+  \fi
+  \the\numexpr\value{chapter}+\@sectioningshift\relax
 \else
-	\the\numexpr\value{chapter}+\@sectioningshift
-\fi\space
+	\the\numexpr\value{chapter}+\@sectioningshift\relax
+\fi
 }
 
-\def\thesection{\thechapter\relax%
-\texorpdfstring{\protect\watermark{.}}{.}%
+\def\thesection{%
+\ifnum 1 < \numexpr \value{sectioningcountertouched}+1\relax %
+  \relax%
+\else
+  \ifnum 1 > \numexpr \value{sectioningcounterstarred}+1\relax
+    \ifnum 1 > \numexpr \value{reversesecnumdepth}\relax
+      \thechapter\relax%
+      \texorpdfstring{\protect\watermark{.}}{.}%
+    \fi
+  \fi
+\fi
 \ifnum\value{section} < 1%
-	\addtocounter{section}{1}%
+  \addtocounter{section}{1}%
 \fi%
-\the\numexpr\value{section}+\@sectioningshift\relax}
+\the\numexpr\value{section}+\@sectioningshift\relax%
+}
 
-\def\thesubsection{\thesection\relax%
-\texorpdfstring{\protect\watermark{.}}{.}%
+\def\thesubsection{%
+\ifnum 2 < \numexpr \value{sectioningcountertouched}+1\relax %
+  \relax%
+\else
+  \ifnum 2 > \numexpr \value{sectioningcounterstarred}+1\relax
+    \ifnum 2 > \numexpr \value{reversesecnumdepth}\relax
+      \thesection\relax%
+      \texorpdfstring{\protect\watermark{.}}{.}%
+    \fi
+  \fi
+\fi
 \ifnum\value{subsection} < 1%
 	\addtocounter{subsection}{1}%
 \fi%
-\the\numexpr\value{subsection}+\sectioningshift\relax}
+\the\numexpr\value{subsection}+\@sectioningshift\relax}
 
-\def\thesubsubsection{\thesubsection\relax%
-\texorpdfstring{\protect\watermark{.}}{.}%
+\def\thesubsubsection{%
+\ifnum 3 < \numexpr \value{sectioningcountertouched}+1\relax %
+  \relax%
+\else
+  \ifnum 3 > \numexpr \value{sectioningcounterstarred}+1\relax
+    \ifnum 3 > \numexpr \value{reversesecnumdepth}\relax
+      \thesubsection\relax%
+      \texorpdfstring{\protect\watermark{.}}{.}%
+    \fi
+  \fi
+\fi
 \ifnum\value{subsubsection} < 1%
 	\addtocounter{subsubsection}{1}%
 \fi%
@@ -1934,118 +2211,187 @@
 %%%
 
 \newcommand{\autolabeling}[2]{
-	\ifautolabel\label{#1:#2}\else\relax\fi
+	\ifautolabel
+    \labelselector{#1}{#2}
+  \else\relax\fi
 }
 
-%%%	Part no number command
-\storeold{\part}
-
-\def\part{\@ifstar\@partC\@@partC}
-\def\@partC#1{
-	\resetcounters{3}
-	\oldpart*{#1}
-	\addcontentsline{toc}{part}{#1}
-	\markboth{#1}{\rightmark}
-}
-\def\@@partC#1{
-	\oldpart{#1}
+%%% command \createsectioningstyling[<level>]{\<name>}{<style>}{<space before>}{<space after>}
+\newcommand{\createsectioningstyling}[7][\secingLevelLowest]{
+  \renewcommand#2{
+    \@startsection{\cs@to@str#2}{#1}{\z@}%
+    {#3 \@plus #4 \@minus #5}% %%% TODO make plus and minus relative
+    {#6 \@plus #7}%
+    {\style[#1]{heading}}
+  }
 }
 
-%%%	Chapter no number command
-\storeold{\chapter}
+\ifsectioningstyling
+  \createsectioningstyling[1]{\section}{-3.5ex}{-1ex}{-.2ex}{2.3ex}{.2ex}
+  \createsectioningstyling[2]{\subsection}{-3.25ex}{-1ex}{-.2ex}{1.5ex}{.2ex}
+  \createsectioningstyling[3]{\subsubsection}{-3.25ex}{-1ex}{-.2ex}{1.5ex}{.2ex}
 
-\def\chapter{\@ifstar\@chapterC\@@chapterC}
-\def\@chapterC#1{
-	\resetcounters{3}
-	\oldchapter*{#1}
-	\addcontentsline{toc}{chapter}{#1}
-	\markboth{#1}{\rightmark}
-	%%%	Set footnote counter
-	\autolabeling{ch}{#1}
-}
-\newcommand{\@@chapterC}[2][\@empty]{
-	\ifx\@empty#1
-		\oldchapter{#2}
-		\autolabeling{ch}{#2}
-	\else
-		\oldchapter[#1]{#2}
-		\autolabeling{ch}{#1}	
-	\fi
+  \def\@makechapterhead#1{%
+    \vspace*{50\p@}%
+    {\parindent \z@ \raggedright \style[0]{heading}%\normalfont
+      \ifnum \c@secnumdepth >\m@ne
+        \ifchaptername % check for chaptername option
+          \@chapapp\space\thechapter\linebreak
+        \fi
+         %\vskip 20\p@
+      \fi
+      \interlinepenalty\@M
+      \Huge \bfseries #1\par\nobreak
+      \vskip 40\p@
+    }}
+  \def\@makeschapterhead#1{%
+    \vspace*{50\p@}%
+    {\parindent \z@ \raggedright
+      \style[0]{heading}%\normalfont
+      \interlinepenalty\@M
+      \Huge \bfseries  #1\par\nobreak
+      \vskip 40\p@
+    }}
+\fi
+
+\ifsectioningstyling
+  \ifparagraphstyling
+    \createsectioningstyling[4]{\paragraph}{-3.25ex}{-1ex}{-.2ex}{.2ex}{.2ex} %Negative values to create linebreak
+    \createsectioningstyling[5]{\subparagraph}{-3.25ex}{-1ex}{-.2ex}{.2ex}{.2ex}%Negative values to create linebreak
+  \fi
+\fi
+
+
+
+
+\def\secingLevelLowest{6}% Subparagraph level +1
+\def\secingLevelHighest{-2}% Part level -1
+\newcounter{sectioningcounterdisplay}
+\setcounter{sectioningcounterdisplay}{\secingLevelLowest}
+\newcounter{sectioningcountertouched}
+\setcounter{sectioningcountertouched}{\secingLevelLowest}
+
+\newcounter{sectioningcounterstarred}
+\setcounter{sectioningcounterstarred}{\secingLevelHighest}
+
+%%% Set counter depth to only exclude subsubsection and (sub)paragraph
+\setcounter{secnumdepth}{3} %%% TODO change to 2
+\setcounter{tocdepth}{2}
+
+%% custom counter for reverse senumdepth
+\newcounter{reversesecnumdepth}
+\setcounter{reversesecnumdepth}{\secingLevelHighest}
+
+\newcommand{\createsectioning}[2][\secingLevelLowest]{
+	\storeold{#2}
+	\def#2{
+		\@ifstar
+		{\csname @\expandafter\cs@to@str\string#2New\endcsname}
+		{\csname @@\expandafter\cs@to@str\string#2New\endcsname}
+	}
+  
+  \expandafter\newcommand\csname @\expandafter\cs@to@str\string#2New\endcsname[2][\@empty]{
+    \csname @@@\expandafter\cs@to@str\string#2Internal\endcsname{##1}{##2}{*}
+    \ifnum #1 > \value{sectioningcounterdisplay}%
+      \relax
+    \else
+      \setcounter{sectioningcounterdisplay}{#1}
+    \fi
+    \setcounter{sectioningcounterstarred}{#1}
+  }
+  
+  \expandafter\newcommand\csname @@\expandafter\cs@to@str\string#2New\endcsname[2][\@empty]{
+    \ifnum #1 > \value{sectioningcounterdisplay}%
+      %%% TODO add partial numbering branch
+      \ifhideuppersectioning
+        \ifnum #1 = \value{sectioningcounterstarred}
+          \addtocounter{sectioningcounterstarred}{-1}
+        \else
+          \ClassWarning{TUestyle}{PARTIAL Numbering removed from '\string#2 because it is nested inside unnumbered sectioning}
+        \fi
+        \csname @@@\expandafter\cs@to@str\string#2Internal\endcsname{##1}{##2}{}
+      \else
+        \csname @@@\expandafter\cs@to@str\string#2Internal\endcsname{##1}{##2}{*}
+        \ClassWarning{TUestyle}{Numbering removed from '\string#2 because it is nested inside unnumbered sectioning}
+      \fi
+    \else
+      \setcounter{sectioningcounterstarred}{\secingLevelHighest}
+      \setcounter{sectioningcounterdisplay}{\secingLevelLowest}
+      \csname @@@\expandafter\cs@to@str\string#2Internal\endcsname{##1}{##2}{}
+    \fi
+  }
+  
+  \expandafter\newcommand\csname @@@\expandafter\cs@to@str\string#2Internal\endcsname[3]{
+    \resetcounters{#1}
+    %%%% \thesectioningcounterdisplay TODO remove, used for testing
+    \csname old\expandafter\cs@to@str\string#2\endcsname##3{##2}
+    \ifx\@empty##1%
+      \autolabeling{#2}{##2}%
+    \else%
+      \autolabeling{#2}{##1}%
+    \fi
+    \partmark{##2}
+    \ifnum #1 < \value{sectioningcountertouched}
+      \ifnum \value{sectioningcountertouched} < \secingLevelLowest
+        \ClassError{TUestyle}{\string#2\space was called after a sectioning command lower in the hierarchy was called first, @line \thefirstsectioningline: \firstsectioningline}{Make sure the hierarchy is correct to prevent duplicate numbering. Either remove \firstsectioningline\space @line \thefirstsectioningline\space or replace \string#2\space with sectioning equal or higher in hierarchy than \firstsectioningline.}
+      \else
+        \setcounter{sectioningcountertouched}{#1}
+        \newcounter{firstsectioningline}
+        \setcounter{firstsectioningline}{\the\inputlineno}
+        \def\firstsectioningline{\string#2}
+      \fi
+    \fi
+    \thispagestyle{fancy}
+    \@ifequal{##3}{}{
+      \relax
+    }{
+      \phantomsection
+      \addcontentsline{toc}{\expandafter\cs@to@str\string#2}{##2}
+    }
+  }
 }
 
-%%%	Section no number command
-\storeold{\section}
 
-\def\section{\@ifstar\@sectionC\@@sectionC}
-\def\@sectionC#1{
-	\resetcounters{4}
-	\oldsection*{#1}
-	\addcontentsline{toc}{section}{#1}
-	\markboth{#1}{\rightmark}
-	\autolabeling{sec}{#1}
-}
-\newcommand{\@@sectionC}[2][\@empty]{
-	\ifx\@empty#1
-    \oldsection{#2}
-    \autolabeling{sec}{#2}
-	\else
-    \oldsection[#1]{#2}
-    \autolabeling{sec}{#1}	
-	\fi
-}
+\AtBeginDocument{
+  %%%	Part no number command
+  \createsectioning[0]{\part}
 
-\storeold{\subsection}
+  \def\partmark#1{
+    \markboth{\leftmark}{\MakeUppercase{\partname\space\thepart.\space#1}}
+  }
 
-\def\subsection{\@ifstar\@subsectionC\@@subsectionC}
-\def\@subsectionC#1{
-	\resetcounters{5}
-	\oldsubsection*{#1}
-	\addcontentsline{toc}{subsection}{#1}
-	\markboth{#1}{\rightmark}
-	\autolabeling{subsec}{#1}
-}
-\newcommand{\@@subsectionC}[2][\@empty]{
-	\ifx\@empty#1
-    \oldsubsection{#2}
-    \autolabeling{sec}{#2}
-	\else
-    \oldsubsection[#1]{#2}
-    \autolabeling{subsec}{#1}	
-	\fi
+  %%%	Chapter no number command
+  \createsectioning[0]{\chapter}
+
+    \def\chaptermark#1{
+      \markboth{\MakeUppercase{\ifnum \c@secnumdepth >\m@ne \chaptername\space\thechapter.\fi\space#1}}{\rightmark}
+    }
+
+
+  %%%	Section no number command
+  \createsectioning[1]{\section}
+
+  %%%	Subsection no number command
+  \createsectioning[2]{\subsection}
+
+  %%%
+  % Auto labeling of sectioning
+  %%%
+  \createsectioning[3]{\subsubsection}
+
+  \createsectioning[4]{\paragraph}
+
+  \createsectioning[5]{\subparagraph}
 }
 
 %%%
-% Auto labeling of sectioning
+% Customize appendix
 %%%
 
-\storeold{\subsubsection}
-\renewcommand{\subsubsection}[2][\@empty]{%
-\ifx\@empty#1%
-	\oldsubsubsection{#2}\autolabeling{ssec}{#2}%
-\else%
-	\oldsubsubsection[#1]{#2}\autolabeling{ssec}{#1}%
-\fi}
-
-\storeold{\paragraph}
-\renewcommand{\paragraph}[2][\@empty]{%
-\ifx\@empty#1%
-	\oldparagraph{#2}\autolabeling{par}{#2}%
-\else%
-	\oldparagraph[#1]{#2}\autolabeling{par}{#1}%
-\fi}
-
-\storeold{\subparagraph}
-\renewcommand{\subparagraph}[2][\@empty]{%
-\ifx\@empty#1%
-	\oldsubparagraph{#2}\autolabeling{subpar}{#2}%
-\else%
-	\oldsubparagraph[#1]{#2}\autolabeling{subpar}{#1}%
-\fi}
-
-
-
-
-
+\AtBeginDocument{
+  \storeold{\appendix}
+  \def\appendix{\part*{Appendix}\oldappendix}
+}
 
 
 
@@ -2057,19 +2403,19 @@
   \setlength{\fboxsep}{0pt}
     \@ifequal{#1}{top}{%
       %%% Left top column
-      \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight+\@axiswidth+\@axispadding},left,bottom]{%
-        \axisposition{\@axisheight+\@axispadding}%
-        \begin{minipage}[b][\dimexpr \paperheight-\@axisheight-\@axispadding \relax]{\dimexpr \axispositionlength - \@tocleftpadding -\@axispadding \relax}%
+      \axisposition{\@axisheight+\@axispadding}%
+      \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axiswidth+\axispositionY},left,bottom]{%
+        \begin{minipage}[b][\dimexpr \paperheight-\axispositionY \relax]{\dimexpr \axispositionX - \@tocleftpadding -\@axispadding \relax}%
       
           \raggedright%
           \style{note}#2\vspace{-\baselineskip}\end{minipage}}
     }{%
       %%% Left bottom column
-      \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axisheight-\@axispadding-\@axiswidth},left,top]{%
-        \axisposition{\@axisheight-\@axiswidth-\@axispadding}%
-        \begin{minipage}[t][\dimexpr \@axisheight-\@axispadding \relax]{\dimexpr \axispositionlength - \@tocleftpadding -\@axispadding \relax}%
-          \raggedright%
+      \axisposition{\@axisheight-\@axiswidth-\@axispadding}%
+      \pgftext[at=\pgfpoint{\@tocleftpadding}{\axispositionY},left,top]{%
+        \begin{minipage}[t][\dimexpr \@axisheight-\@axispadding \relax]{\dimexpr \axispositionX - \@tocleftpadding -\@axispadding \relax}%
           \slantedpar{40}{\linewidth}%
+          \raggedright%
           #2\end{minipage}}
     }
   \endgroup
@@ -2087,7 +2433,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\setnewlength{\@axispadding}{2mm}
+\setnewlength{\@axispadding}{10bp}
 
 %%%
 % Defining command for the TU/e logo, innovation and axes
@@ -2098,7 +2444,7 @@
 	%%%	If drawtuelogo is not set to false, by the "notuelogo" option
 	\iflogo
 		 % TU/e logo and red lines
-		 \pgftext[at=\pgfpoint{\@Hspacing-2.31cm}{\the\paperheight-5.25mm},left,top]{\includegraphics[width=7cm]{tuelogo}}%
+		 \pgftext[at=\pgfpoint{\@Hspacing-2.475cm}{\the\paperheight-5.25mm},left,top]{\includegraphics[height=1.5cm]{tuelogo}}%
 		
 		\newvariable{logoname}{}
 		\if\theadministrativeunit\empty
@@ -2112,8 +2458,19 @@
 		\ifprofilingtouched
 			\logoname{\theprofilingvalue}
 		\fi\fi\fi
-		\pgfsetcolor{tuedarkblue}
-		\pgftext[at=\pgfpoint{\@Hspacing-.5cm}{\the\paperheight-2.3cm},left,top]{\bfseries \thelogoname}%		
+
+    \setlength{\tempboxaheight}{0pt}
+    \ifprofilingtouched
+        \axisposition{\paperheight-5.25mm-1.5cm}
+        \ifprofilingfilled
+          \titlepagecontent[\theprofilingcolor]{\theprofilingvalue}{white}{\style[1]{heading}}
+        \else
+          \titlepagecontent{\theprofilingvalue}{\theprofilingcolor}{\style[1]{heading}}
+        \fi
+    \else
+      \axisposition{\paperheight-2.3cm}
+      \titlepagecontent{\thelogoname}{tuedarkblue}{\style[4]{heading}}
+    \fi
 	\else
 		\relax
 	\fi
@@ -2134,14 +2491,88 @@
 	\pgfusepath{fill}
 
 	%%%	If innovation is not set to false, by the "noinnovation" option
-	\ifx\innovation\undefined
+	\ifinnovation
+  %%%%%%%%%%%%%%%  \ClassError{Tuestyle}{oke dan}{}
 		\pgfsetcolor{tuedarkblue}
-		\pgftext[at=\pgfpoint{\@Hspacing-\@Hshift+420mm}{6.75mm},left,bottom]{\bfseries Where innovation starts}%
+    \axisposition{6.75mm}
+		\pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY},left,bottom]{\style[4]{heading}\color{tuedarkblue} Where innovation starts}%
 	\fi
 
 	%%%	Reset colour to black
 	\pgfsetcolor{black}
 }
+
+
+
+            %% TODO move
+            \newcommand{\settocompleteheight}[2]{
+            \settoheight{#1}{#2}
+            \settodepth{\@tempdima}{#2}
+            \addtolength{#1}{\@tempdima}
+            \global#1=#1
+            }
+
+   %% to use you need to set \axispostionX and \axispositionY lengths first, preferably by using \axisposition
+   % also set tempboxaheight 0 if it is the first
+   \setnewlength{\tempboxaheight}{0pt}
+   \setnewlength{\tempboxawidth}{0pt}
+   
+\newcommand{\titlepagecontent}[4][\@empty]{
+  \setlength{\tempboxawidth}{0pt}
+  \axisposition{\axispositionY-2\tempboxaheight}
+  \setnewlength{\@tempbaselength}{\dimexpr\paperwidth-\axispositionX-\@axispadding-\layoutrightmargin\relax}
+  \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY},left,top]{%% TODO better positioning 
+    \@ifequal{#1}{}{
+      \setlength{\tempboxaheight}{0pt}
+    }{
+      \def\@tempcontentinside{
+          #4%
+          \leavevmode\color{#3}%
+          #2
+      }
+      \def\@tempcontent{% 
+        #4%
+        \leavevmode\color{#3}%      
+        \vbox{%
+          \slantedpar[right]{40}{\linewidth}%
+          \raggedright%
+           \@tempcontentinside\vspace{\baselineskip}}%
+      }%
+      \global\sbox{\@tempboxa}{%
+        \begin{minipage}[t]{\@tempbaselength}%
+        \parbox{\linewidth}{%
+          \@tempcontent%
+        }
+        \end{minipage}%
+      }%
+      \settocompleteheight{\tempboxaheight}{\usebox{\@tempboxa}}
+      
+      \ifx#1\@empty\else
+        #4
+        \getlongestsentence{#2}
+        \ifdim \templongest < \@tempbaselength
+          \setlength{\tempboxawidth}{\templongest}
+        \else
+          \setlength{\tempboxawidth}{\@tempbaselength}
+        \fi
+          \global\tempboxawidth=\tempboxawidth
+      \fi
+    }
+  }
+  \ifx#1\@empty\else
+    \pgfsetcolor{#1}
+    \pgfpathmoveto{\pgfpoint{\axispositionX }                                                  {\axispositionY}}
+    \pgfpathlineto{\pgfpoint{\axispositionX  + \tempboxawidth + 2\baselineskip}                {\axispositionY}}
+    \pgfpathlineto{\pgfpoint{\axispositionX   + \tempboxawidth + 2\baselineskip}                {\axispositionY - 2\tempboxaheight}}
+    \pgfpathlineto{\pgfpoint{\axispositionX  - \@shiftratio\tempboxaheight*2}                  {\axispositionY - 2\tempboxaheight}}
+    \pgfusepath{fill}
+  \fi
+  \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY-\baselineskip},left,top]{%% TODO better positioning 
+     \usebox{\@tempboxa}
+  }
+}
+  
+
 
 %%%
 % 	Create the TU/e style titlepage
@@ -2156,188 +2587,155 @@
      
 \fi
       
-\renewcommand\maketitle{
-\clearpage%
-\begin{titlepage}
-
-  %%%% TODO footnotesize and settings
-	\let\footnotesize\small%
-	\let\footnoterule\relax%
-	\let\footnote\thanks%
-	%\hfuzz=1000pt
-
-	\newgeometry{left=0cm,top=0cm,bottom=0cm, right=0cm, ignoreall}
-	\begin{pgfpicture}{0cm}{0cm}{\paperwidth}{\paperheight}
-  
-		%%%	If the cover option is set, then draw cover and white overlays
-    \ifcover
-			%%% Display area to be filled by the cover image
-			\pgfsetcolor{black!20!white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@axisheight}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
-			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-			\pgfusepath{fill}
-      
-			%%% Draw the cover 
-			\pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%
-       
-      %%% Compare the cover ratio to the actual ratio and draw if wrong
-      \pgfsetcolor{red}
-      \pgftext[at=\pgfpoint{\paperwidth-.5\@coverwidth}{\@coverbottom},center,bottom]{
-      \ifrealnum{\@coverratio}{\actual@coverratio}{}{
-        \parbox[b]{\@coverwidth}{
-          \huge \centering WARNING: Cover-image doesn't fill set coverratio.
-        }
-      }{}
-      }%
-      
-			%%% Draw bottom white overlay for the cover
-			\pgfsetcolor{white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\@coverbottom}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{\@coverbottom}}
-			\pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
-			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-			\pgfusepath{fill}
-			 
-			%%% Draw left white overlay for the cover
-			\pgfsetcolor{white}
-			\pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
-			\pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*85mm}{\@axisheight}}
-			\pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*\paperheight}{0cm}}
-			\pgfpathlineto{\pgfpoint{0mm}{0mm}}
-			\pgfusepath{fill}
-		\fi
-		
-		%%%	Drawing of the TU/e axes and logo
-		\drawtuelogoandaxes
-		
-		%%% From name and address
-		\pgfsetcolor{black}
-      \infobox[top]{%
-				\frontpagebody{\textbf{\theadministrativeunit}\vspace{\baselineskip}}
-				\ifx\thedepartment\empty
-        \else
-          \frontpagebody{\textit{\textbf{\thedepartment}}}
-        \fi
-				\ifx\theaddress\empty
-        \else
-          \frontpagebody{\theaddress ,}%
-        \fi
-        \ifaddress
-					\frontpagebody{5612 AZ Eindhoven}
-					\frontpagebody{\thePObox\space513, 5600 MB Eindhoven}
-					\ifx\theNetherlands\empty
-          \else
-            \frontpagebody{\theNetherlands}
-          \fi
-				\fi
-				\ifx\thewebsite\empty
-        \else
-					\hypersetup{urlcolor={black}}
-					\frontpagebody{\urlstyle{same}\url{\thewebsite}}
-					\hypersetup{urlcolor={tuescarlet}}
-				\fi
-			}%
-    %%% Left column with info
-      \infobox[bottom]{%
-        \ifauthor%
-          \frontpagehead{\theauthorlabel}%
-          \frontpagebody{\@author}%
-        \fi%
-        \ifx\theorderissuer\empty
-        \else%
-          \frontpagehead{\theorderissuerlabel}%
-          \frontpagebody{\theorderissuer}%
-        \fi%
-        \ifx\thereference\empty
-        \else%
-          \frontpagehead{\thereferencelabel}%
-          \frontpagebody{\thereference}%
-        \fi%
-        \theaddfrontpage%
-        \ifx\thedate\empty
-        \else%
-          \frontpagehead{\thedatelabel}%
-          \frontpagebody{\thedate}%
-        \fi%
-        \ifx\theversionnum\empty
-        \else%
-          \frontpagehead{\theversionlabel}%
-          \frontpagebody{\theversionnum}%
-        \fi%
-    }%
-    \ifcover
-    %%% Title and subtitle positioned underneath cover
-      \pgftext[at=\pgfpoint{\paperwidth-\@coverwidth+0.5cm}{\@coverbottom-0.5cm},left,top]{%
-        \parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
-      }
-    \else 
-    %%% Title and subtitle at normal position
-      \pgftext[at=\pgfpoint{\@Hspacing-1.88cm}{\@axisheight-\@axiswidth-0.48cm},left,top]{%
-        \parbox[t]{0.5\paperwidth}{\raggedright\normalfont\fontsize{17}{19}\selectfont\bfseries \@title\\[1ex]\large\mdseries \thesubtitle}%
-      }
-    \fi
-	\end{pgfpicture}%
-\end{titlepage}
-
-\hfuzz=0pt
-
-%%%	Reset the original values of all margins
-\resetlayout
-}
-
-%%%
-% 	Redefine chapter heading style 
-%%%
-
-\ifsectioningstyling
-  % Redefining the \chapter command from the report and book class
-  % to make sure that headings are also printed on pages
-  % that start a new chapter. The "Chapter" word is also removed.
-  % Most of the modifications are lines being commented out.
-  \renewcommand\chapter
-  {
-    \if@openright
-      \cleardoublepage
-    \else
-      \clearpage
-    \fi
-  %	\thispagestyle{plain}%
-    \global\@topnum\z@
-    \@afterindentfalse
-    \secdef
-    \@chapter
-    \@schapter
-  }
-
-  \def\@makechapterhead#1{%
-    \vspace*{50\p@}%
-    {
-      \parindent \z@ \raggedright \normalfont
-      \ifnum \c@secnumdepth >\m@ne
-      \LARGE\bfseries \thechapter
-  %		\par\nobreak
-  %		\vskip 20\p@
-    \fi
-  %		\interlinepenalty\@M
-      \LARGE \bfseries \hspace{1em} #1\par\nobreak
-      \vskip 40\p@
-    }
-  }
     
-  \def\@makeschapterhead#1{%
-    \vspace*{50\p@}%
-    {
-      \parindent \z@ \raggedright
-      \normalfont
-      \interlinepenalty\@M
-      \LARGE \bfseries  #1\par\nobreak
-      \vskip 40\p@
-    }
-  }
-\fi
+%%% TODO use only on frontpage, then reset
+\def\@fnsymbol#1{\ifcase\value{footnote}\or*\or
+†\or‡\or§\or¶\or||\or**\or††\or‡‡\or|||\or***\or†††\or‡‡‡\or \ClassError{TUeStyle}{Frontpage counter too large. Are you sure you need that many authors?}\fi}
 
+\renewcommand\maketitle{
+  \clearpage%
+  \setcounter{footnote}{-1}
+  \renewcommand{\thefootnote}{\fnsymbol{footnote}}
+  \def\and{} %%% TODO add warning
+  \begin{titlepage}
+    %%%% TODO footnotesize and settings
+    \let\footnotesize\small%
+    \let\footnoterule\relax%
+    \let\footnote\thanks%
+    %%%\hfuzz=1000pt
+
+    \newgeometry{left=0cm,top=0cm,bottom=0cm, right=0cm, ignoreall}
+    \begin{pgfpicture}{0cm}{0cm}{\paperwidth}{\paperheight}
+    
+      %%%	If the cover option is set, then draw cover and white overlays
+      \ifcover
+        %%% Display area to be filled by the cover image
+        \pgfsetcolor{black!20!white}
+        \pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
+        \pgfpathlineto{\pgfpoint{\the\paperwidth}{\@axisheight}}
+        \pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
+        \pgfpathlineto{\pgfpoint{0mm}{0mm}}
+        \pgfusepath{fill}
+        
+        %%% Draw the cover 
+        \pgftext[at=\pgfpoint{\paperwidth-\@coverwidth}{\@covertop},left,top]{\includegraphics[width={\@coverwidth}]{\definedpath \covername}}%
+         
+        %%% Compare the cover ratio to the actual ratio and draw if wrong
+        \pgfsetcolor{red}
+        \pgftext[at=\pgfpoint{\paperwidth-.5\@coverwidth}{\@coverbottom},center,bottom]{
+        \ifrealnum{\@coverratio}{\actual@coverratio}{}{
+          \parbox[b]{\@coverwidth}{
+            \huge \centering WARNING: Cover-image doesn't fill set coverratio.
+          }
+        }{}
+        }%
+        
+        %%% Draw bottom white overlay for the cover
+        \pgfsetcolor{white}
+        \pgfpathmoveto{\pgfpoint{0mm}{\@coverbottom}}
+        \pgfpathlineto{\pgfpoint{\the\paperwidth}{\@coverbottom}}
+        \pgfpathlineto{\pgfpoint{\the\paperwidth}{0cm}}
+        \pgfpathlineto{\pgfpoint{0mm}{0mm}}
+        \pgfusepath{fill}
+         
+        %%% Draw left white overlay for the cover
+        \pgfsetcolor{white}
+        \pgfpathmoveto{\pgfpoint{0mm}{\@axisheight}}
+        \pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*85mm}{\@axisheight}}
+        \pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*\paperheight}{0cm}}
+        \pgfpathlineto{\pgfpoint{0mm}{0mm}}
+        \pgfusepath{fill}
+      \fi
+
+      %%% From name and address
+      \pgfsetcolor{black}
+        \infobox[top]{%
+          \frontpagebody{\textbf{\theadministrativeunit}\vspace{\baselineskip}}
+          \ifx\thedepartment\empty
+          \else
+            \frontpagebody{\textit{\textbf{\thedepartment}}}
+          \fi
+          \ifx\theaddress\empty
+          \else
+            \frontpagebody{\theaddress ,}%
+          \fi
+          \ifaddress
+            \frontpagebody{5612 AZ Eindhoven}
+            \frontpagebody{\thePObox\space513, 5600 MB Eindhoven}
+            \ifx\theNetherlands\empty
+            \else
+              \frontpagebody{\theNetherlands}
+            \fi
+          \fi
+          \ifx\thewebsite\empty
+          \else
+            \hypersetup{urlcolor={black}}
+            \frontpagebody{\urlstyle{same}\url{\thewebsite}}
+            \hypersetup{urlcolor={tuescarlet}}
+          \fi
+        }%
+      %%% Left column with info
+        \infobox[bottom]{%
+          \ifauthor%
+            \frontpagehead{\theauthorlabel}%
+            \frontpagebody{\@author}%
+          \fi%
+          \ifx\theorderissuer\empty
+          \else%
+            \frontpagehead{\theorderissuerlabel}%
+            \frontpagebody{\theorderissuer}%
+          \fi%
+          \ifx\thereference\empty
+          \else%
+            \frontpagehead{\thereferencelabel}%
+            \frontpagebody{\thereference}%
+          \fi%
+          \theaddfrontpage%
+          \ifx\thedate\empty
+          \else%
+            \frontpagehead{\thedatelabel}%
+            \frontpagebody{\thedate}%
+          \fi%
+          \ifx\theversionnum\empty
+          \else%
+            \frontpagehead{\theversionlabel}%
+            \frontpagebody{\theversionnum}%
+          \fi%
+      }%
+      \ifcover
+      
+      
+   
+
+      
+      
+      %%% Title and subtitle positioned underneath cover
+        \setlength{\tempboxaheight}{0pt}
+        \axisposition{\@coverbottom}
+
+      \else
+      %%% Title and subtitle at normal position
+        \setlength{\tempboxaheight}{0pt}
+        \axisposition{\@axisheight}
+      \fi
+      \titlepagecontent{\@title}{black}{\style[0]{heading}}
+      \titlepagecontent{\thesubtitle}{black}{\style[3]{heading}}
+      \titlepagecontent{\thesubsubtitle}{black}{\style{body}\justified}    
+      
+      %%%	Drawing of the TU/e axes and logo
+      %   Drawn last so it overlays everything else
+      \drawtuelogoandaxes
+    \end{pgfpicture}%
+  \end{titlepage}
+
+  %%%% \hfuzz=0pt
+
+  %%%	Reset the original values of all margins
+  \renewcommand{\thefootnote}{\arabic{footnote}}
+  \resetcounters{0}  %%% TODO use resetcounters
+  \resetlayout
+}
+\def\and{\ClassWarning{TUestyle}{\string\and command is disabled, use \string\author{<name1>}{<name2>}{<name3>} for proper styling}{}}
 
 
 %%%
@@ -2355,6 +2753,7 @@
 	\if@openright
 		\cleardoublepage
 	\else\relax\fi
+  \setlength{\parskip}{\listofparskip}
 
 	% The table of contents needs different margins. The package geometry is used to
 	% change the margins of certain pages within a document.
@@ -2416,9 +2815,14 @@
 
 	%%% Draw title and subtitle
   \infobox[bottom]{%
-    \frontpagehead{\thetitlelabel}%
-    \frontpagebody{\@title}%
-    \frontpagebody{\thesubtitle}%
+    \ifx\@title\empty\relax\else
+      \frontpagehead{\thetitlelabel}%
+      \frontpagebody{\@title}%
+    \fi
+    \ifx\thesubtitle\empty\relax\else
+      \frontpagehead{\thesubtitlelabel}%
+      \frontpagebody{\thesubtitle}%
+    \fi
   }
 }
 
@@ -2462,13 +2866,13 @@
 
 %%%	Define left side footer
 \newcommand{\leftsidefoot}{
-	\style{body}\color{black}\footnumber\hspace{0.1cm}\color{hfcolor}\space- 
+	\style{body}\color{black}\footnumber\color{hfcolor}\space-\space
 	\@title 
   	\ifx\theversionnum\empty\relax\else
       { / \theversionlabel\space\theversionnum }
     \fi
-	\ifchapterf
-    \itshape\nouppercase{\leftmark}
+	\ifsectioningf
+    \\\itshape\nouppercase{\leftmark}
   \fi
 	\ifx\theextraf\empty\relax\else
     \\\theextraf
@@ -2481,10 +2885,10 @@
   \@title
   \ifx\theversionnum\empty\relax\else
     { / \theversionlabel\space\theversionnum }
-  \fi - 
-	\hspace{0.1cm}\color{black}\footnumber\color{hfcolor}
-	\ifchapterf
-    \itshape\nouppercase{\leftmark}
+  \fi
+  \space-\space\color{black}\footnumber\color{hfcolor}
+	\ifsectioningf
+    \\\itshape\nouppercase{\rightmark}
   \fi
 	\ifx\theextraf\empty\relax\else
     \\\theextraf
@@ -2596,14 +3000,6 @@
 	\fi
 }
 \sethf
-
-%%%
-%	Set last page label
-%%%
-
-\AtEndDocument{
-	\label{lastdocpage}
-}
 
 
 
@@ -2730,6 +3126,26 @@ L\kern-.36em%
 %%%
 % Listing styling
 %%%
+\newcommand{\definelist}[3][1]{
+  \expandafter\def\csname listof#2s\endcsname{%
+    \begin{onecolarea}
+      \chapter*{\csname thelistof#2sname\endcsname}%
+      \setlength{\parskip}{\listofparskip}
+      \@starttoc{#3}%
+    \end{onecolarea}% defines the list of notes' formatting	
+  }
+  \stylelist[#1]{note}
+}
+
+\newcommand{\stylelist}[2][1]{  
+  \expandafter\def\csname l@#2\endcsname##1##2{%
+    \@dottedtocline{1}
+     {0em} % Indent
+     {#1\listindent} % Listing number width
+     {##1} % Entry text
+     {##2}% % Page number
+  }
+}
 
 %%%
 %	Notes
@@ -2761,29 +3177,6 @@ L\kern-.36em%
   }
 }
 
-\newcommand{\definelist}[3][1]{
-  \expandafter\def\csname listof#2s\endcsname{%
-    \begin{onecolarea}
-      \chapter*{\csname thelistof#2sname\endcsname}%
-      \@starttoc{#3}%
-    \end{onecolarea}% defines the list of notes' formatting	
-  }
-  \stylelist[#1]{note}
-}
-
-\newcommand{\stylelist}[2][1]{  
-  \expandafter\def\csname l@#2\endcsname##1##2{%
-    \@dottedtocline{1}
-     {0em} % Indent
-     {#1\listindent} % Listing number width
-     {##1} % Entry text
-     {##2}% % Page number
-  }
-}
-
-
-
-
 %%
 %	Command \listofnotes
 %	Produces a list of all notes
@@ -2791,5 +3184,67 @@ L\kern-.36em%
 \definelist[1]{note}{lon}
 
 
+
+%%%% TODO check if it produces errors
+%%%% TODO make option
+%%%% TODO disable in final (option) mode
+\iflinenum
+  \def\parlineval{{\it\color{black!50}l.\space\the\inputlineno.\space}}%
+  \storeold{\everypar}
+  \newtoks\everypar
+  \oldeverypar{\the\everypar%
+  \settowidth{\parlinewidth}{\parlineval}%
+  \hspace{-\parlinewidth}\parlineval} 
+\fi
+
+
+%%%
+%	Footnote styling
+%	Marginpar styling
+%	Footnote* command creation
+%%%
+
+\renewcommand\@makefnmark{\hbox{\@textsuperscript{\color{tuered}\@thefnmark}}}
+
+\let\oldfootnote\footnote
+\def\footnote{\@ifstar\@footnoteS\@@footnoteS}
+\def\@footnoteS{%
+	\xdef\@thefnmark{--}\@footnotetext%
+}
+\def\@@footnoteS#1{
+	\oldfootnote{#1}
+}
+
+\let\@oldmakefntext\@makefntext
+\long\def\@makefntext#1{%
+  \parindent 1em\noindent \hb@xt@ 1.8em{\hss \@makefnmark\space}\style{note}#1}%
+  
+\let\oldmarginpar\marginpar
+\def\marginpar#1{
+\oldmarginpar{\style{note}#1}
+}
+
+
+
+
+
+
+
+%%%
+% set default font
+%%%
+
+\AtBeginDocument{
+	%% Set font
+	\style{body}
+  %%  Removes extreme spacing between paragraphs
+  %   Boxes on every page are of a different height
+\raggedbottom
+}
+
+%%% Redefine skip amounts
+\smallskipamount=.5\baselineskip plus .15\baselineskip minus .15\baselineskip
+\medskipamount=1\baselineskip plus .3\baselineskip minus .3\baselineskip
+\bigskipamount=3\baselineskip plus 1\baselineskip minus 1\baselineskip
 
 
