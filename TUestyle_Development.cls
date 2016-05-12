@@ -17,8 +17,8 @@
 %   Used Packages
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
 \RequirePackage{xkeyval}
 \RequirePackage[table]{xcolor}    % loads also »colortbl«
 
@@ -1769,6 +1769,7 @@
 
 \setnewlength{\labelindent}{7pt}
 \setlength{\labelsep}{.5\tabsize}
+\addtolength{\labelsep}{-.5\labelindent}
 
 \settowidth{\leftmargini}{\labelitemi}
 \addtolength{\leftmargini}{\labelsep}
@@ -1918,24 +1919,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-  %% Write out which labels have changed
-  \def\@testdef #1#2#3{%
-    \def\reserved@a{#3}\expandafter \ifx \csname #1@#2\endcsname
-  \reserved@a  \else
-  \typeout{^^Jlabel #2 changed:^^J%
-  \meaning\reserved@a^^J%
-  \expandafter\meaning\csname #1@#2\endcsname^^J}%
-  \@tempswatrue \fi}
+%% Write out to log which labels have changed
+\def\@testdef #1#2#3{%
+  \def\reserved@a{#3}\expandafter%
+  \ifx \csname #1@#2\endcsname
+    \reserved@a  \else
+      \typeout{%
+        ^^Jlabel #2 changed:^^J%
+        \meaning\reserved@a^^J%
+        \expandafter\meaning\csname #1@#2\endcsname^^J%
+      }%
+    \@tempswatrue 
+  \fi
+}
 
 
-  % redefine \raggedright to not create with \shapepar:
-  % i i i i i
-  % i i i i i i i i i i i i i i i i i i i i i i i i
-  % i i i i i i i i i i i i i i i i i i i i i i i i
-  \def\raggedright{%
-  \let\\\@centercr\@rightskip \z@ plus\linewidth \rightskip\@rightskip
-  \leftskip\z@skip
-  \parindent\z@}
+% redefine \raggedright to not create with \shapepar:
+% i i i i i
+% i i i i i i i i i i i i i i i i i i i i i i i i
+% i i i i i i i i i i i i i i i i i i i i i i i i
+\def\raggedright{%
+\let\\\@centercr\@rightskip \z@ plus\linewidth \rightskip\@rightskip
+\leftskip\z@skip
+\parindent\z@}
 
 
 %%%	Set cleardoublepage to also work with the "oneside" option
@@ -3225,6 +3231,54 @@ L\kern-.36em%
 }
 
 
+%%%
+%	Indentation commands
+%%%
+
+%%% command \indent
+%%  used for inline indents
+\storeold{\indent}
+\newcommand{\forceindent}{\parindent=.5\tabsize\indent\parindent=0pt\relax} %parindent is temporarily redefined
+
+%%% command \indentpar
+%%  used for a single complete indented paragraph
+\def\indentpar{
+  \parshape 1 .5\tabsize \dimexpr\linewidth-.5\tabsize\relax
+}
+ 	
+%%% command \beginindentpar
+%%  used to start complete indented paragraphs
+\def\beginindentpar{%
+   \advance\leftskip .5\tabsize
+}
+
+%%% command \endindentpar
+%%  used to end complete indented paragraphs
+\def\endindentpar{%
+    \advance\leftskip -.5\tabsize
+  }
+
+%%% command \narrower
+%%  used to start complete narrow paragraphs
+\def\narrower{% redefine narrower command to the correct size
+	\advance\leftskip .5\tabsize
+    \advance\rightskip .5\tabsize
+  }   
+
+%%% command \narrower
+%%  used to end complete narrow paragraphs
+\def\wider{% define opposite of \narrower
+	\advance\leftskip -.5\tabsize
+    \advance\rightskip -.5\tabsize
+  }   
+
+
+
+
+
+
+
+
 
 
 
@@ -3241,10 +3295,3 @@ L\kern-.36em%
   %   Boxes on every page are of a different height
 \raggedbottom
 }
-
-%%% Redefine skip amounts
-\smallskipamount=.5\baselineskip plus .15\baselineskip minus .15\baselineskip
-\medskipamount=1\baselineskip plus .3\baselineskip minus .3\baselineskip
-\bigskipamount=3\baselineskip plus 1\baselineskip minus 1\baselineskip
-
-
