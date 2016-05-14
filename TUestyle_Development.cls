@@ -648,10 +648,44 @@
     }
     \long\def\cs@to@str@aux@ii#1{\z@}
 
+    
+    
 
 %%% \textlcsc{<string>}
 %% Make all LowerCase Small Caps
 \newcommand\textlcsc[1]{\textsc{\MakeLowercase{#1}}}
+
+\newif\iflc
+
+%%% \forcetextlcsc{<string>}
+%% Make all LowerCase Small Caps, used if the font doesn't support it
+\def\forcetextlcsc{\lctrue\bgroup\obeyspaces\forcetextscaux}
+
+%%% \forcetextsc{<string>}
+%% Make all LowerCase Small Caps
+\def\forcetextsc{\lcfalse\bgroup\obeyspaces\forcetextscaux}
+
+    \def\forcetextscaux#1{\expandafter\forcetextscauxii #1\relax\relax\egroup}
+    \def\forcetextscauxii#1{%
+    \ifx\relax#1\else \ifcat#1\@sptoken{} \expandafter\expandafter\expandafter\forcetextscauxii\else
+    \forcemakesc#1\expandafter\expandafter\expandafter\forcetextscauxii\expandafter\fi\fi}
+
+    \def\forcemakesc#1{%
+      \iflc
+        {\scalefont{.85}{\uppercase{#1}}}%
+      \else
+        \ifnum`#1=\uccode`#1 {#1}\else {\scalefont{.85}{\uppercase{#1}}}\fi%
+      \fi
+    }
+
+
+%%% \scalefont{<scalefactor>}{<string>}
+%% Scale fontsize in string by scalefactor, keep baselineskip
+\newlength{\currentfontsize}
+\def\scalefont#1{%
+    \setlength{\currentfontsize}{\f@size pt}%
+    \setfontsize{#1\currentfontsize}{\baselineskip}%
+}
 
 %%% command \ifcounter{<counter>}{<on true>}{<on false>}
 %%  check if a counter exists
@@ -661,6 +695,18 @@
   \else%
     \expandafter\@secondoftwo%
   \fi%
+}
+
+%%% command \ifnumber{<counter>}{<on true>}{<on false>}
+%%  check if input is a number
+\def\ifnumber#1{%
+  \afterassignment\get@args\count@=0#1\hfuzz#1\hfuzz}
+\def\get@args#1\hfuzz#2\hfuzz{%
+  \if\relax\detokenize{#1}\relax
+    \expandafter\@firstoftwo
+  \else
+    \expandafter\@secondoftwo
+  \fi
 }
 
 \let\oldauthor\author
@@ -685,25 +731,77 @@
 \newcommand{\initadddata}{
   \@ifundefined{c@\expandafter\cs@to@str\tmp@sum}{%
     \expandafter\newcount\csname c@\expandafter\cs@to@str\tmp@sum\endcsname % define counter c@<name>@sum if it doesn't exist yet
+    \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname -1\relax
   }{}
   \csname decl@\endcsname\checknextarg
 }
 
     \newcommand{\checknextarg}{
-      \@ifnextchar\bgroup{\gobblenext}{}% Check if another "argument" exists
+      \@ifnextchar\bgroup{
+        \gobblenext % Check if another "argument" exists
+      }{
+        \@ifnextchar[{
+          \gobblenext@key
+        }{}
+      }
     }
 
     \newcommand{\gobblenext}[1]{%
       \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax
       \let\tempname@sum\tempname
-      \expandafter\def\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}% Add value to numbered variable
-      \@ifnextchar\bgroup{\gobblenext}{}% Gobble next "argument"
+      \protected@edef\tempvalue{#1}
+      \expandafter\let\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname\tempvalue% Add value to numbered variable
+      \ClassWarning{TUestyle}{\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname: #1}{}
+      \checknextarg% Gobble next "argument"
+    }
+    
+    \def\gobblenext@key[#1]{
+      \let\tempname@sum\tempname
+      \ifnum \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname = 0
+        \ClassError{TUeStyle}{Key comes after value}{}
+      \else
+        \ifnumber{#1}{
+          \ClassError{TUeStyle}{Numbers not accepted as key}{}
+        }{
+          \ifcsname data:\tempname:#1\expandafter\endcsname
+            \ClassWarning{TUestyle}{A value key is overwritten}{}
+          \else
+            \newcounter{currentnum}
+            \setcounter{currentnum}{\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname}
+            \expandafter\edef\csname data:\tempname:#1\endcsname{\noexpand\csname data:\tempname:\thecurrentnum\endcsname}
+          % Add value to keyed variable
+          \fi
+        }
+      \fi
+      \checknextarg
     }
 
 
 %%% \getdata[<index>]\<name>
 %%  prints data contained in \data:<name>:<index>
-\def\getdata[#1]#2{\csname data:\string#2:#1\endcsname}
+\def\getdata[#1]#2{
+  \ifcsname data:\string#2:#1\endcsname
+    \csname data:\string#2:#1\endcsname
+  \else
+    \ClassError{Tuestyle}{data:\string#2:#1 undefined}{}
+  \fi
+}
+
+%%% \cleardata[<index>]\<name>
+%%  clears data contained in \data:<name>:<index>
+\def\cleardata[#1]#2{
+  \ifcsname data:\string#2:#1\endcsname
+    \expandafter\def\csname data:\string#2:#1\endcsname{
+      \ClassError{Tuestyle}{data:\string#2:#1 undefined}{}
+    }
+  \else
+    \ClassError{Tuestyle}{data:\string#2:#1 undefined}{}
+  \fi
+}
+
+
+
+\expandafter\def\csname data:\string\author:9\endcsname{\ClassWarning{TUestyle}{A value key is overwritten}{}}
 
 %%% \printdata{\<name>}{<global delimiter optional>}{<last delimiter optional>}
 %%  prints data contained in \data:<name>:<range>
@@ -1263,10 +1361,10 @@
 
 %%% Note labels
 \ifenglish
-	\newvariable{notesname}{note}
+	\newvariable{notesname}{Note}
 	\newvariable{listofnotesname}{List of Notes}
 \else
-	\newvariable{notesname}{notitie}
+	\newvariable{notesname}{Notitie}
 	\newvariable{listofnotesname}{Lijst van Notities}
 \fi
 
@@ -1812,6 +1910,8 @@
 
 \edef\endtabular{\unexpanded\expandafter{\endtabular}\noexpand\reset@color}
 
+\renewcommand{\arraystretch}{1.75}
+
 \storeoldenv{\table}
 \renewenvironment{table}[1][ht!]{%
   \oldtable[#1]\autocenter}%
@@ -1824,8 +1924,6 @@
 	}{%
 	\\\arrayrulecolor{tuered}\hline
 	\endoldtabular}
-
-\renewcommand{\arraystretch}{1.75}
 
 \newcommand{\headbegin}{
 	\rowcolor{tuered}
@@ -2355,6 +2453,7 @@
       \addcontentsline{toc}{\expandafter\cs@to@str\string#2}{##2}
     }
   }
+ %%%%% \renewcommand{\@seccntformat}[1]{\csname the#1\endcsname.}
 }
 
 
@@ -3177,7 +3276,7 @@ L\kern-.36em%
 %% defines the note styling
 \newcommand{\notestyle}[2]{%
   \textcolor{tuescarlet}{
-    \textbf{[\thenotesname\space #1:}
+    \textbf{[\forcetextsc{\thenotesname}\space #1:}
     #2%
     \textbf{]}
   }
