@@ -73,11 +73,6 @@
 \newif\ifnotes
 \notesfalse
 
-%%% Draw instructions
-%%  (false by default)
-\newif\ifinstructions
-\instructionsfalse
-
 %%% Switch between one-sided / two-sided mode
 %%  (one-sided by default)
 \newif\iftwosided
@@ -297,9 +292,6 @@
 % draw notes
 \DeclareOptionX{notes}{\notestrue}
 
-% draw instructions
-\DeclareOptionX{instructions}{\instructionsfalse}
-
 % draw one-sided / two-sided
 \DeclareOptionX{oneside}{\twosidedfalse}
 \DeclareOptionX{twoside}{\twosidedtrue}
@@ -436,6 +428,39 @@
 %   User commands
 %%%
 
+%%   symbol reshaping commands
+%%   used to rotate symbols to create new symbols
+
+%%% command \reflectit
+%%  reflects symbol horizontally
+%%% command \turnover 
+%%  reflects symbol vertically
+%%% command \turnne   
+%%  turns a symbol north east
+%%% command \turnnw   
+%%  turns a symbol north west
+%%% command \turnsw   
+%%  turns a symbol south west
+%%% command \turnse   
+%%  turns a symbol south east
+\newcommand{\reflecth}[1]{\reflectbox{#1}}
+\newcommand{\reflectv}[1]{\reflectbox{\rotatebox[origin=c]{180}{#1}}}
+\newcommand{\turnover}[1]{\rotatebox[origin=c]{180}{#1}}
+\newcommand{\turnne}[1]{\rotatebox[origin=c]{45}{#1}}
+\newcommand{\turnnw}[1]{\rotatebox[origin=c]{135}{#1}}
+\newcommand{\turnsw}[1]{\rotatebox[origin=c]{225}{#1}}
+\newcommand{\turnse}[1]{\rotatebox[origin=c]{315}{#1}}
+
+%%  symbol reshaping commands
+%%  same as above, with math mode enabled
+\newcommand{\mreflecth}[1]{\reflecth{\ensuremath#1}}
+\newcommand{\mreflectv}[1]{\reflectv{\ensuremath#1}}
+\newcommand{\mturnover}[1]{\turnover{\ensuremath#1}}
+\newcommand{\mturnne}[1]{\turnne{\ensuremath#1}}
+\newcommand{\mturnnw}[1]{\turnnw{\ensuremath#1}}
+\newcommand{\mturnsw}[1]{\turnsw{\ensuremath#1}}
+\newcommand{\mturnse}[1]{\turnse{\ensuremath#1}}
+
 %%% command \enquote{<content>}
 %%  correctly enquotes content, in the primary quoatation style
 \newcommand{\enquote}[1]{``#1’’}
@@ -527,27 +552,26 @@
 \newcommand{\tocless}[2]{\bgroup\stoplistentries #1{#2}
 \labelselector{#1}{#2}\egroup}
 
-
-
 %%% TODO needs comments
 \newcommand{\labelless}[2]{\bgroup\storeoldrelax{\label}\def\label##1{}%
 #1{#2}\egroup}
 \newcommand{\stopautolabels}{\autolabelfalse}
 \newcommand{\startautolabels}{\autolabeltrue}
 
-
-%%%%% TODO move
-%%%	Define the instructions command if the "instructions" option is used
-\ifinstructions
-  \newcommand{\instruction}[1]{}
-\else
-  \newcommand{\instruction}[1]{\textit{\textcolor{tueblue}{\textbf{[INSTRUCTION:} #1\textbf{]}}}}
-\fi
-
-
 %%%
 %   Package commands
 %%%
+
+%%% command \getcondition{<if-name>}
+%%  USE:    \if\getcondition{<name>}, where \if<name> is declared by \newif\if<name>
+\newcommand*{\getcondition}[1]{%
+  T\expandafter
+  \ifx\csname if#1\endcsname\iftrue
+    \expandafter T%
+  \else
+    \expandafter F%
+  \fi
+}
 
 %%% command \newvariable{<variable>}{<value>}
 %%  defines commands for getting and setting a variable
@@ -719,6 +743,11 @@
   \initadddata
 }
 
+%%% TODO add comments
+\newcommand{\authordelim}[2]{
+\preprintdata\author{#1}{#2}
+}
+
 
 %%% \adddata\<name>{<value 1}...{<value n-1}{<value n}
 %%  saves data in \data:<name>:<range>
@@ -749,9 +778,10 @@
     \newcommand{\gobblenext}[1]{%
       \advance\csname c@\expandafter\cs@to@str\tmp@sum\endcsname 1\relax
       \let\tempname@sum\tempname
-      \protected@edef\tempvalue{#1}
-      \expandafter\let\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname\tempvalue% Add value to numbered variable
-      \ClassWarning{TUestyle}{\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname: #1}{}
+      %\protected@edef\tempvalue{#1}
+     % \expandafter\let\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname\tempvalue% Add value to numbered variable
+      \expandafter\protected@edef\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}
+     %% \ClassWarning{TUestyle}{\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname: #1}{}
       \checknextarg% Gobble next "argument"
     }
     
@@ -875,6 +905,16 @@
 \newcommand{\printstring}[1]{%
   \csname all:\cs@to@str#1\endcsname
 }
+
+%%% TODO description
+\newcommand{\ifprintstring}[1]{%
+  \ifcsname all:\cs@to@str#1\endcsname
+    \expandafter\@firstoftwo%
+  \else%
+    \expandafter\@secondoftwo%
+  \fi%
+}
+
 
 %%% \watermark
 %%  Creates tiny watermark inside the following character, intended use: \watermark.
@@ -1259,15 +1299,23 @@
   \setnewlength{\rightmargincalculated}{\dimexpr \layoutrightmargin + \marginparL + \marginparwidth \relax}
 }
 
+%%%%% TODO paper size option
+%	If the document uses the "twoside" option
+\iftwosided
+  \geometry{a4paper}
+%	If the document uses the "oneside" option
+\else
+  \geometry{a4paper}
+\fi
 
 \newcommand{\resetlayout}{
   \disablepageskip
   \sethf
   
-	%%%	If the document uses the "twoside" option
+	%	If the document uses the "twoside" option
 	\iftwosided
 		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
-	%%%	If the document uses the "oneside" option
+	%	If the document uses the "oneside" option
 	\else
 		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
 	\fi
@@ -1275,12 +1323,21 @@
   \enablepageskip
 }
 
-
 \AtBeginDocument{
-\preprintdata\author{, }{ \& }
-\def\@author{\printstring\author} %%% Todo, command doesn't work for pdf
-	\hypersetup{pdftitle = {\@title},pdfauthor = {\@author},pdfsubject={\thesubtitle},pdfkeywords={Version \theversionnum} {Eindhoven University of Technology},pdfcreator={aLeX TU/e template}}
-\preprintdata\author{,\hfill\break}{ \&\hfill\break}
+\ifprintstring{\author}{% If custom delimiters defined by user (using \preprintdata\author)
+  \def\@author{\printstring\author}
+}{% Else
+  \preprintdata\author{,\hfill\break}{ \&\hfill\break}
+  \def\@author{\printstring\author}
+}
+\begingroup %begingroup not to overwrite earlier \preprintdata\author
+  \preprintdata\author{, }{ \& }
+  \def\pdf@author{\printstring\author}
+  \hypersetup{pdftitle = {\@title},pdfauthor = {\pdf@author},pdfsubject={\thesubtitle},pdfkeywords={Version \theversionnum} {Eindhoven University of Technology},pdfcreator={aLeX TU/e template}}
+\endgroup
+
+
+
 \resetlayout
 }
 
@@ -1922,7 +1979,7 @@
 \setlength{\arrayrulewidth}{1.5pt}%
 	\oldtabular%
 	}{%
-	\\\arrayrulecolor{tuered}\hline
+  \\\arrayrulecolor{tuered}\hline
 	\endoldtabular}
 
 \newcommand{\headbegin}{
@@ -1941,6 +1998,24 @@
 \newcommand{\subheadend}{
 	\colorrows{\color{black}}
 }
+
+%%% COMMAND:  \parcell[<alignment>]{<content>}
+%%  USAGE:    Used to create a breakable cell within a table
+%%  EXAMPLE:  Vertical center middle: \specialcell   {Foo\\bar} & Foo\\
+%%  EXAMPLE:  Vertical center top:    \specialcell[t]{Foo\\bar} & Foo\\
+%%  EXAMPLE:  Vertical center bottom: \specialcell[b]{Foo\\bar} & Foo\\
+\def\parcell{%
+   \@ifnextchar[%
+     {\parcell@i}
+     {\parcell@i[c]}%
+}
+\def\parcell@i[#1]{%
+   \@ifnextchar[%
+     {\parcell@ii{#1}}
+     {\parcell@ii{#1}[c]}%
+}
+\def\parcell@ii#1[#2]#3{%
+  \begin{oldtabular}[#1]{@{}#2@{}}#3\end{oldtabular}}
 
 %%%
 %   Figure styles
@@ -2036,6 +2111,7 @@
 % i i i i i
 % i i i i i i i i i i i i i i i i i i i i i i i i
 % i i i i i i i i i i i i i i i i i i i i i i i i
+\storeold{\raggedright}
 \def\raggedright{%
 \let\\\@centercr\@rightskip \z@ plus\linewidth \rightskip\@rightskip
 \leftskip\z@skip
@@ -3262,25 +3338,56 @@ L\kern-.36em%
 %%
 \ifnotes
   \newcounter{note} % note counter
-  
-  \newcommand{\note}[1]{%
-    \refstepcounter{note}%
-    \notestyle{\thenote}{#1}%
-    \addcontentsline{lon}{note}{\numberline {\thenote} #1}
+  \newcommand{\note}[2][\@empty]{%
+    \@ifundefined{if#1}{%
+      \expandafter\newif\csname if#1\endcsname%
+      \csname #1true\endcsname%
+    }{}%
+    \if\getcondition{#1}%
+      \refstepcounter{note}%
+      \notestyle[#1]{\thenote}{#2}%
+      \addcontentsline{lon}{note}{\numberline {\thenote} #2}%
+    \fi%
   }
 \else
-  \newcommand{\note}[1]{}
+  \newcommand{\note}[2][\@empty]{}
 \fi
 
 
 %% defines the note styling
-\newcommand{\notestyle}[2]{%
-  \textcolor{tuescarlet}{
-    \textbf{[\forcetextsc{\thenotesname}\space #1:}
-    #2%
-    \textbf{]}
-  }
+\newcommand{\notestyle}[3][\@empty]{%
+  \textcolor{tuescarlet}{%
+    {\raisebox{0pt}[0pt]{\scalefont{1.2}\textbf{|}}}%
+    \settoheight{\@tempdima}{N}%
+    \textbf{\forcetextsc{N}\raisebox{\depth}{\rotatebox[origin=c]{90}{\resizebox{\@tempdima}{!}{\forcetextsc{OTE}}}}\hspace{1pt}#2%
+    \ifx#1\@empty\relax\else\space\forcetextsc{#1}\fi%
+    }%
+    {\raisebox{0pt}[0pt]{\scalefont{1.2}\textbf{|\guillemotright}}}\space%
+    #3%
+    \space{\raisebox{0pt}[0pt]{\scalefont{1.2}\textbf{\guillemotleft|}}}%
+  }%
 }
+
+%%% command \hidenotes
+\newcommand{\hidenotes}[1]{
+    \@ifundefined{if#1}{
+      \expandafter\newif\csname if#1\endcsname
+      \csname #1false\endcsname
+    }{
+      \csname #1false\endcsname
+    }
+}
+
+%%% command \shownotes
+\newcommand{\shownotes}[1]{
+    \@ifundefined{if#1}{
+      \ClassError{TUeStyle}{Note type #1 doesn't exist}{}
+    }{
+      \csname #1true\endcsname
+    }
+}
+
+
 
 %%
 %	Command \listofnotes
@@ -3371,8 +3478,20 @@ L\kern-.36em%
     \advance\rightskip -.5\tabsize
   }   
 
+%%%
+%	Formatting marks
+%%%
 
-
+%%% NOTE requires explicit linebreaking
+\newenvironment{showspaces}
+  {\par\obeyspaces\obeylines%
+  \begingroup\lccode`\~=`\ \lowercase{\endgroup\let~}\AND%
+  \begingroup\lccode`\~=`\^^M\lowercase{\endgroup\let~}\AND}%
+  {\par}
+\newcommand{\AND}{%
+  \leaders\hrule height 1.5ex
+  \hskip\fontdimen2\font plus \fontdimen3\font minus \fontdimen4\font
+}
 
 
 
