@@ -24,7 +24,6 @@
 
 \RequirePackage{pgf}  % loads also »xcolor«
 \RequirePackage[dutch, english]{babel}
-\RequirePackage{fancyhdr}
 \RequirePackage{graphicx}
 \RequirePackage{anyfontsize}
 %\RequirePackage{titletoc}
@@ -61,7 +60,8 @@
 
 %%% Use Meta OT fonts
 %%  (false by default)
-\newif\iftuefonts\tuefontsfalse
+\newif\iftuefonts
+\tuefontsfalse
 
 %%% Show margins
 %%  (false by default)
@@ -74,9 +74,12 @@
 \notesfalse
 
 %%% Switch between one-sided / two-sided mode
-%%  (one-sided by default)
+%%  (one-sided by default) %%% TODO describe per class
 \newif\iftwosided
-\twosidedfalse
+
+%%% Check if user overwrites default twoside or oneside
+\newif\iftwosidedtouched
+\twosidedtouchedfalse
 
 %%% Switch between one-column / two-column mode
 %%  (one-column by default)
@@ -191,6 +194,12 @@
   \fi
 }
 
+%%% TODO add comments
+\newcommand{\PassOptionsToBaseClass}[1]{
+  \PassOptionsToClass{#1}{book}
+  \PassOptionsToClass{#1}{report}
+}
+
 
 
 
@@ -204,8 +213,8 @@
 \def\DeclareBooleanOptionX#1{\define@boolkey{TUestyle_Development.cls}[]{#1}{}}
 
 % document options
-\DeclareOptionX{report}{\bookfalse}
-\DeclareOptionX{book}{\booktrue}
+\DeclareOptionX{report}{\bookfalse \iftwosidedtouched\relax\else\twosidedfalse\fi}
+\DeclareOptionX{book}{\booktrue \iftwosidedtouched\relax\else\twosidedtrue\fi}
 
 % throw error on not supported paper sizes
 \DeclareOptionX{a5paper}{\ClassErrorNotSupported{a4paper}{a5paper}}
@@ -216,12 +225,12 @@
 \DeclareOptionX{landscape}{\ClassErrorNotSupported{portrait}{landscape}}
 
 % custom layout margins
-\DeclareOptionX{left}{\setlength{\layoutleftmargin}{#1}}
-\DeclareOptionX{right}{\setlength{\layoutrightmargin}{#1}}
-\DeclareOptionX{top}{\setlength{\layouttopmargin}{#1}}
-\DeclareOptionX{bottom}{\setlength{\layoutbottommargin}{#1}}
-\DeclareOptionX{marginparL}{\setlength{\marginparL}{#1}}
-\DeclareOptionX{marginparR}{\setlength{\marginparL}{#1}}
+\DeclareOptionX{left}{\newlength{\layoutleftmargin}\setlength{\layoutleftmargin}{#1}}
+\DeclareOptionX{right}{\newlength{\layoutrightmargin}\setlength{\layoutrightmargin}{#1}}
+\DeclareOptionX{top}{\newlength{\layouttopmargin}\setlength{\layouttopmargin}{#1}}
+\DeclareOptionX{bottom}{\newlength{\layoutbottommargin}\setlength{\layoutbottommargin}{#1}}
+\DeclareOptionX{marginparL}{\newlength{\marginparL}\setlength{\marginparL}{#1}}
+\DeclareOptionX{marginparR}{\newlength{\marginparL}\setlength{\marginparL}{#1}}
 
 % language options
 \DeclareOptionX{english}{\englishtrue}
@@ -236,7 +245,7 @@
 \DeclareOptionX{draftmark}{\draftmarktrue}
 
 % draw draft line numbering
-\DeclareOptionX{draftmark}{\linenumfalse}
+\DeclareOptionX{linenum}{\linenumfalse}
 
 %%% TU/e style options
 
@@ -275,6 +284,16 @@
 \DeclareBooleanOptionX{chaptername}
 \chapternamefalse
 
+% Shift all sectioning numbering to left margin,
+% widen left margin
+% Shift complete chapter heading in left margin
+\DeclareBooleanOptionX{runinsec}
+\runinsecfalse
+
+% Hidden watermark in sectioning
+\DeclareBooleanOptionX{watermark}
+\watermarkfalse
+
 % use paragraph style
 \DeclareBooleanOptionX{paragraphstyling}
 \paragraphstylingtrue
@@ -293,8 +312,8 @@
 \DeclareOptionX{notes}{\notestrue}
 
 % draw one-sided / two-sided
-\DeclareOptionX{oneside}{\twosidedfalse}
-\DeclareOptionX{twoside}{\twosidedtrue}
+\DeclareOptionX{oneside}{\twosidedfalse \twosidedtouchedtrue}
+\DeclareOptionX{twoside}{\twosidedtrue  \twosidedtouchedtrue}
 
 % draw one-column / two-column
 \DeclareOptionX{onecolumn}{\twocolumnfalse}
@@ -348,7 +367,7 @@
 }
 
 
-% header options
+% header & footer options
 
 % draw one-sided / two-sided header and footer
 \DeclareOptionX{onesidehf}{\onesidehftrue}
@@ -356,7 +375,7 @@
 
 % draw faded header and footer
 \DeclareOptionX{fadehf}{
-  \definecolor{hfcolor}{gray}{0}
+  \definecolor{hfcolor}{gray}{.2}
 }
 
 % draw chapter in footer
@@ -406,6 +425,15 @@
 % hide upper sectioning
 \DeclareBooleanOptionX{hideuppersectioning}
 \hideuppersectioningfalse
+
+% font options
+\DeclareOptionX{9pt}  {\PassOptionsToBaseClass{10pt}            \def\classFontSize{9} }
+\DeclareOptionX{10pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{10}}
+\DeclareOptionX{11pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{11}}
+\DeclareOptionX{12pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{12}}
+
+\PassOptionsToBaseClass{10pt}
+\def\classFontSize{9}
 
 % pass options to underlying classes
 \DeclareOptionX*{%
@@ -462,11 +490,11 @@
 \newcommand{\mturnse}[1]{\turnse{\ensuremath#1}}
 
 %%% command \enquote{<content>}
-%%  correctly enquotes content, in the primary quoatation style
+%%  correctly enquotes content, in the primary quotation style
 \newcommand{\enquote}[1]{``#1’’}
 
 %%% command \secenquote{<content>}
-%%  correctly enquotes content, in the secondary quoatation style
+%%  correctly enquotes content, in the secondary quotation style
 \newcommand{\secenquote}[1]{‘#1’}
 
 %%% command \superscript{<content>}
@@ -557,6 +585,11 @@
 #1{#2}\egroup}
 \newcommand{\stopautolabels}{\autolabelfalse}
 \newcommand{\startautolabels}{\autolabeltrue}
+
+%%% Justify command
+  \newcommand{\justified}{%
+    \rightskip\z@skip%
+    \leftskip\z@skip}
 
 %%%
 %   Package commands
@@ -916,24 +949,37 @@
 }
 
 
-%%% \watermark
-%%  Creates tiny watermark inside the following character, intended use: \watermark.
-\newcommand\watermark[1]{%
-    #1%
-    \sbox0{#1}%
-    \llap{%
-    \makebox[\wd0][c]{%  hor. centering
-    \raisebox{.5\ht0}{%  approx. vert. centering
-    \csname Gin@isotrue\endcsname% = "keepaspectratio"
-    \resizebox*{.8\ht0}{.8\ht0}{% Scale down (the height is also used for the width to avoid the surrounding spaces)
-    \parbox{10em}{% Allow line breaks
-            \color{black!90}%
-            %%%% TODO authorlist and actual copyholder
-            This PDF was created by \@author\ for COPYHOLDER.
-        }%
-    }}}}%
-}
-
+\ifwatermark
+  %%% \watermark
+  %%  Creates tiny watermark inside the following character, intended use: \watermark.
+  \newcommand\watermark[1]{%
+      #1%
+      \sbox0{#1}%
+      \llap{%
+      \makebox[\wd0][c]{%  hor. centering
+      \raisebox{.5\ht0}{%  approx. vert. centering
+      \csname Gin@isotrue\endcsname% = "keepaspectratio"
+      \resizebox*{.8\ht0}{.8\ht0}{% Scale down (the height is also used for the width to avoid the surrounding spaces)
+      \parbox{10em}{% Allow line breaks
+      \hbadness=100000 %
+              \pgfsetfillopacity{0.1}\color{black}%
+              %%%% TODO authorlist and actual copyholder
+              This PDF % 
+              \ifx\theversionnum\empty
+              \else%
+               (\theversionnum)\space%
+              \fi%
+              was created by \@author\ %
+              \ifx\thecopyholder\empty\relax
+              \else
+                for \thecopyholder
+              \fi.
+          }%
+      }}}}%
+  }
+\else
+  \newcommand\watermark[1]{#1}
+\fi
 
 %%% \storeoldenv{\<name>}
 %%  Stores the environment \begin{<name>}\end{<name>} to \begin{old<name>}\end{old<name>}
@@ -1127,13 +1173,13 @@
   \setlength{\axispositionX}{\dimexpr \@Hspacing-\@Hshift + \@shiftratio\axispositionY -\@axiswidth \relax}%
 }
 
-
+\newcounter{numberofsentences}
 %%% command \getlongestsentence{<string>}
-%%  Splits sentences on \break and outputs longest sentence to \templongest
+%%  Splits sentences on \break and outputs longest sentence to \longestsentence
 \def\getlongestsentence#1{%
-	\setnewlength{\templongest}{0pt}
+	\setnewlength{\longestsentence}{0pt}
+    \setcounter{numberofsentences}{0}
 	\def\holder{}
-	\def\delim{\break} %Split string at breaks
     \begingroup
     \edef\@tempa{\detokenize\expandafter{#1}\space}%
     \expandafter\endgroup
@@ -1141,41 +1187,92 @@
 }
 
     \long\def\readstring#1 #2\relax{%
-          \partitionstring{#1}{\delim}%  #1 = substr, #2 = rest of string
+          \partitionstringonbreaks{#1}%  #1 = substr, #2 = rest of string
           \begingroup%
           \ifx\relax#2\relax  % is #2 empty?
-            \def\next{\endgroup\endstringpartition}% end-macro
+            \def\next{\endgroup\addtocounter{numberofsentences}{1}\endstringpartition}% end-macro
           \else%
              \def\next{\endgroup\readstring#2\relax}%
           \fi%
           \next%
     }
-
-    \long\def\partitionstring#1#2{%
+    
+    \def\instring#1#2{TT\fi\begingroup
+    \edef\x{\endgroup\noexpand\in@{#1}{#2}}\x\ifin@}
+    
+    \def\sentencedelimi{\titlebreak}
+    \def\sentencedelimii{\linebreak}
+    
+    \long\def\partitionstringonbreaks#1{%
       \expandafter\edef\expandafter\tempa{\detokenize{#1}}%
-      \expandafter\edef\expandafter\tempb{\expandafter\string#2}%
-        \ifx \tempa \tempb%
-          \endstringpartition%
-        \else%
-          \g@addto@macro\holder{\scantokens{#1}}%
-        \fi%
+      \expandafter\edef\expandafter\tempb{\expandafter\string\sentencedelimi}%
+      \expandafter\edef\expandafter\tempc{\expandafter\string\sentencedelimii}%
+          \if\instring{\tempb}{\tempa}
+            \g@addto@macro\holder{\scantokens{#1}}%
+            \addtocounter{numberofsentences}{1}
+            \endstringpartition%
+          \else
+              \if\instring{\tempc}{\tempa}
+                \g@addto@macro\holder{\scantokens{#1}}%
+                \addtocounter{numberofsentences}{1}
+                \endstringpartition%
+              \else
+                \g@addto@macro\holder{\scantokens{#1}}%
+              \fi
+          \fi
     }
 
     \def\endstringpartition{%
       \settowidth{\@tempdima}{\holder}%
-      \ifnum \@tempdima > \templongest%
-      \setlength{\templongest}{\@tempdima}%
+      \ifnum \@tempdima > \longestsentence%
+      \setlength{\longestsentence}{\@tempdima}%
       \else\fi%
       \def\holder{}%
+      
     }
 
-    
-%%% Justify command
-  \newcommand{\justified}{%
-    \rightskip\z@skip%
-    \leftskip\z@skip}
-      
-    
+%%% TODO add comments
+\newcommand{\@setClassFontSize}[3]{
+    \expandafter\def\csname selectedfont@#1\endcsname{#2bp}
+    \expandafter\def\csname selectedbls@#1\endcsname{#3bp}
+}
+
+%%% TODO add comments
+\ifnum \classFontSize = 9 
+  \newcommand{\setclassFontSize}[9]{
+    \@setClassFontSize{#1}{#2}{#3}
+  }
+\else \ifnum \classFontSize = 10
+  \newcommand{\setclassFontSize}[9]{
+    \@setClassFontSize{#1}{#4}{#5}
+  }
+\else \ifnum \classFontSize = 11
+  \newcommand{\setclassFontSize}[9]{
+    \@setClassFontSize{#1}{#6}{#7}
+  }
+\else \ifnum \classFontSize = 12
+  \newcommand{\setclassFontSize}[9]{
+    \@setClassFontSize{#1}{#8}{#9}
+  }
+\fi\fi\fi\fi
+
+
+
+%%% TODO add comments
+\newcommand{\copyclassFontSize}[2]{
+  \expandafter\def\csname selectedfont@#1\endcsname{\csname selectedfont@#2\endcsname}
+  \expandafter\def\csname selectedbls@#1\endcsname{\csname selectedbls@#2\endcsname}
+}
+
+%%% TODO add comments
+\newcommand{\useclassFontSize}[1]{%
+ \setfontsize{%
+  \csname selectedfont@#1\endcsname%
+ }{%
+  \csname selectedbls@#1\endcsname%
+ }%
+}
+
 
 %%%
 %   Internal debug commands
@@ -1220,13 +1317,11 @@
 
 % depending packages
 \iftuefonts\relax\else
-  \AtBeginDocument{
-    \RequirePackage{uarial}
-  }
+  \RequirePackage{uarial}
 \fi
-\RequirePackage[bookmarks=true,linktocpage=true,bookmarksnumbered=true,breaklinks=true]{hyperref}
-\RequirePackage{geometry}
-
+\RequirePackage{hyperref}
+\RequirePackage[a4paper]{geometry}
+\RequirePackage{fancyhdr}
 
 
 %%%
@@ -1241,21 +1336,81 @@
 
 
 
+%%% TODO move
+\newcommand{\ifexists}[1]{
+  \ifcsname #1\endcsname
+    \expandafter\@firstoftwo%
+  \else%
+    \expandafter\@secondoftwo%
+  \fi%
+}
+
+
+\ifruninsec
+  \def\gridleftcolumns{2}
+  \def\@seccntformat#1{\llap{\protect\makebox[2\tabsize][l]{\csname the#1\endcsname}}}
+\fi
+
+
 
 %%%
 %   Grid
 %%%
+\AtBeginDocument{
+  \begingroup
+    \def\sentencedelimi{ }
+    \newcounter{footerlines}
+    \expandafter\getlongestsentence{\@title}
+    \addtocounter{footerlines}{\thenumberofsentences}
+    \ifsectioningf
+      \addtocounter{footerlines}{1}
+    \fi
+    \ifx\theextraf\empty\relax\else
+      \getlongestsentence{\theextraf}
+      \addtocounter{footerlines}{\thenumberofsentences}
+    \fi
+  \endgroup  
+  \ifexists{footskipvalue}{}{
+    \setnewlength{\footskipvalue}{\dimexpr \thefooterlines\baselineskip + \headfootsep}
+  }
+  \ifexists{layoutbottommargin}{}{
+    \setnewlength{\layoutbottommargin}{\dimexpr 15.75mm+\footskipvalue\relax} % 15.75mm
+  }
+}
 
-\setnewlength{\layoutleftmargin}{15mm}
-\setnewlength{\layoutrightmargin}{15mm}
-\setnewlength{\layouttopmargin}{\dimexpr 40.5mm\relax} % 2*20.25mm
-\setnewlength{\layoutbottommargin}{\dimexpr 31.5mm\relax} % 2*15.75mm
-\setnewlength{\marginparL}{\columnsep}
-\setnewlength{\marginparR}{\layoutrightmargin}
+\setnewlength{\headfootsep}{3\baselineskip}
 
-\def\gridcolumns{12}
-\def\gridleftcolumns{1}
-\def\gridrightcolumns{2}
+\ifexists{headsepvalue}{}{
+  \setnewlength{\headsepvalue}{\headfootsep}
+}
+
+\ifexists{layoutleftmargin}{}{
+  \setnewlength{\layoutleftmargin}{15mm}
+}
+\ifexists{layoutrightmargin}{}{
+  \setnewlength{\layoutrightmargin}{15mm}
+}
+\ifexists{layouttopmargin}{}{
+  \setnewlength{\layouttopmargin}{\dimexpr 20.25mm+\headheight+\headsepvalue\relax} % 20.25mm
+}
+\ifexists{marginparL}{}{
+  \setnewlength{\marginparL}{\columnsep}
+}
+\ifexists{marginparR}{}{
+  \setnewlength{\marginparR}{\layoutrightmargin}
+}
+\ifexists{gridcolumns}{}{
+  \def\gridcolumns{12}
+}
+\ifexists{gridleftcolumns}{}{
+  \def\gridleftcolumns{1}
+}
+\ifexists{gridrightcolumns}{}{
+  \def\gridrightcolumns{2}
+}
+
+
+
 \def\gridbodycolumns{\numexpr\gridcolumns-\gridleftcolumns-\gridrightcolumns\relax}
 
 \setnewlength{\gridgutterwidth}{3.853mm}
@@ -1282,44 +1437,38 @@
 \setlength{\tabsize}{\dimexpr \gridcolumnwidth + \gridgutterwidth}
 
 
+
+\ifruninsec
+  \setnewlength{\chaptershift}{2\tabsize}
+\else
+  \setnewlength{\chaptershift}{0pt}
+\fi
+
+
 %%%
 %   Layout
 %%%
+\newcommand{\resetHeadWidth}{\fancy@setoffs} %\resetHeadWidth which calls the fancyhdr macro for defining the header and footer widths.
 
-%%% TODO implement \sethf \pagestyle{fancy}
 
 
 %%%
 % Set original margins
 %%%
-
-\newcommand{\resetrightmargin}{
-  \setlength{\marginparsep}{\marginparL}
-  \setlength{\marginparwidth}{\dimexpr \frameright - \marginparL - \marginparR \relax}
-  \setnewlength{\rightmargincalculated}{\dimexpr \layoutrightmargin + \marginparL + \marginparwidth \relax}
-}
-
-%%%%% TODO paper size option
-%	If the document uses the "twoside" option
-\iftwosided
-  \geometry{a4paper}
-%	If the document uses the "oneside" option
-\else
-  \geometry{a4paper}
-\fi
-
 \newcommand{\resetlayout}{
-  \disablepageskip
-  \sethf
-  
+  \setnewlength{\marginparsepvalue}{\marginparL}
+  \setnewlength{\marginparwidthvalue}{\dimexpr \frameright - \marginparL - \marginparR \relax}
+  \setnewlength{\rightmargincalculated}{\dimexpr \layoutrightmargin + \marginparL + \marginparwidth \relax}
+  \disablepageskip  
 	%	If the document uses the "twoside" option
 	\iftwosided
-		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
+		\newgeometry{footskip=\footskipvalue,marginparsep=\marginparsepvalue,marginparwidth=\marginparwidthvalue,headsep=\headsepvalue,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=true}
 	%	If the document uses the "oneside" option
 	\else
-		\newgeometry{headsep=30pt,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
+		\newgeometry{footskip=\footskipvalue,marginparsep=\marginparsepvalue,marginparwidth=\marginparwidthvalue,headsep=\headsepvalue,bindingoffset=0cm,top=\layouttopmargin,left=\frameleft,right=\frameright,bottom=\layoutbottommargin,headheight=16pt,twoside=false}
 	\fi
-  \resetrightmargin
+  \resetHeadWidth
+  \sethf
   \enablepageskip
 }
 
@@ -1529,10 +1678,10 @@
 %%%
 
 % Arial
-\renewcommand{\sfdefault}{phv}
-\renewcommand{\rmdefault}{phv}
+\renewcommand{\sfdefault}{ua1}
+\renewcommand{\rmdefault}{ua1}
 \renewcommand{\ttdefault}{pcr}
-\renewcommand{\familydefault}{\sfdefault}
+\renewcommand\familydefault{\sfdefault}
 
 % Meta OT
 
@@ -1547,6 +1696,9 @@
     \normalfont\fontseries{m}\selectfont%
   \fi
 }
+
+\sbox0{\sffamily X}
+\DeclareFontShape{T1}{ua1}{sb}{n}{ <-> ua1r8t}{} %map semi bold to regular
 
 \newcommand{\fontmedium}{%
   \iftuefonts%
@@ -1563,6 +1715,7 @@
     \normalfont\fontseries{b}\selectfont%
   \fi
 }
+
 
 
 
@@ -1655,59 +1808,104 @@
 \colorlet{colorlink}{tuered!20!white}
 
 
+%%%
+%   Font size commands
+%%%
+
+%%                % Name              % 9pt         % 10pt        % 11pt        % 12pt
+\setclassFontSize {tiny}              {5}{6.5}      {5}{6.5}      {6}{7.75}     {6}{7.75}
+\setclassFontSize {scriptsize}        {6.75}{9}     {6.75}{9}     {7.75}{11.25} {7.75}{11.25}
+\setclassFontSize {caption}           {7.75}{11.25} {8.5}{11.5}   {9.25}{12.75} {10}{12.75}
+\copyclassFontSize{footnote}          {caption}
+\copyclassFontSize{tableHead}         {caption}
+\copyclassFontSize{tableText}         {caption}
+\setclassFontSize {small}             {8.5}{11.5}   {9.25}{12.75} {10}{12.75}   {10.75}{14.35}
+\setclassFontSize {body}              {9.25}{12.75} {10}{12.75}   {10.75}{14.35}{12}{15.75}
+\copyclassFontSize{subHeadii}         {body}
+\copyclassFontSize{accentText}        {body}
+\copyclassFontSize{subInfo}           {body}
+\setclassFontSize {subHeadi}          {10}{12.75}   {10.75}{14.35}{11.5}{15.75} {12.75}{16.5}
+\setclassFontSize {payOffii}          {10}{12.75}   {10}{12.75}   {10}{12.75}   {10}{12.75}
+\setclassFontSize {recruitingText}    {10.75}{14.35}{11}{14.35}   {11.75}{15.75}{13}{17.25}
+\copyclassFontSize{introii}           {recruitingText}
+\setclassFontSize {recruitingHead}    {11}{14.35}   {11.25}{14.5} {12}{15.75}   {13.25}{17.5}
+\copyclassFontSize{quoteiv}           {recruitingHead}
+\setclassFontSize {articleHeadviii}   {12.25}{16}   {12.25}{16}   {12.75}{16.5} {14}{18.5}
+\copyclassFontSize{introi}            {articleHeadviii}
+\copyclassFontSize{quoteiii}          {articleHeadviii}
+\setclassFontSize {articleHeadviihalf}{14}{18.5}    {14}{18.5}    {14}{18.5}    {15}{20}
+\setclassFontSize {quoteii}           {15}{20}      {15}{20}      {15}{20}      {16}{21.25}
+\setclassFontSize {payOffi}           {15}{20}      {15}{20}      {15}{20}      {15}{20}
+\setclassFontSize {articleHeadvii}    {16}{21.25}   {16}{21.25}   {16}{21.25}   {18}{24}
+\setclassFontSize {quotei}            {18}{24}      {18}{24}      {18}{24}      {20}{26,75}
+\setclassFontSize {articleHeadvi}     {20}{26,75}   {20}{26,75}   {20}{26,75}   {24}{32}
+\setclassFontSize {articleHeadv}      {24}{32}      {24}{32}      {24}{32}      {30}{40}
+\setclassFontSize {articleHeadiv}     {30}{40}      {30}{40}      {30}{40}      {30}{40}
+\setclassFontSize {articleHeadii}     {36}{48}      {36}{48}      {36}{48}      {36}{48}
+\setclassFontSize {articleHeadii}     {42}{54}      {42}{54}      {42}{54}      {42}{54}
+\setclassFontSize {articleHeadi}      {48}{58}      {48}{58}      {48}{58}      {48}{58}
+
+\renewcommand\tiny{\useclassFontSize{tiny}}
+\renewcommand\scriptsize{\useclassFontSize{scriptsize}}
+\renewcommand\large{\useclassFontSize{articleHeadviii}}
+\renewcommand\Large{\useclassFontSize{articleHeadviihalf}}
+\renewcommand\LARGE{\useclassFontSize{articleHeadvii}}
+\renewcommand\huge{\useclassFontSize{articleHeadvi}}
+\renewcommand\Huge{\useclassFontSize{articleHeadv}}
+
+
+
+
 
 %%%
 %   Text styles
 %%%
 
-
-
 % heading subparagraph
 \def\styling@headingsubparagraph{%
-  \setfontsize{9.25bp}{12.75bp}%
+  \useclassFontSize{subHeadii}%
 	\fontmedium%
   \leavevmode\color{colorsubheading}\it%
 }
 
-
 % heading paragraph
 \def\styling@headingparagraph{%
-  \setfontsize{10bp}{12.75bp}%
+  \useclassFontSize{subHeadi}%
 	\fontbold%
   \leavevmode\color{colorsubheading}%
 }
 
 % heading subsubsection
 \def\styling@headingsubsubsection{%
-  \setfontsize{12.25bp}{16bp}%
+  \useclassFontSize{articleHeadviii}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % heading subsection
 \def\styling@headingsubsection{%
-  \setfontsize{16bp}{21,25bp}%
+  \useclassFontSize{articleHeadvii}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % heading section
 \def\styling@headingsection{%
-  \setfontsize{20bp}{26,75bp}%
+  \useclassFontSize{articleHeadvi}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % heading chapter
 \def\styling@headingchapter{%
-  \setfontsize{24bp}{32bp}%
+  \useclassFontSize{articleHeadv}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % heading part
 \def\styling@headingpart{%
-  \setfontsize{30bp}{40bp}%
+  \useclassFontSize{articleHeadiv}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
@@ -1716,119 +1914,137 @@
 
 % heading Large
 \def\styling@headingLarge{%
-  \setfontsize{36bp}{48bp}%
+  \useclassFontSize{articleHeadiii}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % heading LARGE
 \def\styling@headingLARGE{%
-  \setfontsize{42bp}{54bp}%
+  \useclassFontSize{articleHeadii}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % heading huge
 \def\styling@headinghuge{%
-  \setfontsize{48bp}{58bp}%
+  \useclassFontSize{articleHeadi}%
 	\fontbold%
   \leavevmode\color{colorheading}%
 }
 
 % intro normal
 \def\styling@intronormal{%
-  \setfontsize{10.75bp}{14.35bp}%
+  \useclassFontSize{introii}%
 	\fontmedium%
   \leavevmode\color{colorintro}%
 }
 
 % intro large
 \def\styling@introlarge{%
-  \setfontsize{12.25bp}{16bp}%
+  \useclassFontSize{introi}%
 	\fontmedium%
   \leavevmode\color{colorintro}%
 }
 
 % body text
 \def\styling@body{%
-  \setfontsize{9.25bp}{12.75bp}%
+  \useclassFontSize{body}%
 	\fontdefault%
   \leavevmode\color{colorbody}%
 }
 
+%%% TODO rename: promotional or recruiting
+
 % promotional text
 \def\styling@promotional{%
-  \setfontsize{10.75bp}{14.35bp}%
+  \useclassFontSize{recruitingText}%
 	\fontnormal%
   \leavevmode\color{colorpromotional}%
 }
 
 % promotional heading
 \def\styling@promotionalheading{%
-  \setfontsize{11bp}{14.35bp}%
+  \useclassFontSize{recruitingHead}%
 	\fontbold%
   \leavevmode\color{colorsubheading}%
 }
 
-% quote normal
+%%% TODO add qoute 3&4, also in switch
+
+% quote large
+\def\styling@quotesmall{%
+  \useclassFontSize{quoteiv}%
+	\fontmedium%
+  \leavevmode\color{colorquote}%
+}
+
+% quote large
 \def\styling@quotenormal{%
-  \setfontsize{15bp}{20bp}%
+  \useclassFontSize{quoteiii}%
 	\fontmedium%
   \leavevmode\color{colorquote}%
 }
 
 % quote large
 \def\styling@quotelarge{%
-  \setfontsize{18bp}{24bp}%
+  \useclassFontSize{quoteii}%
+	\fontmedium%
+  \leavevmode\color{colorquote}%
+}
+
+% quote Large
+\def\styling@quoteLarge{%
+  \useclassFontSize{quotei}%
 	\fontmedium%
   \leavevmode\color{colorquote}%
 }
 
 % accent text
 \def\styling@accent{%
-  \setfontsize{9.25bp}{12.75bp}%
+  \useclassFontSize{accentText}%
 	\fontmedium%
   \leavevmode\color{coloraccent}%
 }
 
 % info text
 \def\styling@info{%
-  \setfontsize{9.25bp}{12.75bp}%
+  \useclassFontSize{subInfo}%
 	\fontnormal%
   \leavevmode\color{colorinfo}%
 }
 
 % caption
 \def\styling@caption{%
-  \setfontsize{9.25bp}{12.75bp}%
+  \useclassFontSize{caption}%
 	\fontbold%
   \leavevmode\color{colorcaption}%
 }
 
 % note
 \def\styling@note{%
-  \setfontsize{7.75bp}{12.75bp}%
+  \useclassFontSize{footnote}%
 	\fontnormal%
   \leavevmode\color{colornote}%
 }
 
-% quote normal
+% payoff normal
 \def\styling@payoffnormal{%
-  \setfontsize{10bp}{12.75bp}%
+  \useclassFontSize{payOffii}%
 	\fontmedium%
   \leavevmode\color{colorpayoff}%
 }
 
-% quote large
+% payoff large
 \def\styling@payofflarge{%
-  \setfontsize{15bp}{12.75bp}%
+  \useclassFontSize{payOffi}%
 	\fontmedium%
   \leavevmode\color{colorpayoff}%
 }
 
 % tiny (self-defined)
 \def\styling@tiny{%
-  \setfontsize{6,25bp}{12.75bp}%
+  \useclassFontSize{tiny}%
 	\fontmedium%
   \leavevmode\color{colorbody}%
 }
@@ -1862,9 +2078,11 @@
     \@ifequal{#1}{1}{\styling@promotionalheading}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
   }{\@ifequal{#2}{quote}{%
-    \@ifequal{#1}{1}{\styling@quotelarge}%
-    {\@ifequal{#1}{2}{\styling@quotenormal}%
-    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}%
+    \@ifequal{#1}{1}{\styling@quoteLarge}%
+    {\@ifequal{#1}{2}{\styling@quotelarge}%
+    {\@ifequal{#1}{3}{\styling@quotenormal}%
+    {\@ifequal{#1}{4}{\styling@quotesmall}%
+    {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}}%
   }{\@ifequal{#2}{accent}{%
     \@ifequal{#1}{1}{\styling@accent}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}%
@@ -2084,6 +2302,9 @@
 %%% List indent
 \setnewlength{\listindent}{\tabsize}
 
+%%% List environment indent (includes quote)
+\setlength{\leftmargini}{.5\tabsize}
+
 %%% Paragraph indent
 \setlength{\parindent}{0pt}
 
@@ -2107,12 +2328,11 @@
 }
 
 
-% redefine \raggedright to not create with \shapepar:
+% define \shapedraggedright as redefined \raggedright to not create with \shapepar:
 % i i i i i
 % i i i i i i i i i i i i i i i i i i i i i i i i
 % i i i i i i i i i i i i i i i i i i i i i i i i
-\storeold{\raggedright}
-\def\raggedright{%
+\def\shapedraggedright{%
 \let\\\@centercr\@rightskip \z@ plus\linewidth \rightskip\@rightskip
 \leftskip\z@skip
 \parindent\z@}
@@ -2240,9 +2460,10 @@
 %	Enable PDF bookmarks
 %	Make index page numbers clickable
 
-%%%	Set link colors
+%%%	Set link colors, bookmarks etc.
 \hypersetup{
-  bookmarks=true,
+  linktocpage=true,
+  breaklinks=true,
   linktocpage=true,
   bookmarksnumbered=true,
   breaklinks=true,
@@ -2317,7 +2538,11 @@
   \fi
 }
 
-\def\thepart{\the\numexpr\value{part}+\@sectioningshift\relax}
+\def\thepart{\ifnum\value{part} < 1%
+  \addtocounter{part}{1}%
+\fi%
+\the\numexpr\value{part}+\@sectioningshift\relax%
+}
 
 \def\thechapter{%
 \ifnum\value{chapter} < 1%
@@ -2410,28 +2635,23 @@
   \createsectioningstyling[1]{\section}{-3.5ex}{-1ex}{-.2ex}{2.3ex}{.2ex}
   \createsectioningstyling[2]{\subsection}{-3.25ex}{-1ex}{-.2ex}{1.5ex}{.2ex}
   \createsectioningstyling[3]{\subsubsection}{-3.25ex}{-1ex}{-.2ex}{1.5ex}{.2ex}
-
-  \def\@makechapterhead#1{%
-    \vspace*{50\p@}%
-    {\parindent \z@ \raggedright \style[0]{heading}%\normalfont
-      \ifnum \c@secnumdepth >\m@ne
-        \ifchaptername % check for chaptername option
-          \@chapapp\space\thechapter\linebreak
+  
+  \AtBeginDocument{
+    \def\@makechapterhead#1{%
+      \vspace*{50\p@}%
+      \hspace{-\chaptershift}\parbox{\dimexpr\linewidth+\chaptershift}{\parindent \z@ \raggedright \style[0]{heading}%\normalfont
+        \ifnum \c@secnumdepth >\m@ne
+          \ifchaptername % check for chaptername option
+            \@chapapp\space\thechapter\linebreak
+          \fi
+           %\vskip 20\p@
         \fi
-         %\vskip 20\p@
-      \fi
-      \interlinepenalty\@M
-      \Huge \bfseries #1\par\nobreak
-      \vskip 40\p@
-    }}
-  \def\@makeschapterhead#1{%
-    \vspace*{50\p@}%
-    {\parindent \z@ \raggedright
-      \style[0]{heading}%\normalfont
-      \interlinepenalty\@M
-      \Huge \bfseries  #1\par\nobreak
-      \vskip 40\p@
-    }}
+        \interlinepenalty\@M
+        \Huge \bfseries #1\par\nobreak
+        \vskip 40\p@
+      }
+    }
+  }
 \fi
 
 \ifsectioningstyling
@@ -2503,14 +2723,12 @@
   
   \expandafter\newcommand\csname @@@\expandafter\cs@to@str\string#2Internal\endcsname[3]{
     \resetcounters{#1}
-    %%%% \thesectioningcounterdisplay TODO remove, used for testing
     \csname old\expandafter\cs@to@str\string#2\endcsname##3{##2}
     \ifx\@empty##1%
       \autolabeling{#2}{##2}%
     \else%
       \autolabeling{#2}{##1}%
     \fi
-    \partmark{##2}
     \ifnum #1 < \value{sectioningcountertouched}
       \ifnum \value{sectioningcountertouched} < \secingLevelLowest
         \ClassError{TUestyle}{\string#2\space was called after a sectioning command lower in the hierarchy was called first, @line \thefirstsectioningline: \firstsectioningline}{Make sure the hierarchy is correct to prevent duplicate numbering. Either remove \firstsectioningline\space @line \thefirstsectioningline\space or replace \string#2\space with sectioning equal or higher in hierarchy than \firstsectioningline.}
@@ -2529,7 +2747,6 @@
       \addcontentsline{toc}{\expandafter\cs@to@str\string#2}{##2}
     }
   }
- %%%%% \renewcommand{\@seccntformat}[1]{\csname the#1\endcsname.}
 }
 
 
@@ -2537,16 +2754,19 @@
   %%%	Part no number command
   \createsectioning[0]{\part}
 
-  \def\partmark#1{
-    \markboth{\leftmark}{\MakeUppercase{\partname\space\thepart.\space#1}}
-  }
-
   %%%	Chapter no number command
   \createsectioning[0]{\chapter}
+  
+  \def\chaptermark#1{
+   \markboth{\MakeUppercase{\ifnum \c@secnumdepth >\m@ne \chaptername\space\thechapter\fi\space#1}}{\rightmark}
+  }
+  
+  \renewcommand\sectionmark[1]{%
+    \markright{\ifnum \c@secnumdepth >\z@ \thesection . \ \fi #1}
+  }
+  
+  \renewcommand{\subsectionmark}[1]{}
 
-    \def\chaptermark#1{
-      \markboth{\MakeUppercase{\ifnum \c@secnumdepth >\m@ne \chaptername\space\thechapter.\fi\space#1}}{\rightmark}
-    }
 
 
   %%%	Section no number command
@@ -2640,18 +2860,21 @@
 			\logoname{\theprofilingvalue}
 		\fi\fi\fi
 
-    \setlength{\tempboxaheight}{0pt}
-    \ifprofilingtouched
-        \axisposition{\paperheight-5.25mm-1.5cm}
-        \ifprofilingfilled
-          \titlepagecontent[\theprofilingcolor]{\theprofilingvalue}{white}{\style[1]{heading}}
-        \else
-          \titlepagecontent{\theprofilingvalue}{\theprofilingcolor}{\style[1]{heading}}
-        \fi
-    \else
-      \axisposition{\paperheight-2.3cm}
-      \titlepagecontent{\thelogoname}{tuedarkblue}{\style[4]{heading}}
-    \fi
+    \begingroup
+      \enablefrontbreak
+      \setlength{\tempboxaheight}{0pt}
+      \ifprofilingtouched
+          \axisposition{\paperheight-5.25mm-1.5cm}
+          \ifprofilingfilled
+            \titlepagecontent[\theprofilingcolor]{\theprofilingvalue}{white}{\style[1]{heading}}{\dimexpr\paperwidth-\axispositionX-\frameright\relax}
+          \else
+            \titlepagecontent{\theprofilingvalue}{\theprofilingcolor}{\style[1]{heading}}{}
+          \fi
+      \else
+        \axisposition{\paperheight-2.3cm}
+        \titlepagecontent{\thelogoname}{tuedarkblue}{\style[4]{heading}}{}
+      \fi
+    \endgroup
 	\else
 		\relax
 	\fi
@@ -2698,10 +2921,17 @@
    \setnewlength{\tempboxaheight}{0pt}
    \setnewlength{\tempboxawidth}{0pt}
    
-\newcommand{\titlepagecontent}[4][\@empty]{
+\newcommand{\titlepagecontent}[5][\@empty]{
   \setlength{\tempboxawidth}{0pt}
   \axisposition{\axispositionY-2\tempboxaheight}
   \setnewlength{\@tempbaselength}{\dimexpr\paperwidth-\axispositionX-\@axispadding-\layoutrightmargin\relax}
+  #2\setnewlength{\fillhorizontalpadding}{\@axispadding}
+  \setnewlength{\fillverticalpadding}{\@axispadding}
+  \@ifequal{#5}{}{
+    \setnewlength{\minimumfillwidth}{0pt}
+  }{
+    \setnewlength{\minimumfillwidth}{\dimexpr #5 - \fillhorizontalpadding\relax}
+  }
   \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY},left,top]{%% TODO better positioning 
     \@ifequal{#1}{}{
       \setlength{\tempboxaheight}{0pt}
@@ -2717,7 +2947,7 @@
         \vbox{%
           \slantedpar[right]{40}{\linewidth}%
           \raggedright%
-           \@tempcontentinside\vspace{\baselineskip}}%
+           \@tempcontentinside}%
       }%
       \global\sbox{\@tempboxa}{%
         \begin{minipage}[t]{\@tempbaselength}%
@@ -2727,28 +2957,36 @@
         \end{minipage}%
       }%
       \settocompleteheight{\tempboxaheight}{\usebox{\@tempboxa}}
+      \addtolength{\tempboxaheight}{\fillverticalpadding}
+      \global\tempboxaheight=\tempboxaheight
       
       \ifx#1\@empty\else
         #4
         \getlongestsentence{#2}
-        \ifdim \templongest < \@tempbaselength
-          \setlength{\tempboxawidth}{\templongest}
+        \ifdim \longestsentence < \@tempbaselength
+          \ifdim \dimexpr\longestsentence + \fillhorizontalpadding\relax < \minimumfillwidth
+            \setlength{\tempboxawidth}{\minimumfillwidth}
+          \else
+            \setlength{\tempboxawidth}{\longestsentence}
+            \addtolength{\tempboxawidth}{\fillhorizontalpadding}
+          \fi
         \else
           \setlength{\tempboxawidth}{\@tempbaselength}
         \fi
           \global\tempboxawidth=\tempboxawidth
       \fi
+      \global\tempboxawidth=\tempboxawidth
     }
   }
   \ifx#1\@empty\else
     \pgfsetcolor{#1}
     \pgfpathmoveto{\pgfpoint{\axispositionX }                                                  {\axispositionY}}
-    \pgfpathlineto{\pgfpoint{\axispositionX  + \tempboxawidth + 2\baselineskip}                {\axispositionY}}
-    \pgfpathlineto{\pgfpoint{\axispositionX   + \tempboxawidth + 2\baselineskip}                {\axispositionY - 2\tempboxaheight}}
+    \pgfpathlineto{\pgfpoint{\axispositionX  + \tempboxawidth + \fillhorizontalpadding}                {\axispositionY}}
+    \pgfpathlineto{\pgfpoint{\axispositionX   + \tempboxawidth + \fillhorizontalpadding}                {\axispositionY - 2\tempboxaheight}}
     \pgfpathlineto{\pgfpoint{\axispositionX  - \@shiftratio\tempboxaheight*2}                  {\axispositionY - 2\tempboxaheight}}
     \pgfusepath{fill}
   \fi
-  \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY-\baselineskip},left,top]{%% TODO better positioning 
+  \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY-.25\baselineskip-\fillverticalpadding},left,top]{%% TODO better positioning 
      \usebox{\@tempboxa}
   }
 }
@@ -2768,7 +3006,14 @@
      
 \fi
       
-    
+\newcommand\enablefrontbreak{
+  \def\titlebreak{\linebreak}
+}
+
+\newcommand\disablefrontbreak{
+  \def\titlebreak{\unskip\space}
+}
+
 %%% TODO use only on frontpage, then reset
 \def\@fnsymbol#1{\ifcase\value{footnote}\or*\or
 †\or‡\or§\or¶\or||\or**\or††\or‡‡\or|||\or***\or†††\or‡‡‡\or \ClassError{TUeStyle}{Frontpage counter too large. Are you sure you need that many authors?}\fi}
@@ -2784,6 +3029,7 @@
     \let\footnoterule\relax%
     \let\footnote\thanks%
     %%%\hfuzz=1000pt
+    \enablefrontbreak
 
     \newgeometry{left=0cm,top=0cm,bottom=0cm, right=0cm, ignoreall}
     \begin{pgfpicture}{0cm}{0cm}{\paperwidth}{\paperheight}
@@ -2899,9 +3145,9 @@
         \setlength{\tempboxaheight}{0pt}
         \axisposition{\@axisheight}
       \fi
-      \titlepagecontent{\@title}{black}{\style[0]{heading}}
-      \titlepagecontent{\thesubtitle}{black}{\style[3]{heading}}
-      \titlepagecontent{\thesubsubtitle}{black}{\style{body}\justified}    
+      \titlepagecontent[green]{\@title}{black}{\style[0]{heading}}{}
+      \titlepagecontent[green]{\thesubtitle}{black}{\style[3]{heading}}{}
+      \titlepagecontent{\thesubsubtitle}{black}{\style{body}\justified}{}    
       
       %%%	Drawing of the TU/e axes and logo
       %   Drawn last so it overlays everything else
@@ -3047,39 +3293,47 @@
 
 %%%	Define left side footer
 \newcommand{\leftsidefoot}{
-	\style{body}\color{black}\footnumber\color{hfcolor}\space-\space
-	\@title 
-  	\ifx\theversionnum\empty\relax\else
-      { / \theversionlabel\space\theversionnum }
+  \parbox[b]{\linewidth}{\raggedright
+    \style{body}\color{black}\footnumber\color{hfcolor}\space-\space
+    \@title 
+      \ifx\theversionnum\empty\relax\else
+        { / \theversionlabel\space\theversionnum }%
+      \fi%
+    \ifsectioningf
+      \\\itshape\nouppercase{\leftmark}\ifx\leftmark\empty\linebreak\fi
     \fi
-	\ifsectioningf
-    \\\itshape\nouppercase{\leftmark}
-  \fi
-	\ifx\theextraf\empty\relax\else
-    \\\theextraf
-  \fi
+    \ifx\theextraf\empty\relax\else
+      \theextraf
+    \fi
+  }
 }
 
 %%%	Define right side footer
 \newcommand{\rightsidefoot}{
-	\style{body}\color{hfcolor}
-  \@title
-  \ifx\theversionnum\empty\relax\else
-    { / \theversionlabel\space\theversionnum }
-  \fi
-  \space-\space\color{black}\footnumber\color{hfcolor}
-	\ifsectioningf
-    \\\itshape\nouppercase{\rightmark}
-  \fi
-	\ifx\theextraf\empty\relax\else
-    \\\theextraf
-  \fi
+  \parbox[b]{\linewidth}{\raggedleft
+    \style{body}\color{hfcolor}%
+    \storeold{\linebreak}%
+    \def\linebreak{\space-\space\color{black}\footnumber\oldlinebreak\restoreold{\linebreak}\color{hfcolor}}%
+    \@title%
+    \ifx\theversionnum\empty%
+      \linebreak%
+    \else%
+      \space/\space\theversionlabel\space\theversionnum\linebreak%
+    \fi%
+    \ifsectioningf%
+      \itshape\nouppercase{\rightmark}\linebreak%
+    \fi%
+    \ifx\theextraf\empty\relax\else%
+      \theextraf%
+    \fi%
+  }
 }
 
 %%%	Define copyholder footer
 \newcommand{\copyfoot}{
 	\ifcopyf
-		\frontpagehead{\thecopyholderlabel}\meta\thecopyholder
+		\frontpagehead{\hfill\thecopyholderlabel}
+    \frontpagebody{\hfill\thecopyholder}\vspace{-.5\baselineskip}
 	\fi
 }
 
@@ -3107,9 +3361,8 @@
 \newcommand{\setheadersTwo}{
 	\pagestyle{fancy}
 	\fancyhf{}
-	%	Header in the center of the page
-	\fancyhead[C]{
-		\draftmarking
+  %	Header in the center of the page
+	\fancyhead[CO]{
 	}
 	%	Header for the even pages, header on the left
 	\fancyhead[LE]{
@@ -3127,15 +3380,32 @@
 	\fancyfoot[LO]{
 		\leftsidefoot
 	}
-	%	Copyholder on other side
-	\fancyfoot[LE]{
-		\copyfoot
-	}
-	%	Copyholder on other side
-	\fancyfoot[RO]{
-		\copyfoot
-	}
-	\renewcommand{\headrulewidth}{0mm}
+
+  %	Copyholder in the middle
+	\fancyfoot[CE]{%
+    \makebox[\textwidth]{%
+      \raisebox{\dimexpr-15.75mm+\fboxrule}{
+      \setlength{\fboxsep}{0pt}%
+      \fbox{\parbox[b]{5cm}{\copyfoot}}%
+      }%
+    }%
+    \raisebox{\dimexpr.5\paperheight-15.75mm}[0pt][0pt]{\hspace{-\textwidth}\makebox[\textwidth]{%
+      \draftmarking%
+    }}%
+	}%
+  
+  %	Copyholder in the middle
+	\fancyfoot[CO]{%
+    \makebox[\textwidth]{%
+      \raisebox{\dimexpr-15.75mm+\fboxrule}{
+      \setlength{\fboxsep}{0pt}%
+      \fbox{\parbox[b]{5cm}{\copyfoot}}%
+      }%
+    }%
+    \raisebox{\dimexpr.5\paperheight-15.75mm}[0pt][0pt]{\hspace{-\textwidth}\makebox[\textwidth]{%
+      \draftmarking%
+    }}
+	}%
 }
 
 %%%	Define header and footers for oneside design
@@ -3154,15 +3424,21 @@
 	\fancyfoot[L]{
 		\leftsidefoot
 	}
-	%	Copyholder on other side
-	\fancyfoot[R]{
+	%	Copyholder in the middle
+	\fancyfoot[C]{
 		\copyfoot
 	}
-	\renewcommand{\headrulewidth}{0mm}
 }
 
 %%%	Set defined header/footers, custom, twoside or oneside
 \newcommand{\sethf}{
+  \ifonesidehf
+    \fancyheadoffset[LO]{\dimexpr\marginparsep+\marginparwidth\relax}
+    \fancyfootoffset[RO]{\dimexpr\marginparsep+\marginparwidth\relax} 
+  \else
+    \fancyheadoffset[LO,RE]{\dimexpr\marginparsep+\marginparwidth\relax}
+    \fancyfootoffset[RO,LE]{0pt}
+  \fi
 	\ifdefined\setheaders
 		\setheaders
 	\else
@@ -3179,11 +3455,17 @@
 			\setheadersOne
 		\fi
 	\fi
+ \renewcommand{\headrulewidth}{0mm}
 }
 \sethf
 
-
-
+\fancypagestyle{plain}{%
+  \fancyhead{}
+  \fancyfoot{}
+  \fancyfoot[C]{
+      \color{hfcolor}-\space\color{black}\footnumber\color{hfcolor}\space-
+  }
+}
 
 
 %%%
@@ -3192,13 +3474,15 @@
 
 \newsavebox{\draftBox}
 \savebox{\draftBox}{%
-	\color{colorlink}
-	\rotatebox[origin=c]{-45}{\fontsize{300bp}{0bp} \selectfont \textbf{\textsc{draft}}}%
+	\color{tuered}
+  \pgfsetfillopacity{0.1}
+	\rotatebox[origin=c]{-45}{\fontsize{150bp}{0bp} \selectfont \textbf{\textsc{draft}}}%
+  \pgfsetfillopacity{1}
 }%
 
 %%%	Declare the \draftmark command and scale it to the text
 \newcommand{\draftmark}{%
-	\resizebox{!}{200pt}{\usebox{\draftBox}}%
+	\usebox{\draftBox}%
 }
 
 
@@ -3219,7 +3503,7 @@
 \oldLeX}
 
 \DeclareRobustCommand{\aLeX}{%
-\begingroup\fontfamily{crm}\textlatin{\oldaLeX}\endgroup%
+\begingroup\fontfamily{cmr}\selectfont\oldaLeX\endgroup%
 }
 
 \DeclareRobustCommand{\org@LeX}{%
@@ -3231,31 +3515,7 @@ L\kern -.1667em\lower .5ex\hbox {E}\kern -.125emX\@
 }
 
 \DeclareRobustCommand{\LeX}{%
-\begingroup\fontfamily{crm}\textlatin{\oldLeX}\endgroup%
-}
-
-
-
-
-
-%%%
-% \CaLaTeX command
-%%%
-
-\DeclareRobustCommand{\oldCaLaTeX}{%
-C\kern-.2em%
-{\sbox\z@ T%
-\vbox to\ht\z@{\hbox{%
-\check@mathfonts
-\fontsize\sf@size\z@
-\math@fontsfalse\selectfont A}%
-\vss}%
-}%
-\kern-.15em%
-\oldLaTeX}
-
-\DeclareRobustCommand{\CaLaTeX}{%
-\begingroup\fontfamily{crm}\textlatin{\oldCaLaTeX}\endgroup%
+\begingroup\fontfamily{cmr}\selectfont\oldLeX\endgroup%
 }
 
 
@@ -3279,7 +3539,7 @@ L\kern-.36em%
 \oldTeX}
 
 \DeclareRobustCommand{\LaTeX}{%
-\begingroup\fontfamily{crm}\textlatin{\oldLaTeX}\endgroup%
+\begingroup\fontfamily{cmr}\selectfont\oldLaTeX\endgroup%
 }
 
 \DeclareRobustCommand{\oldTeX}{%
@@ -3287,18 +3547,8 @@ L\kern-.36em%
 }
 
 \DeclareRobustCommand{\TeX}{%
-\begingroup\fontfamily{crm}\textlatin{\oldTeX}\endgroup%
+\begingroup\fontfamily{cmr}\selectfont\oldTeX\endgroup%
 }
-
-
-
-
-%%%
-% \CaTeX
-%%%
-
-%%%%%%%%%%%% Needs to be created
-
 
 
 
@@ -3433,7 +3683,7 @@ L\kern-.36em%
   
 \let\oldmarginpar\marginpar
 \def\marginpar#1{
-\oldmarginpar{\style{note}#1}
+\oldmarginpar[\raggedleft\style{note}#1]{\raggedright\style{note}#1}
 }
 
 
@@ -3496,20 +3746,27 @@ L\kern-.36em%
 
 
 
+\renewenvironment{quotation}
+           {\list{}{\listparindent \leftmargin%
+                    \itemindent    0pt
+                    \rightmargin \leftmargin
+                    \parsep        \z@ \@plus\p@}%
+            \item\relax\style[4]{quote}}
+           {\endlist}
+
+\storeoldenv{\quote}
+\renewenvironment{quote}{\style[4]{quote}\oldquote}{\endoldquote}
 
 
 
-
-
-
-%%%
-% set default font
-%%%
 
 \AtBeginDocument{
-	%% Set font
-	\style{body}
   %%  Removes extreme spacing between paragraphs
   %   Boxes on every page are of a different height
 \raggedbottom
+\disablefrontbreak
 }
+
+\def\titlebreak{\unskip\space} %unskip to remove space in front 
+
+
