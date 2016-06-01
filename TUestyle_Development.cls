@@ -290,6 +290,10 @@
 \DeclareBooleanOptionX{runinsec}
 \runinsecfalse
 
+% Keep subsectionmark
+\DeclareBooleanOptionX{subsecmark}
+\subsecmarkfalse
+
 % Hidden watermark in sectioning
 \DeclareBooleanOptionX{watermark}
 \watermarkfalse
@@ -415,12 +419,7 @@
 % Print optimalization
 \newif\ifprint
 \printfalse
-\DeclareOptionX{print}{%
-  \AtBeginDocument{
-  \storeold{\href}
-  \renewcommand{\href}[2]{\oldhref{##1}{##2}\footnote{\url{##1}}}
-  }
-}
+\DeclareOptionX{print}{\printtrue}
 
 % hide upper sectioning
 \DeclareBooleanOptionX{hideuppersectioning}
@@ -813,14 +812,16 @@
       \let\tempname@sum\tempname
       %\protected@edef\tempvalue{#1}
      % \expandafter\let\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname\tempvalue% Add value to numbered variable
-      \expandafter\protected@edef\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \endcsname{#1}
+      \expandafter\protected@edef\csname data:\tempname:\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname  \expandafter\endcsname{\detokenize{#1}}
      %% \ClassWarning{TUestyle}{\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname: #1}{}
       \checknextarg% Gobble next "argument"
     }
     
+    \newcounter{currentnum}
+    
     \def\gobblenext@key[#1]{
       \let\tempname@sum\tempname
-      \ifnum \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname = 0
+      \ifnum \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname = -1
         \ClassError{TUeStyle}{Key comes after value}{}
       \else
         \ifnumber{#1}{
@@ -829,7 +830,6 @@
           \ifcsname data:\tempname:#1\expandafter\endcsname
             \ClassWarning{TUestyle}{A value key is overwritten}{}
           \else
-            \newcounter{currentnum}
             \setcounter{currentnum}{\the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname}
             \expandafter\edef\csname data:\tempname:#1\endcsname{\noexpand\csname data:\tempname:\thecurrentnum\endcsname}
           % Add value to keyed variable
@@ -864,13 +864,11 @@
 
 
 
-\expandafter\def\csname data:\string\author:9\endcsname{\ClassWarning{TUestyle}{A value key is overwritten}{}}
-
 %%% \printdata{\<name>}{<global delimiter optional>}{<last delimiter optional>}
 %%  prints data contained in \data:<name>:<range>
-\newif\ifprint
+\newif\ifdataprint
 \newcommand{\printdata}[1]{%
-  \printtrue
+  \dataprinttrue
   \def\tempname{\string#1}%
   \def\delimi{, }%
   \def\delimii{ \& }%
@@ -881,7 +879,7 @@
 %%  prints data contained in \data:<name>:<range> to \all:<name>
 \newcommand{\preprintdata}[1]{%
   \def\tempname{\string#1}%
-  \printfalse
+  \dataprintfalse
   \def\delimi{, }%
   \def\delimii{ \& }%
   \@ifnextchar\bgroup{\firstdelim}{\initiateprint{\tempname}}% If delimiter: set it, else, print
@@ -897,45 +895,52 @@
       \def\delimii{#1}%
       \@ifnextchar\bgroup{\seconddelim}{\initiateprint{\tempname}}% If second delimiter: set it, else, print
     }
-
+    
+    \newcounter{tempcount}%
     \newcommand{\initiateprint}[1]{%
       \edef\tmp@sum{#1@sum}%
       \edef\tmp{#1}%
-      \newcount\tempcount%
-      \advance\tempcount 1\relax%
+      \setcounter{tempcount}{0}%
       \expandafter\def\csname all:\expandafter\cs@to@str\tmp\endcsname{} % define counter all:<name> if it doesn't exist yet, otherwise clear
       \printdatainternal#1%
     }
 
     \newcommand{\printdatainternal}[1]{%
-      \ifnum \the\tempcount < \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax%
-        \ifnum \the\tempcount > 1% Use first delimiter in front of values, after the first value
-          \printandwritedata[\delimi]% Print current value
+      \ifnum \thetempcount < \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax%
+        \ifnum \thetempcount > 0% Use first delimiter in front of values, after the first value
+          \printandwritedata[\delimi]\relax% Print current value
         \else%
-          \printandwritedata% Print first value
+          \printandwritedata\relax% Print first value
         \fi%
-        \advance\tempcount 1\relax%
+        \addtocounter{tempcount}{1}%
         \printdatainternal#1% Loop
       \else%
-        \ifnum \the\tempcount = \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax% % Use second delimiter in front of the last value
+        \ifnum \thetempcount = \the\csname c@\expandafter\cs@to@str\tmp@sum\endcsname \relax% % Use second delimiter in front of the last value
           \printandwritedata[\delimii]% Print last value
         \fi
       \fi
     }
     
     \newcommand{\printandwritedata}[1][]{%
-      \ifprint
-        #1\csname data:\tmp:\the\tempcount\endcsname%
+      \ifdataprint%
+        #1\csname data:\tmp:\thetempcount\endcsname%
       \fi
       \expandafter\edef\csname all:\expandafter\cs@to@str\tmp\expandafter\endcsname{%
         \csname all:\expandafter\cs@to@str\tmp\expandafter\endcsname%
-        #1\csname data:\tmp:\the\tempcount\endcsname%
+        #1\csname data:\tmp:\thetempcount\endcsname%
       }%
     }
     
 %%% \printstring{\<name>}
 %%  prints data contained in \all:<name> as a string, needed when commands can't be expanded
 \newcommand{\printstring}[1]{%
+  \def\tempdata{\csname all:\cs@to@str#1\endcsname}%%%%%% TODO implement better
+  \edef\tempdata{\noexpand\scantokens{\tempdata}}%
+  \tempdata%
+}
+
+%%%% TODO add descrp
+\newcommand{\safeprintstring}[1]{%
   \csname all:\cs@to@str#1\endcsname
 }
 
@@ -1170,7 +1175,9 @@
 \newlength{\axispositionX}
 \newcommand{\axisposition}[1]{%
   \setlength{\axispositionY}{\dimexpr #1 \relax}%
+  \global\axispositionY=\axispositionY
   \setlength{\axispositionX}{\dimexpr \@Hspacing-\@Hshift + \@shiftratio\axispositionY -\@axiswidth \relax}%
+  \global\axispositionX=\axispositionX
 }
 
 \newcounter{numberofsentences}
@@ -1230,6 +1237,14 @@
       \def\holder{}%
       
     }
+    
+%%  Command: get longest sentence if it is smaller than the maximum linewidth (#1)
+\newcommand{\getlongestsentenceif}[2][0pt]{
+\getlongestsentence{#2}
+\ifdim \longestsentence > #1
+	\setlength{\longestsentence}{#1}
+\fi
+}
 
 %%% TODO add comments
 \newcommand{\@setClassFontSize}[3]{
@@ -1317,7 +1332,7 @@
 
 % depending packages
 \iftuefonts\relax\else
-  \RequirePackage{uarial}
+  \RequirePackage{arial}
 \fi
 \RequirePackage{hyperref}
 \RequirePackage[a4paper]{geometry}
@@ -1479,9 +1494,12 @@
   \preprintdata\author{,\hfill\break}{ \&\hfill\break}
   \def\@author{\printstring\author}
 }
+
 \begingroup %begingroup not to overwrite earlier \preprintdata\author
   \preprintdata\author{, }{ \& }
-  \def\pdf@author{\printstring\author}
+  \def\pdf@author{\safeprintstring\author}
+  \def\titlebreak{ }
+  \def\linebreak{ }
   \hypersetup{pdftitle = {\@title},pdfauthor = {\pdf@author},pdfsubject={\thesubtitle},pdfkeywords={Version \theversionnum} {Eindhoven University of Technology},pdfcreator={aLeX TU/e template}}
 \endgroup
 
@@ -2462,23 +2480,30 @@
 
 %%%	Set link colors, bookmarks etc.
 \hypersetup{
+  backref=true,
   linktocpage=true,
   breaklinks=true,
   linktocpage=true,
   bookmarksnumbered=true,
   breaklinks=true,
-	colorlinks,
+	colorlinks=true,
 	linkcolor={tuered},
 	citecolor={tuedarkblue},
-	urlcolor={tuescarlet}
+	urlcolor={tuescarlet},
+  linkbordercolor={tuered},
+  citebordercolor={tuedarkblue},
+	urlbordercolor={tuescarlet}
 }
 
+\urlstyle{same}
 \urlstyle{allbreak} % set as default
 
-%%% command \code{<content>}
-%%  styles content as a non-linking url
-%%  affected by restrictedbreak or allbreak
-\DeclareUrlCommand\code{\urlstyle{same}}
+\ifprint
+  \AtBeginDocument{
+    \storeold{\href}
+    \renewcommand{\href}[2]{\oldhref{##1}{##2}\footnote{\url{##1}}}
+  }
+\fi
 
 
 
@@ -2632,9 +2657,11 @@
 }
 
 \ifsectioningstyling
-  \createsectioningstyling[1]{\section}{-3.5ex}{-1ex}{-.2ex}{2.3ex}{.2ex}
-  \createsectioningstyling[2]{\subsection}{-3.25ex}{-1ex}{-.2ex}{1.5ex}{.2ex}
-  \createsectioningstyling[3]{\subsubsection}{-3.25ex}{-1ex}{-.2ex}{1.5ex}{.2ex}
+  \createsectioningstyling[1]{\section}       {-3.5ex}  {-1ex}{-.2ex}{2.3ex}{.2ex}
+  \createsectioningstyling[2]{\subsection}    {-3.25ex} {-1ex}{-.2ex}{1.5ex}{.2ex}
+  \createsectioningstyling[3]{\subsubsection} {-3.25ex} {-1ex}{-.2ex}{1.5ex}{.2ex}
+  
+  \setnewlength{\vaftersection}{2.3ex \@plus .2ex}
   
   \AtBeginDocument{
     \def\@makechapterhead#1{%
@@ -2765,8 +2792,9 @@
     \markright{\ifnum \c@secnumdepth >\z@ \thesection . \ \fi #1}
   }
   
-  \renewcommand{\subsectionmark}[1]{}
-
+  \ifsubsecmark\relax\else
+    \renewcommand{\subsectionmark}[1]{}
+  \fi
 
 
   %%%	Section no number command
@@ -2808,15 +2836,15 @@
       \pgftext[at=\pgfpoint{\@tocleftpadding}{\@axiswidth+\axispositionY},left,bottom]{%
         \begin{minipage}[b][\dimexpr \paperheight-\axispositionY \relax]{\dimexpr \axispositionX - \@tocleftpadding -\@axispadding \relax}%
       
-          \raggedright%
+          \shapedraggedright%
           \style{note}#2\vspace{-\baselineskip}\end{minipage}}
     }{%
       %%% Left bottom column
       \axisposition{\@axisheight-\@axiswidth-\@axispadding}%
       \pgftext[at=\pgfpoint{\@tocleftpadding}{\axispositionY},left,top]{%
         \begin{minipage}[t][\dimexpr \@axisheight-\@axispadding \relax]{\dimexpr \axispositionX - \@tocleftpadding -\@axispadding \relax}%
-          \slantedpar{40}{\linewidth}%
-          \raggedright%
+          \slantedpar{80}{\linewidth}%
+          \shapedraggedright%
           #2\end{minipage}}
     }
   \endgroup
@@ -2864,35 +2892,22 @@
       \enablefrontbreak
       \setlength{\tempboxaheight}{0pt}
       \ifprofilingtouched
-          \axisposition{\paperheight-5.25mm-1.5cm}
           \ifprofilingfilled
-            \titlepagecontent[\theprofilingcolor]{\theprofilingvalue}{white}{\style[1]{heading}}{\dimexpr\paperwidth-\axispositionX-\frameright\relax}
+            \titlepagecontent[right][pink]{\theprofilingvalue}{purple}{\style[1]{heading}}{\dimexpr\paperwidth-\axispositionX-\frameright\relax}{\paperheight-5.25mm-1.5cm}{}{}
+           %%% TODO make normal
+            \titlepagecontent[left][pink]{\theprofilingvalue}{purple}{\style[1]{heading}}{}{\paperheight-5.25mm-1.5cm}{}{}
           \else
-            \titlepagecontent{\theprofilingvalue}{\theprofilingcolor}{\style[1]{heading}}{}
+            \titlepagecontent[right]{\theprofilingvalue}{\theprofilingcolor}{\style[1]{heading}}{}{\paperheight-5.25mm-1.5cm}{}
           \fi
       \else
-        \axisposition{\paperheight-2.3cm}
-        \titlepagecontent{\thelogoname}{tuedarkblue}{\style[4]{heading}}{}
+        \titlepagecontent[right]{\thelogoname}{tuedarkblue}{\style[4]{heading}}{}{\paperheight-2.3cm}{}{}
       \fi
     \endgroup
 	\else
 		\relax
 	\fi
 
-	%%%	Draw horizontal axis
-	\pgfsetcolor{tuered}
-	\pgfpathmoveto{\pgfpoint{0mm}			{\@axisheight}}
-	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight}}
-	\pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight-\@axiswidth}}
-	\pgfpathlineto{\pgfpoint{0cm}			{\@axisheight-\@axiswidth}}
-	\pgfusepath{fill}
-
-	%%%	Draw diagonal axis
-	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\paperheight}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth-\@Hshift}	{0cm}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth}			{\paperheight}}
-	\pgfusepath{fill}
+  \drawtueaxes
 
 	%%%	If innovation is not set to false, by the "noinnovation" option
 	\ifinnovation
@@ -2907,6 +2922,25 @@
 }
 
 
+%%% Use this command only INSIDE a pgfpicture environment
+\newcommand{\drawtueaxes}[1][true]{
+  \pgfsetcolor{tuered}
+  \@ifequal{#1}{true}{
+    %%%	Draw horizontal axis
+    \pgfpathmoveto{\pgfpoint{0mm}			{\@axisheight}}
+    \pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight}}
+    \pgfpathlineto{\pgfpoint{\paperwidth}	{\@axisheight-\@axiswidth}}
+    \pgfpathlineto{\pgfpoint{0cm}			{\@axisheight-\@axiswidth}}
+    \pgfusepath{fill}
+  }{}
+	%%%	Draw diagonal axis
+	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\paperheight}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth-\@Hshift}	{0cm}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth}			{\paperheight}}
+	\pgfusepath{fill}
+}
+
 
             %% TODO move
             \newcommand{\settocompleteheight}[2]{
@@ -2918,35 +2952,85 @@
 
    %% to use you need to set \axispostionX and \axispositionY lengths first, preferably by using \axisposition
    % also set tempboxaheight 0 if it is the first
-   \setnewlength{\tempboxaheight}{0pt}
-   \setnewlength{\tempboxawidth}{0pt}
+   \newlength{\tempboxaheight}
+   \newlength{\tempboxawidth}
    
-\newcommand{\titlepagecontent}[5][\@empty]{
-  \setlength{\tempboxawidth}{0pt}
-  \axisposition{\axispositionY-2\tempboxaheight}
-  \setnewlength{\@tempbaselength}{\dimexpr\paperwidth-\axispositionX-\@axispadding-\layoutrightmargin\relax}
-  #2\setnewlength{\fillhorizontalpadding}{\@axispadding}
-  \setnewlength{\fillverticalpadding}{\@axispadding}
-  \@ifequal{#5}{}{
-    \setnewlength{\minimumfillwidth}{0pt}
-  }{
-    \setnewlength{\minimumfillwidth}{\dimexpr #5 - \fillhorizontalpadding\relax}
+   \newlength{\titlepagecontentX}
+   \newlength{\titlepagecontentY}
+   
+   \setnewlength{\fillhorizontalpadding}{\@axispadding}
+   \newlength{\fillverticalpadding}
+   
+\def\titlepagecontent{%
+   \@ifnextchar[%
+     {\titlepagecontent@i}
+     {\titlepagecontent@i[right]}%
+}
+\def\titlepagecontent@i[#1]{%
+   \@ifnextchar[%
+     {\titlepagecontent@ii{#1}}
+     {\titlepagecontent@ii{#1}[\@empty]}%
+}
+\def\titlepagecontent@ii#1[#2]#3#4#5#6#7#8#9{%
+  \setlength{\tempboxawidth}{0pt}% Reset item-width
+  
+  \axisposition{#7-2\tempboxaheight}% Get axisposition X and Y
+  \setlength{\titlepagecontentX}{\axispositionX}% Store axisposition X
+  \setlength{\titlepagecontentY}{\axispositionY}% Store axisposition Y
+  \global\titlepagecontentY=\titlepagecontentY% Set axisposition Y to be global
+  
+  \@ifequal{#1}{left}{}
+  {% If right go to the right side of the axis
+    \addtolength{\axispositionX}{\@axiswidth}
   }
-  \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY},left,top]{%% TODO better positioning 
-    \@ifequal{#1}{}{
-      \setlength{\tempboxaheight}{0pt}
-    }{
+  
+  {%
+    #5% Activate disired styling (inside group to contain it)
+    \setlength{\currentfontsize}{\f@size pt}% Store the current fontsize
+    \global\currentfontsize=\currentfontsize% Set the current fontsize to be global
+  }
+  
+  \@ifequal{#9}{}{% If the vertical padding is not specified
+    \setlength{\fillverticalpadding}{\@axispadding}% Set vertical padding to equal to horizontal padding
+  }{% If the vertical padding is specified
+    \setlength{\fillverticalpadding}{#9}% Set vertical padding to value specified
+  }
+  
+  \@ifequal{#1}{left}{% If left set baselength:
+    \setnewlength{\@tempbaselength}{\dimexpr\titlepagecontentX-\@axispadding-\@axiswidth-\layoutleftmargin\relax}
+    \ifx#2\@empty\else
+      \addtolength{\@tempbaselength}{-\fillhorizontalpadding}% Substract padding from baselength
+    \fi
+  }{% If right set baselength:
+    \setnewlength{\@tempbaselength}{\dimexpr\paperwidth-\titlepagecontentX-.3\currentfontsize-\layoutrightmargin-\@axispadding\relax}
+    \ifx#2\@empty\else
+      \addtolength{\@tempbaselength}{-\fillhorizontalpadding}% Substract padding from baselength
+    \fi
+  }
+  
+  \@ifequal{#6}{}{% If no minimum width is specified
+    \setnewlength{\minimumfillwidth}{0pt}
+    % Set the minimum to 0
+  }{% If a minimum width is specified
+    \setnewlength{\minimumfillwidth}{#6}
+    % Set the minimum to value specified
+  }
+  
+  \pgftext[at=\pgfpoint{0pt}{0pt},left,top]{
       \def\@tempcontentinside{
-          #4%
-          \leavevmode\color{#3}%
-          #2
+          #5%
+          \leavevmode\color{#4}%
+          #3
       }
       \def\@tempcontent{% 
-        #4%
-        \leavevmode\color{#3}%      
+        #5%
+        \leavevmode\color{#4}%      
         \vbox{%
-          \slantedpar[right]{40}{\linewidth}%
-          \raggedright%
+          \@ifequal{#1}{left}{%
+            \slantedpar[left]{80}{\linewidth}\raggedleft%
+          }{%
+            \slantedpar[right]{80}{\linewidth}\shapedraggedright%
+          }%
            \@tempcontentinside}%
       }%
       \global\sbox{\@tempboxa}{%
@@ -2959,36 +3043,50 @@
       \settocompleteheight{\tempboxaheight}{\usebox{\@tempboxa}}
       \addtolength{\tempboxaheight}{\fillverticalpadding}
       \global\tempboxaheight=\tempboxaheight
-      
-      \ifx#1\@empty\else
-        #4
-        \getlongestsentence{#2}
+      \ifx#2\@empty\else
+        #5
+        \getlongestsentence{#3}
         \ifdim \longestsentence < \@tempbaselength
-          \ifdim \dimexpr\longestsentence + \fillhorizontalpadding\relax < \minimumfillwidth
-            \setlength{\tempboxawidth}{\minimumfillwidth}
+          \ifdim \longestsentence < \minimumfillwidth
+            \setlength{\tempboxawidth}{\dimexpr\minimumfillwidth\relax}
           \else
             \setlength{\tempboxawidth}{\longestsentence}
-            \addtolength{\tempboxawidth}{\fillhorizontalpadding}
           \fi
         \else
           \setlength{\tempboxawidth}{\@tempbaselength}
         \fi
-          \global\tempboxawidth=\tempboxawidth
       \fi
       \global\tempboxawidth=\tempboxawidth
+  }
+  \ifx#2\@empty\else
+    \pgfsetcolor{#2}
+    \@ifequal{#1}{left}{
+      \pgfpathmoveto{\pgfpoint{\titlepagecontentX}                                                  {\titlepagecontentY}}
+      \pgfpathlineto{\pgfpoint{\titlepagecontentX  - \tempboxawidth - \fillhorizontalpadding-\@axispadding -\@axiswidth}                {\titlepagecontentY}}
+      \pgfpathlineto{\pgfpoint{\titlepagecontentX   - \tempboxawidth - \fillhorizontalpadding-\@axispadding -\@axiswidth}                {\titlepagecontentY - 2\tempboxaheight}}
+      \pgfpathlineto{\pgfpoint{\titlepagecontentX  - \@shiftratio\tempboxaheight*2}                  {\titlepagecontentY - 2\tempboxaheight}}
+      \pgfusepath{fill}
+    }{
+      \pgfpathmoveto{\pgfpoint{\titlepagecontentX}                                                  {\titlepagecontentY}}
+      \pgfpathlineto{\pgfpoint{\titlepagecontentX  + \tempboxawidth + \fillhorizontalpadding}                {\titlepagecontentY}}
+      \pgfpathlineto{\pgfpoint{\titlepagecontentX   + \tempboxawidth + \fillhorizontalpadding}                {\titlepagecontentY - 2\tempboxaheight}}
+      \pgfpathlineto{\pgfpoint{\titlepagecontentX  - \@shiftratio\tempboxaheight*2}                  {\titlepagecontentY - 2\tempboxaheight}}
+      \pgfusepath{fill}
+    }
+  \fi
+  \@ifequal{#1}{left}{
+    \pgftext[at=\pgfpoint{\layoutleftmargin}{\titlepagecontentY-.25\baselineskip-\fillverticalpadding},left,top]{%
+     \usebox{\@tempboxa}
+    }
+  }{
+    \pgftext[at=\pgfpoint{\titlepagecontentX+\@axispadding}{\titlepagecontentY-.25\baselineskip-\fillverticalpadding},left,top]{%
+      \usebox{\@tempboxa}
     }
   }
-  \ifx#1\@empty\else
-    \pgfsetcolor{#1}
-    \pgfpathmoveto{\pgfpoint{\axispositionX }                                                  {\axispositionY}}
-    \pgfpathlineto{\pgfpoint{\axispositionX  + \tempboxawidth + \fillhorizontalpadding}                {\axispositionY}}
-    \pgfpathlineto{\pgfpoint{\axispositionX   + \tempboxawidth + \fillhorizontalpadding}                {\axispositionY - 2\tempboxaheight}}
-    \pgfpathlineto{\pgfpoint{\axispositionX  - \@shiftratio\tempboxaheight*2}                  {\axispositionY - 2\tempboxaheight}}
-    \pgfusepath{fill}
-  \fi
-  \pgftext[at=\pgfpoint{\axispositionX+\@axispadding}{\axispositionY-.25\baselineskip-\fillverticalpadding},left,top]{%% TODO better positioning 
-     \usebox{\@tempboxa}
-  }
+  \@ifequal{#8}{nospace}{
+    \setlength{\tempboxaheight}{0pt}
+    \global\tempboxaheight=\tempboxaheight
+  }{}
 }
   
 
@@ -3019,7 +3117,6 @@
 †\or‡\or§\or¶\or||\or**\or††\or‡‡\or|||\or***\or†††\or‡‡‡\or \ClassError{TUeStyle}{Frontpage counter too large. Are you sure you need that many authors?}\fi}
 
 \renewcommand\maketitle{
-  \clearpage%
   \setcounter{footnote}{-1}
   \renewcommand{\thefootnote}{\fnsymbol{footnote}}
   \def\and{} %%% TODO add warning
@@ -3145,9 +3242,9 @@
         \setlength{\tempboxaheight}{0pt}
         \axisposition{\@axisheight}
       \fi
-      \titlepagecontent[green]{\@title}{black}{\style[0]{heading}}{}
-      \titlepagecontent[green]{\thesubtitle}{black}{\style[3]{heading}}{}
-      \titlepagecontent{\thesubsubtitle}{black}{\style{body}\justified}{}    
+      \titlepagecontent[right][green]{\@title}{black}{\style[0]{heading}}{}{\axispositionY}{}{}
+      \titlepagecontent[right][pink]{\thesubtitle}{black}{\style[3]{heading}}{}{\titlepagecontentY}{}{}
+      \titlepagecontent[right]{\thesubsubtitle}{black}{\style{body}\justified}{}{\titlepagecontentY}{}{}
       
       %%%	Drawing of the TU/e axes and logo
       %   Drawn last so it overlays everything else
@@ -3165,6 +3262,7 @@
 \def\and{\ClassWarning{TUestyle}{\string\and command is disabled, use \string\author{<name1>}{<name2>}{<name3>} for proper styling}{}}
 
 
+
 %%%
 % 	Redefine table of contents
 %%%
@@ -3180,7 +3278,6 @@
 	\if@openright
 		\cleardoublepage
 	\else\relax\fi
-  \setlength{\parskip}{\listofparskip}
 
 	% The table of contents needs different margins. The package geometry is used to
 	% change the margins of certain pages within a document.
@@ -3295,12 +3392,14 @@
 \newcommand{\leftsidefoot}{
   \parbox[b]{\linewidth}{\raggedright
     \style{body}\color{black}\footnumber\color{hfcolor}\space-\space
-    \@title 
-      \ifx\theversionnum\empty\relax\else
-        { / \theversionlabel\space\theversionnum }%
+    \@title
+      \ifx\theversionnum\empty
+        \linebreak
+      \else
+        { / \theversionlabel\space\theversionnum }\linebreak%
       \fi%
     \ifsectioningf
-      \\\itshape\nouppercase{\leftmark}\ifx\leftmark\empty\linebreak\fi
+      \itshape\nouppercase{\leftmark}\linebreak%
     \fi
     \ifx\theextraf\empty\relax\else
       \theextraf
@@ -3361,9 +3460,6 @@
 \newcommand{\setheadersTwo}{
 	\pagestyle{fancy}
 	\fancyhf{}
-  %	Header in the center of the page
-	\fancyhead[CO]{
-	}
 	%	Header for the even pages, header on the left
 	\fancyhead[LE]{
 		\leftsidehead
@@ -3380,9 +3476,8 @@
 	\fancyfoot[LO]{
 		\leftsidefoot
 	}
-
   %	Copyholder in the middle
-	\fancyfoot[CE]{%
+	\fancyfoot[C]{%
     \makebox[\textwidth]{%
       \raisebox{\dimexpr-15.75mm+\fboxrule}{
       \setlength{\fboxsep}{0pt}%
@@ -3393,29 +3488,12 @@
       \draftmarking%
     }}%
 	}%
-  
-  %	Copyholder in the middle
-	\fancyfoot[CO]{%
-    \makebox[\textwidth]{%
-      \raisebox{\dimexpr-15.75mm+\fboxrule}{
-      \setlength{\fboxsep}{0pt}%
-      \fbox{\parbox[b]{5cm}{\copyfoot}}%
-      }%
-    }%
-    \raisebox{\dimexpr.5\paperheight-15.75mm}[0pt][0pt]{\hspace{-\textwidth}\makebox[\textwidth]{%
-      \draftmarking%
-    }}
-	}%
 }
 
 %%%	Define header and footers for oneside design
 \newcommand{\setheadersOne}{
 	\pagestyle{fancy}
 	\fancyhf{}
-	%	Header in the center of the page
-	\fancyhead[C]{
-		\draftmarking
-	}
 	%	Header only on the right side
 	\fancyhead[R]{
 		\rightsidehead
@@ -3424,10 +3502,18 @@
 	\fancyfoot[L]{
 		\leftsidefoot
 	}
-	%	Copyholder in the middle
-	\fancyfoot[C]{
-		\copyfoot
-	}
+  %	Copyholder in the middle
+	\fancyfoot[C]{%
+    \makebox[\textwidth]{%
+      \raisebox{\dimexpr-15.75mm+\fboxrule}{
+      \setlength{\fboxsep}{0pt}%
+      \fbox{\parbox[b]{5cm}{\copyfoot}}%
+      }%
+    }%
+    \raisebox{\dimexpr.5\paperheight-15.75mm}[0pt][0pt]{\hspace{-\textwidth}\makebox[\textwidth]{%
+      \draftmarking%
+    }}%
+	}%
 }
 
 %%%	Set defined header/footers, custom, twoside or oneside
@@ -3463,7 +3549,9 @@
   \fancyhead{}
   \fancyfoot{}
   \fancyfoot[C]{
+    \parbox[b]{\linewidth}{\centering
       \color{hfcolor}-\space\color{black}\footnumber\color{hfcolor}\space-
+    }
   }
 }
 
@@ -3758,6 +3846,87 @@ L\kern-.36em%
 \renewenvironment{quote}{\style[4]{quote}\oldquote}{\endoldquote}
 
 
+\newenvironment{intro}{\style[2]{intro}}{}
+
+
+
+\newif\ifallowaxistile
+\allowaxistiletrue
+
+
+\newcommand{\makeaxis}{
+	\if@openright
+		\cleardoublepage
+	\else\relax\fi
+
+	% The table of contents needs different margins. The package geometry is used to
+	% change the margins of certain pages within a document.
+	% After the table of contents, they will be reset.
+	
+  %%%%%%%%\newgeometry{bottom=\layoutbottommargin, twoside=false, right=\rightmargincalculated, left=\@tocleftspace, top=\@toctopspace, headheight=0cm, headsep=0cm,footskip=0cm,marginpar=0cm,marginparsep=0cm}
+	\newgeometry{marginparsep=\marginparsepvalue,marginparwidth=\marginparwidthvalue,bindingoffset=0cm,top=\layouttopmargin,left=\layoutleftmargin,right=\frameright,bottom=\layoutbottommargin,twoside=false, headheight=0cm, headsep=0cm,footskip=0cm}
+
+	\fancyhf{}
+  \newtoks\mylinetoks%use token register to allow \linebreak etc., this doesn't work in edef
+  \mylinetoks={}
+	\fancyfoot[L]{%
+	\vspace{\dimexpr-\layouttopmargin-\textheight}%
+	\makebox[\textwidth][l]{%
+		\hspace{-\layoutleftmargin}%
+			\begin{pgfpicture}{0mm}{0mm}{\paperwidth}{\paperheight}
+        \setlength{\tempboxaheight}{0pt}
+        \axisposition{\paperheight-\layouttopmargin+\@axispadding}
+        \setlength{\titlepagecontentY}{\axispositionY}
+				\drawtueaxes[false]
+        \the\mylinetoks
+			\end{pgfpicture}
+		}
+	}
+	\newpage\null\thispagestyle{fancy}
+
+\checknextargb}
+
+\newcommand{\checknextargb}{%
+  \@ifnextchar\bgroup{%
+    \gobblenextb % Check if another "argument" exists
+  }{%
+    \@ifnextchar[{%
+      \gobblenextb@key%
+    }{% Ending
+      %%%	Begin new page to start layout-change
+      \newpage
+
+      %%%	Reset the original values of all margins
+      \resetlayout
+    }
+  }
+}
+
+
+  \newcommand{\gobblenextb}[1]{%
+      \mylinetoks=\expandafter{\the\mylinetoks
+      \titlepagecontent[right]{#1}{black}{}{}{\titlepagecontentY}{}{.5\baselineskip}
+    }
+    \allowaxistiletrue
+    \checknextargb% Gobble next "argument"
+  }
+  
+  \newlength{\tempaxispos}
+  \def\gobblenextb@key[#1]{%
+    \ifallowaxistile
+      \mylinetoks=\expandafter{\the\mylinetoks
+      \titlepagecontent[left]{#1}{tuered}{}{}{\titlepagecontentY}{nospace}{.5\baselineskip}
+    }
+    \else\ClassError{TUeStyle}{Can't write two titles after each other, use a \string\linebreak (followed by another \string\linebreak for a paragraph ending)}\fi\allowaxistilefalse
+    \checknextargb% Gobble next "argument"
+  }
+
+
+
+
+
+
+
 
 
 \AtBeginDocument{
@@ -3769,4 +3938,20 @@ L\kern-.36em%
 
 \def\titlebreak{\unskip\space} %unskip to remove space in front 
 
+\setcounter{errorcontextlines}{20}
 
+
+
+\newenvironment{minitextpage}{
+	\@ifnextchar[{
+		\begin{minipage}
+	}{
+		\begin{minipage}[t]
+	}
+}{	
+	\setlength{\currentfontsize}{\f@size pt}%
+ 	\vspace{\dimexpr \baselineskip-\currentfontsize \relax}%
+ 	
+ 	\xdef\tpd{\the\prevdepth}% requires empty line before
+	\end{minipage}
+}
