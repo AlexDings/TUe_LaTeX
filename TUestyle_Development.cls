@@ -148,7 +148,7 @@
   \fi%
 }
 
-%%% command \ifequal{<defA>}}{<stringB>}{<on true>}{<on false>}
+%%% command \ifequalii{<defA>}}{<stringB>}{<on true>}{<on false>}
 %%  compares a definition with a string for equality
 \newcommand{\@ifequalii}[4]{%
   \def\string@a{#2}%
@@ -4292,24 +4292,6 @@ L\kern-.36em%
   }
 }
 
-%%% Command \footnote*[<label>]{<text>}
-%%  Result: Outputs a footnote with:
-%%  - a custom footnote mark,
-%%  - footnote label "foot:<label>"
-%%  Followed by a seperating comma if next command is \footnote
-\def\@@footnoteS[#1]#2{%
-  \begingroup%
-  \@ifequalii{\thecurrentFootnoteLabel}{}{%
-    \renewcommand\thefootnote{#1}\footnote{#2}%
-  }{%
-    \renewcommand\thefootnote{#1}\footnote{\label{\thecurrentFootnoteLabel}#2}%
-  }
-  \currentFootnoteLabel{}%
-  \addtocounter{footnote}{-1}%
-  \endgroup%
-  \checkIsFootnote%
-}
-
 %%% Command:  \footnote**[<label>]{<text>}
 %%  Result:   Outputs a footnote with:
 %%  - a custom footnote mark,
@@ -4355,7 +4337,7 @@ L\kern-.36em%
 
 \def\@footnoteswitch{%
   \@ifnextchar[{%
-    \@@footnoteS%
+    \@@footnote%
   }{%
     \@@@footnote%
    }
@@ -4374,21 +4356,23 @@ L\kern-.36em%
   \checkIsFootnote%
 }
 
-%%% Command \footnote[<# label>]{<text>}
-%%  Result: Outputs a regular footnote with a set number
+%%% Command \footnote*[<label>]{<text>}
+%%  Result: Outputs a footnote with:
+%%  - a custom footnote mark,
+%%  - footnote label "foot:<label>"
 %%  Followed by a seperating comma if next command is \footnote
-\def\@@@@footnote[#1]#2{%
+\def\@@footnote[#1]#2{%
+  \begingroup%
   \@ifequalii{\thecurrentFootnoteLabel}{}{%
-    \oldfootnote[#1]{#2}%
+    \renewcommand\thefootnote{#1}\footnote{#2}%
   }{%
-    \oldfootnote[#1]{\label{\thecurrentFootnoteLabel}#2}%
+    \renewcommand\thefootnote{#1}\footnote{\label{\thecurrentFootnoteLabel}#2}%
   }
   \currentFootnoteLabel{}%
+  \addtocounter{footnote}{-1}%
+  \endgroup%
   \checkIsFootnote%
 }
-
-
-
 
 
 \newcommand{\footref}[1]{%
