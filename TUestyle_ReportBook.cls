@@ -16,8 +16,8 @@
 \def\fileversion{v.2.0}
 \def\filedate{2015/03/29}
 \def\filename{TU/e style report & book 2008}
-\def\docname{TUeStyleReportBook.cls}
-\ProvidesClass{TUeStyleReportBook}[\filedate\space\fileversion\space\filename]
+\def\docname{TUestyleDevelopment.cls}
+\ProvidesClass{TUestyleReportBook}[\filedate\space\fileversion\space\filename]
 
 
 
