@@ -536,7 +536,7 @@
 }
 
 % Process all options
-\ProcessOptionsX
+\ProcessOptionsX % TODO define family: <>
 
 
 
@@ -3851,7 +3851,7 @@
 	\iflogo
 		% TU/e logo and red lines
     \setaxisposition{\temp@layoutheight-5.25mm}
-		\pgftext[at=\pgfpoint{\axispositionX-2.415cm}{\axispositionY},left,top]{\resizebox{!}{1.5cm}{\tuelogo}}%
+		\pgftext[at=\pgfpoint{\axispositionX-1.5485*1.5cm-\@axiswidth}{\axispositionY},left,top]{\resizebox{!}{1.5cm}{\tuelogo}}%
 		
 		\newvariable{logoname}{}
 		\if\theadministrativeunit\empty
