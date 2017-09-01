@@ -4270,7 +4270,10 @@
        
                    \resetaxisposition
           \setaxisposition{\paperheight-3cm}
-
+       %%%TODO remove:
+        \titlepagecontent[left][red]{\@title}{colorbody}{\style[0]{heading}\raggedright}{}{\axispositionY}{}{}
+        \titlepagecontent[left]{\thesubsubtitle}{colorbody}{\style{body}\justified}{}{\titlepagecontentY}{}{}
+       
        
         %%%	Drawing of the TU/e axes and logo
         %   Drawn last so it overlays everything else
