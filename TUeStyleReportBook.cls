@@ -402,7 +402,7 @@
     \notesfalse
   \fi
 }
-\ExecuteOptionsX{notes}
+\setkeys{\docname}{notes}
 
 \define@choicekey*{\docname}{footnotealign}[\val\nr]{hang,inline}[hang]{%
   \ifcase\nr\relax
@@ -411,7 +411,7 @@
     \AtBeginDocument{\inlinefntext}
   \fi
 }
-\ExecuteOptionsX{footnotealign}
+\setkeys{\docname}{footnotealign}
 
 %%% Align options
 %%  (centered by default)
@@ -434,7 +434,7 @@
     \def\autocentershort{c}%
   \fi
 }
-\ExecuteOptionsX{align}
+\setkeys{\docname}{align}
 
 % header & footer options
 
@@ -507,13 +507,13 @@
 \define@choicekey*{\docname}{hyperstyle}{border,underline,color}[color]{%
   \def\hyperstyle{#1}
 }
-\ExecuteOptionsX{hyperstyle}
+\setkeys{\docname}{hyperstyle}
 
 % Urlstyle option
 \define@choicekey*{\docname}{urlstyle}{same,allbreak,restrictedbreak}[allbreak]{%
   \AtBeginDocument{\urlstyle{#1}}
 }
-\ExecuteOptionsX{urlstyle}
+\setkeys{\docname}{urlstyle}
 
 
 % font options
