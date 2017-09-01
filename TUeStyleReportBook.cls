@@ -40,6 +40,8 @@
 
 \RequirePackage[table]{xcolor}% also loads »colortbl«
 \RequirePackage{pgf}% also loads »xcolor«, so loaded after »xcolor«
+\usepackage{pgffor}% used to iterate over lists
+
 
 \RequirePackage[dutch, english]{babel}
 
