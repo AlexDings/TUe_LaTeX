@@ -3872,7 +3872,7 @@
         \resetaxisposition
         \setaxisposition{\temp@layoutheight-5.25mm-1.5cm}
         \ifprofilingfilled
-          \titlepagecontent[right][profilingcolor]{\theprofilingvalue}{white}{\style[1]{heading}}{}{\axispositionY}{\dimexpr\temp@layoutwidth-.5\axispositionX-.5\layoutrightmargin\relax}{}
+          \titlepagecontent[right][profilingcolor]{\theprofilingvalue}{white}{\style[1]{heading}}{\@logospacingright}{\axispositionY}{\dimexpr\temp@layoutwidth-.5\axispositionX-.5\layoutrightmargin\relax}{}
         \else
           \titlepagecontent[right]{\theprofilingvalue}{\theprofilingcolor}{\style[1]{heading}}{}{\axispositionY}{}{}
         \fi
