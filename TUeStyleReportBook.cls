@@ -3409,12 +3409,12 @@
 }
 
 \storeoldrelax{\includegraphics}
-\newcommand{\includegraphics}[2][\@empty]{
-	\ifx\@empty#1
-		\oldincludegraphics[width=\maxwidth]{#2}
-	\else
-		\oldincludegraphics[#1]{#2}
-	\fi
+\newcommand{\includegraphics}[2][\@empty]{%
+	\ifx\@empty#1%
+		\oldincludegraphics[width=\maxwidth]{#2}%
+	\else%
+		\oldincludegraphics[#1]{#2}%
+	\fi%
 }
 
 %%% Change GraphicsExtensions to ignore casemixing in determining loading order.
@@ -3794,7 +3794,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand\TUe@checkloadtuelogo[2]{
   \IfFileExists{#1tuelogo.pdf}{
-    \def\tuelogo{#1\includegraphics{#1tuelogo.pdf}}
+    \def\tuelogo{\includegraphics{#1tuelogo.pdf}}
   }{#2}
 }
 \TUe@checkloadtuelogo             {}{
@@ -3808,7 +3808,7 @@
                 \ClassWarningNoLine{TUeStyle}{Package tikz is loaded because "tuelogo.pdf" is missing. For speed reasons, consider adding tuelogo.pdf to your file directory.}
               }
               \RequirePackage{tikz} 
-              \def\tuelogo{
+              \def\tuelogo{%
                 \begin{tikzpicture}[y=1pt, x=1pt, yscale=-1, xscale=1, inner sep=0pt, outer sep=0pt]
                   % T
                   \path[fill=tuedarkblue] (218.5,70.9) -- (0.0,70.9) -- (0.0,121.8) -- (68.3,121.8) -- (68.3,354.3) --(133.9,354.3) -- (133.9,121.8) -- (203.9,121.8) -- (218.5,70.9);
@@ -3851,7 +3851,7 @@
 	\iflogo
 		% TU/e logo and red lines
     \setaxisposition{\temp@layoutheight-5.25mm}
-		\pgftext[at=\pgfpoint{\axispositionX-1.5485*1.5cm-\@axiswidth}{\axispositionY},left,top]{\resizebox{!}{1.5cm}{\tuelogo}}%
+		\pgftext[at=\pgfpoint{\axispositionX-1.5485*1.5cm}{\axispositionY},left,top]{\resizebox{!}{1.5cm}{\tuelogo}}%
 		
 		\newvariable{logoname}{}
 		\if\theadministrativeunit\empty
