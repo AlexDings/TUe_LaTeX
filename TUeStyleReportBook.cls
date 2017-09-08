@@ -3851,7 +3851,12 @@
 	\iflogo
 		% TU/e logo and red lines
     \setaxisposition{\temp@layoutheight-5.25mm}
-		\pgftext[at=\pgfpoint{\axispositionX-1.5485*1.5cm}{\axispositionY},left,top]{\resizebox{!}{1.5cm}{\tuelogo}}%
+    
+    \setnewlength{\@logoheight}{1.5cm}
+    \setnewlength{\@logospacingleft}{\dimexpr1.5485\@logoheight\relax}
+    \setnewlength{\@logospacingright}{\dimexpr3.43\@logoheight\relax}
+    
+		\pgftext[at=\pgfpoint{\axispositionX-\@logospacingleft}{\axispositionY},left,top]{\resizebox{!}{\@logoheight}{\tuelogo}}%
 		
 		\newvariable{logoname}{}
 		\if\theadministrativeunit\empty
