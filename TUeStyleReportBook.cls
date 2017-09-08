@@ -3852,9 +3852,9 @@
 		% TU/e logo and red lines
     \setaxisposition{\temp@layoutheight-5.25mm}
     
-    \setnewlength{\@logoheight}{1.5cm}
-    \setnewlength{\@logospacingleft}{\dimexpr1.5485\@logoheight\relax}
-    \setnewlength{\@logospacingright}{\dimexpr3.43\@logoheight\relax}
+    \setnewlength{\@logoheight}       {1.5cm}
+    \setnewlength{\@logospacingleft } {\dimexpr1.5485\@logoheight\relax}
+    \setnewlength{\@logospacingright} {\dimexpr3.4333\@logoheight\relax}
     
 		\pgftext[at=\pgfpoint{\axispositionX-\@logospacingleft}{\axispositionY},left,top]{\resizebox{!}{\@logoheight}{\tuelogo}}%
 		
@@ -3912,17 +3912,17 @@
   \pgfsetcolor{coloraxis}%
   \ifequal{#1}{true}{%
     %%%	Draw horizontal axis
-    \pgfpathmoveto{\pgfpoint{0mm}			{\@axisheight}}
-    \pgfpathlineto{\pgfpoint{\temp@layoutwidth}	{\@axisheight}}
-    \pgfpathlineto{\pgfpoint{\temp@layoutwidth}	{\@axisheight-\@axiswidth}}
-    \pgfpathlineto{\pgfpoint{0mm}			{\@axisheight-\@axiswidth}}
+    \pgfpathmoveto{\pgfpoint{0mm              -\layoutbleed}{\@axisheight             }}
+    \pgfpathlineto{\pgfpoint{\temp@layoutwidth+\layoutbleed}{\@axisheight             }}
+    \pgfpathlineto{\pgfpoint{\temp@layoutwidth+\layoutbleed}{\@axisheight-\@axiswidth }}
+    \pgfpathlineto{\pgfpoint{0mm              -\layoutbleed}{\@axisheight-\@axiswidth }}
     \pgfusepath{fill}
   }{}%
 	%%%	Draw diagonal axis
-	\pgfpathmoveto{\pgfpoint{\@Hspacing}						{\temp@layoutheight}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@Hshift}				{0cm}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth-\@Hshift}	{0cm}}
-	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth}			{\temp@layoutheight}}
+	\pgfpathmoveto{\pgfpoint{\@Hspacing                       +\@shiftratio\layoutbleed}{\temp@layoutheight +\layoutbleed}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing             -\@Hshift -\@shiftratio\layoutbleed}{0cm                -\layoutbleed}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth -\@Hshift -\@shiftratio\layoutbleed}{0cm                -\layoutbleed}}
+	\pgfpathlineto{\pgfpoint{\@Hspacing-\@axiswidth           +\@shiftratio\layoutbleed}{\temp@layoutheight +\layoutbleed}}
 	\pgfusepath{fill}
 }
 
@@ -4326,15 +4326,15 @@
 \newcommand{\@axisfill}[4][left]{
   \pgfsetcolor{#2}
   \ifequal{#1}{left}{%
-    \pgfpathmoveto{\pgfpoint{0mm}{#4}}
-    \pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*(\temp@layoutheight-(#4))-\@axiswidth}{#4}}
-    \pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*(\temp@layoutheight-(#3))-\@axiswidth}{#3}}
-    \pgfpathlineto{\pgfpoint{0mm}{#3}}
+    \pgfpathmoveto{\pgfpoint{0mm          -\layoutbleed                                       } {#4}}
+    \pgfpathlineto{\pgfpoint{\@Hspacing   -\@shiftratio*(\temp@layoutheight-(#4))-\@axiswidth } {#4}}
+    \pgfpathlineto{\pgfpoint{\@Hspacing   -\@shiftratio*(\temp@layoutheight-(#3))-\@axiswidth } {#3}}
+    \pgfpathlineto{\pgfpoint{0mm          -\layoutbleed                                       } {#3}}
   }{
-    \pgfpathmoveto{\pgfpoint{\paperwidth}{#4}}
-    \pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*(\temp@layoutheight-(#4))}{#4}}
-    \pgfpathlineto{\pgfpoint{\@Hspacing-\@shiftratio*(\temp@layoutheight-(#3))}{#3}}
-    \pgfpathlineto{\pgfpoint{\paperwidth}{#3}}
+    \pgfpathmoveto{\pgfpoint{\paperwidth  +\layoutbleed                                       } {#4}}
+    \pgfpathlineto{\pgfpoint{\@Hspacing   -\@shiftratio*(\temp@layoutheight-(#4))             } {#4}}
+    \pgfpathlineto{\pgfpoint{\@Hspacing   -\@shiftratio*(\temp@layoutheight-(#3))             } {#3}}
+    \pgfpathlineto{\pgfpoint{\paperwidth  +\layoutbleed                                       } {#3}}
   }
   \pgfusepath{fill}
 }
