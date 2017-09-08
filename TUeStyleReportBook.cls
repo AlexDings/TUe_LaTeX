@@ -3858,13 +3858,15 @@
       \relax
     \else	
 			\logoname{\theadministrativeunit}
-		\if\thedepartment\empty
-      \relax
-    \else
-			\logoname{\thedepartment}
-		\ifprofilingtouched
-			\logoname{\theprofilingvalue}
-		\fi\fi\fi
+      \if\thedepartment\empty
+        \relax
+      \else
+        \logoname{\thedepartment}
+        \ifprofilingtouched
+          \logoname{\theprofilingvalue}
+        \fi
+      \fi
+    \fi
     \begingroup
       \enablefrontbreak
       \resetaxisposition
