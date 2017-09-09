@@ -2849,9 +2849,14 @@
 
 % body text
 \def\styling@body{%
+  \styling@@body%
+  \leavevmode\color{colorbody}%
+}
+
+\def\styling@@body{%
   \normalsize%
 	\fontdefault\bodyfamilydefault%
-  \leavevmode\color{colorbody}%
+  \color{colorbody}%
 }
 
 % footer text
@@ -2970,7 +2975,7 @@
     {\ifequal{#1}{5}{\styling@headingsubparagraph}%
     {\ClassError{TUestyle}{Not a valid size for style <#2>: #1}}}}}}}}}}}%
   }{\ifequal{#2}{headerfooter}{%
-    \styling@headerfooter
+    \styling@headerfooter%
   }{\ifequal{#2}{intro}{%
     \ifequal{#1}{1}{\styling@introlarge}%
     {\ifequal{#1}{2}{\styling@intronormal}%
@@ -5640,7 +5645,7 @@ L\kern-.36em%
   %   \raggedbottom %%%% TODO make option
   %   Boxes on every page are of a different height
 \disablefrontbreak%% TODO test if needed
-\style{body}
+\styling@@body%
 }
 
 
