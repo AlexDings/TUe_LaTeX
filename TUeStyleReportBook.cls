@@ -3326,8 +3326,8 @@
 
 %% Write out to log which labels have changed
 \def\@testdef #1#2#3{%
-  \def\@testdef@temp{#3}\expandafter%
-  \ifx \csname #1@#2\endcsname
+  \def\@testdef@temp{#3}\expandafter
+  \ifx\csname#1@#2\endcsname
     \@testdef@temp
   \else
     \typeout{^^J%
@@ -4407,7 +4407,7 @@
 
     \pagestyle{fancy}
       %%%	Draw TOC (Table of Contents)
-      {
+      {\def\@currentlist{toc}
       \@starttoc{toc} 
      }%
     
@@ -5686,6 +5686,7 @@ L\kern-.36em%
 \storeold{\numberline}
 \newlength{\numberlineTemp}%
 \renewcommand{\numberline}[1]{%
+\typeout{NUMBERLINE IS \@currentlist}%% TODO remove
   \expandafter\providelength\csname\@currentlist Widest\endcsname%
   \settowidth{\numberlineTemp}{#1}%
   \expandafter\settobiggest\csname\@currentlist Widest\endcsname{\numberlineTemp}%
