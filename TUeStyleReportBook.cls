@@ -55,10 +55,6 @@
 \RequirePackage{accsupp}
 
 \AtBeginDocument{
-  \RequirePackage{refcheck}% to be loaded after »amsmath« and »hyperref«
-}
-
-\AtBeginDocument{
   %%% Make the sentence spacing single spaced
   %%    Also avoids microtype "\nonfrenchspacing is active. Adjustment of
   %%    (microtype) interword spacing will disable it." warning
@@ -376,6 +372,9 @@
 
 % don't float images
 \DeclareBooleanOptionX[false]{nofloat}
+
+% do use refcheck
+\DeclareBooleanOptionX[true]{refcheck}
 
 % fonts options
 \DeclareOptionX{tuefonts}{\tuefontstrue}
@@ -1785,6 +1784,12 @@
 
 \ifnofloat
   \RequirePackage{float}
+\fi
+
+\ifrefcheck
+  \AtBeginDocument{
+    \RequirePackage{refcheck}% to be loaded after »amsmath« and »hyperref«
+  }
 \fi
 
 \ifinlinesec
