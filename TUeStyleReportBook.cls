@@ -5182,31 +5182,6 @@ L\kern-.36em%
 %	Formatting marks
 %%%
 
-%%% NOTE requires explicit linebreaking
-\newenvironment{showspaces}[1][dot]{\par\obeyspaces%\obeylines%
-  \ifequal{#1}{dot}{%
-    \begingroup\lccode`\~=`\ \lowercase{\endgroup\let~}\spacedot%
-    \begingroup\lccode`\~=`\^^M\lowercase{\endgroup\let~}\spacedot%
-  }{%
-    \ifequal{#1}{bar}{%
-      \begingroup\lccode`\~=`\ \lowercase{\endgroup\let~}\spacebar%
-      \begingroup\lccode`\~=`\^^M\lowercase{\endgroup\let~}\spacebar%
-    }{}%
-  }%
-}
-{\par}
-  
-\newcommand{\spacebar}{%
-  \leaders\hrule height 1.5ex
-  \hskip\fontdimen2\font plus \fontdimen3\font minus \fontdimen4\font
-}
-
-\newcommand{\spacedot}{%
-  \cleaders\hbox{$\cdot$}\relax%%% TODO fix
-  \hskip\fontdimen2\font plus \fontdimen3\font minus \fontdimen4\font
-}
-
-
 \newsavebox{\hugequoteleftBox}
 \newcommand{\hugequoteleft}{%
   \begingroup%
