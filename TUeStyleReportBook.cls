@@ -2178,7 +2178,7 @@
     \showcropvalue,%
     headheight=0pt,%
     headsep=0pt,%
-    footskip=0pt,%
+    footskip=15.75mm,%
     marginparsep    = 0pt,%
     marginparwidth  = 0pt,%
     twoside=false,%
