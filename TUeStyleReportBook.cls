@@ -2237,20 +2237,31 @@
 \let\restoregeometry\resetlayout% To avoid people using restoregeometry from the geometry package
 
 \def\setoddcontentlayout{
-      \initializelayout
-      \ifoddpage{
-        \expandafter\newgeometry\expandafter{\TUE@GeometryOptionsOddCONTENT}
-      }{
-        \expandafter\newgeometry\expandafter{\TUE@GeometryOptionsEvenCONTENT}
-      }
-      \finalizelayout
-      \iftwosided
-        \oddevengeometry{\TUE@GeometryOptionsOddCONTENT}{\TUE@GeometryOptionsEvenCONTENT}
-      \fi
-      }
-
+  \if@openright
+    \cleardoublepage
+  \else
+    \clearpage
+  \relax\fi
+  
+  \initializelayout
+  \ifodd\c@page\relax% Use c@page to keep page empty
+    \expandafter\newgeometry\expandafter{\TUE@GeometryOptionsOddCONTENT}
+  \else
+    \expandafter\newgeometry\expandafter{\TUE@GeometryOptionsEvenCONTENT}
+  \fi
+  \finalizelayout
+  \iftwosided
+    \oddevengeometry{\TUE@GeometryOptionsOddCONTENT}{\TUE@GeometryOptionsEvenCONTENT}
+  \fi
+}
 
 \newcommand{\setfulloddlayout}{
+  \if@openright
+    \cleardoublepage
+  \else
+    \clearpage
+  \relax\fi
+  
   \initializelayout
   \ifoddpage{
     \expandafter\newgeometry\expandafter{\TUE@GeometryOptionsOddFULL}
@@ -2258,7 +2269,7 @@
     \expandafter\newgeometry\expandafter{\TUE@GeometryOptionsEvenFULL}
   }
   \finalizelayout
-  \ifodd\c@page%%% TODO repeat every page to check oddeven
+  \ifodd\c@page% Use c@page to keep page empty
     \setnewlength{\titlepagecontentright}{\frameright}
   \else
     \setnewlength{\titlepagecontentright}{\frameleft}
@@ -4405,11 +4416,6 @@
       }
     \fi%
 %
-    \if@openright
-      \cleardoublepage
-    \else
-      \clearpage
-    \relax\fi
     
     \setoddcontentlayout
 
@@ -5272,12 +5278,6 @@ L\kern-.36em%
    
 \newenvironment{axispage}{
     \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
-
-    \if@openright
-      \cleardoublepage
-    \else
-      \clearpage
-    \relax\fi
     
     \setoddcontentlayout
     
@@ -5314,14 +5314,8 @@ L\kern-.36em%
 
 \newcommand{\makeaxis}{
   \setonmsgs %enable »refcheck« log writing again
-  
-	\if@openright
-		\cleardoublepage
-	\else
-    \clearpage
-  \fi
 
-  \setfulloddlayout\clearpage
+  \setfulloddlayout
   
   \thispagestyle{empty}
 
