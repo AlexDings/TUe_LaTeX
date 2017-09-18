@@ -1070,6 +1070,14 @@
   }{}
 }
 
+%%%	command \settobiggest{\<length 1 name>}{<length 2 name>}
+%%	sets length \<length 1 name> to the length of the biggest the two (\<length 1 name> VS \<length 2 name>).
+\newcommand{\settobiggest}[2]{%
+  \ifdim #2 > #1%
+    \setlength{#1}{#2}%
+  \fi%
+}
+
 %%% command \ifcounter{<counter>}{<on true>}{<on false>}
 %%  check if a counter exists
 \newcommand*\ifcounter[1]{%
@@ -1145,6 +1153,15 @@
           \fi
         }
 
+%%% Environment "holdtogether"
+%%  \begin{holdtogether}
+%%  Environment used when a page break may absolutely not occur
+\newenvironment{holdtogether}
+  {\nobreak\nopagebreak[4]\penalty0\vfilneg
+   \vtop\bgroup}
+  {\par\xdef\tpd{\the\prevdepth}\egroup
+   \prevdepth=\tpd}
+        
 %%% \scalefont{<scalefactor>}{<string>}
 %%  Scale fontsize in string by scalefactor, keep baselineskip
 \def\scalefont#1{%
@@ -2478,6 +2495,12 @@
   \fi
 }
 
+%%% Store font measurements
+\newlength{\bodytextdepth}
+\settodepth{\bodytextdepth}{ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890}
+
+\newlength{\bodytextheight}
+\settoheight{\bodytextheight}{ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890}
 
 
 
@@ -2551,7 +2574,7 @@
 %%%
 %   Document colors
 %%%
-  \AtBeginDocument{
+\AtBeginDocument{
   \letnewcolorifnone{colorbody}{black}
   \letnewcolorifnone{colormain}{tuered}
   \letnewcolorifnone{coloraccent}{tuedarkblue}
@@ -4365,9 +4388,9 @@
 
 \storeold{\tableofcontents}
 \renewcommand\tableofcontents{%
-  \microtypesetup{protrusion=false}
-  \begin{onecolarea}{}{\newpage}
-   
+  \microtypesetup{protrusion=false}%
+  \begin{onecolarea}{}{\newpage}%
+%
     \iftwosided
       \storeold{\contentsline}
       \def\contentsline##1##2##3##4{%
@@ -4379,15 +4402,15 @@
           \oldcontentsline{##1}{\ifoddpagelabel##2}{##3}{##4}%
       }%
       }
-    \fi
-
+    \fi%
+%
     \if@openright
       \cleardoublepage
     \else
       \clearpage
     \relax\fi
     
-    \setoddcontentlayout\clearpage
+    \setoddcontentlayout
 
 
     % The table of contents needs different margins. The package geometry is used to
@@ -5252,7 +5275,7 @@ L\kern-.36em%
       \clearpage
     \relax\fi
     
-    \setoddcontentlayout\clearpage
+    \setoddcontentlayout
     
     \begingroup
     \iftwosided
@@ -5614,7 +5637,7 @@ L\kern-.36em%
 }
 
 %%% Command \switchfont{"font"}
-%%  Example usage: \switchfont{cmss10}, call \switchback to switch the font back
+%%  Example usage: \switchfont{cmss10}, call \switchback to switch the font back to the last switched font
 \newcommand{\switchfont}[1]{
 \expandafter \let \expandafter \switchback \the\font
 \font\1=#1\1
@@ -5661,11 +5684,7 @@ L\kern-.36em%
 
 
 %%%% TODO move
-\newcommand{\settobiggest}[2]{%
-\ifdim #2 > #1%
-	\setlength{#1}{#2}%
-\fi%
-}
+
 
 
 
