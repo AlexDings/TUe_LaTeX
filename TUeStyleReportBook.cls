@@ -4400,9 +4400,10 @@
 \storeold{\tableofcontents}
 \renewcommand\tableofcontents{%
   \microtypesetup{protrusion=false}%
-  \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
   \begin{onecolarea}{}{\newpage}%
-%
+
+  \localdisablerefcheck
+  
     \iftwosided
       \storeold{\contentsline}
       \def\contentsline##1##2##3##4{%
@@ -4445,8 +4446,7 @@
 
 	%%%	Reset the original values of all margins
 	\resetlayout
-
-  \setonmsgs %enable »refcheck« log writing again
+  
   \microtypesetup{protrusion=true}
 }
 
@@ -5265,6 +5265,8 @@ L\kern-.36em%
   \endgroup
 }
 
+    \newsavebox{\fullpagetextblockbox}
+
 \newenvironment{absolutelynopagebreak}
   {\par\nobreak\vfil\penalty0\vfilneg
    \vtop\bgroup}
@@ -5272,13 +5274,14 @@ L\kern-.36em%
    \prevdepth=\tpd}
 
    
-   
-   
-   \newsavebox{\fullpagetextblockbox}
+\newcommand{\localdisablerefcheck}{
+  \ifrefcheck
+    \@show@reffalse% disable »refcheck« showing labels
+    \@give@msgsfalse% disable »refcheck« log writing so the oddpagelabels don't create logs
+  \fi
+}
    
 \newenvironment{axispage}{
-    \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
-    
     \setoddcontentlayout
     
     \begingroup
@@ -5295,8 +5298,6 @@ L\kern-.36em%
       }%
       \pagestyle{fancy}
     \fi
-      
-    \setonmsgs %enable »refcheck« log writing again
 }{\null
     \iftwosided
         \begin{fullpagetextblock}% By design placed after the content so it forces the user to keep the content 1 page long (max)
@@ -5313,7 +5314,6 @@ L\kern-.36em%
 
 
 \newcommand{\makeaxis}{
-  \setonmsgs %enable »refcheck« log writing again
 
   \setfulloddlayout
   
@@ -5345,7 +5345,6 @@ L\kern-.36em%
       \clearpage
       %%%	Reset the original values of all margins
       \resetlayout
-      \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
     }
   }
 }
