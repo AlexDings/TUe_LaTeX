@@ -4389,6 +4389,7 @@
 \storeold{\tableofcontents}
 \renewcommand\tableofcontents{%
   \microtypesetup{protrusion=false}%
+  \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
   \begin{onecolarea}{}{\newpage}%
 %
     \iftwosided
@@ -4439,6 +4440,7 @@
 	%%%	Reset the original values of all margins
 	\resetlayout
 
+  \setonmsgs %enable »refcheck« log writing again
   \microtypesetup{protrusion=true}
 }
 
@@ -5269,6 +5271,8 @@ L\kern-.36em%
    \newsavebox{\fullpagetextblockbox}
    
 \newenvironment{axispage}{
+    \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
+
     \if@openright
       \cleardoublepage
     \else
@@ -5292,6 +5296,7 @@ L\kern-.36em%
       \pagestyle{fancy}
     \fi
       
+    \setonmsgs %enable »refcheck« log writing again
 }{\null
     \iftwosided
         \begin{fullpagetextblock}% By design placed after the content so it forces the user to keep the content 1 page long (max)
@@ -5308,7 +5313,8 @@ L\kern-.36em%
 
 
 \newcommand{\makeaxis}{
-
+  \setonmsgs %enable »refcheck« log writing again
+  
 	\if@openright
 		\cleardoublepage
 	\else
@@ -5345,6 +5351,7 @@ L\kern-.36em%
       \clearpage
       %%%	Reset the original values of all margins
       \resetlayout
+      \setoffmsgs %disable »refcheck« log writing so the oddpagelabels don't create logs
     }
   }
 }
