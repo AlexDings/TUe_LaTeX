@@ -12,7 +12,7 @@
 %   Package or kernel internal commands (\@text@composite@) lower@case@with@.
 %   TeX primitives (\expandafter) lowercase.
 
-\NeedsTeXFormat{LaTeX2e}
+\NeedsTeXFormat   {LaTeX2e}
 
 \def\fileversion  {v.2.0}
 \def\filedate     {2015/03/29}
@@ -156,8 +156,8 @@
   \PassOptionsToClass{#1}{report}%
 }
 
-%%% command \ClassErrorNotSupported{<>}{}
-%%  report class option error
+%%% command \ClassErrorNotSupported[<suggested option>]{<unsupported option>}
+%%  outputs the warning: "Please remove class option <unsupported option>, Only <suggested option> is supported!"
 \newcommand{\ClassErrorNotSupported}[2][\@empty]{%
   \ClassError{\docname}{%
     Please remove class option #2,\MessageBreak%
@@ -168,41 +168,70 @@
   }{}%
 }
 
-%%% D
-\newcommand{\DeclareBooleanOptionX}[2][true]{\define@boolkey{\docname}[]{#2}{}\csname#2#1\endcsname}
+%%% command \DeclareBooleanOptionX[<value>]{<switch name>}
+%%  defines switch \if<switch name> and sets \<switch name><value>
+\newcommand{\DeclareBooleanOptionX}[2][true]{%
+  \define@boolkey{\docname}[]{#2}{}\csname#2#1\endcsname%
+}
 
 
 %%%
 %   Class options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% document options
-\DeclareOptionX{report}{\bookfalse \iftwosidedtouched\relax\else\twosidedfalse\fi}
-\DeclareOptionX{book}{\booktrue \iftwosidedtouched\relax\else\twosidedtrue\fi}
+%%%
+%   General options
+%%%
 
-\newlength{\layoutbleed}
+%%% option report style
+%%  sets \ifbook switch false
+%%  sets \iftwosided false,   if twosided isn't set by user yet
+\DeclareOptionX{report}{%
+  \bookfalse%
+  \iftwosidedtouched\relax\else\twosidedfalse\fi%
+}
+
+%%% option book style
+%%  sets \ifbook switch true
+%%  sets \iftwosided true,    if twosided isn't set by user yet
+\DeclareOptionX{book}{%
+  \booktrue%
+  \iftwosidedtouched\relax\else\twosidedtrue\fi%
+}
+
+%%%
+%   Layout options
+%%%
+
+%%% option bleed
+%%  sets layout bleed length
+%%  default 0pt
 \DeclareOptionX{bleed}{
   \setlength{\layoutbleed}{#1}
   \ifdim \layoutbleed < 0pt\relax
     \ClassError{TUeStyle}{The layout bleed can't be negative.}
   \fi
 }
-\ExecuteOptionsX{bleed=0pt}
+    \newlength{\layoutbleed}
+    \ExecuteOptionsX{bleed=0pt}
 
+%%% command \TUe@definepapersize{<paper type>}{<width>}{<height>}
+%%  used to store <width>   in \<paper type>@width
+%%  used to store <height>  in \<paper type>@height
 \newcommand{\TUe@definepapersize}[3]{
   \expandafter\def\csname #1@width\endcsname{#2}
   \expandafter\def\csname #1@height\endcsname{#3}
 }
 
 %%% TU/e (Eindhoven University of Technology) paper sizes
-%%    Standard sizes:     a4paper, a45paper, a5paper
-%%    Exceptional sizes:  a34paper, a4papersquare, a5papersquare, a6paper
+%%  Standard sizes:     a4paper, a45paper, a5paper
+%%  Exceptional sizes:  a34paper, a4papersquare, a5papersquare, a6paper
 \TUe@definepapersize{a4papersquare}{210mm}{210mm}
 \TUe@definepapersize{a5papersquare}{148mm}{148mm}
 \TUe@definepapersize{a45paper}     {168mm}{240mm}
 \TUe@definepapersize{a34paper}     {240mm}{336mm}
 
-%%%   ISO (International Organization for Standardization) paper sizes
+%% ISO (International Organization for Standardization) paper sizes
 \TUe@definepapersize{a0paper}{841mm} {1189mm}
 \TUe@definepapersize{a1paper}{594mm} {841mm}
 \TUe@definepapersize{a2paper}{420mm} {594mm}
@@ -245,7 +274,8 @@
 \TUe@definepapersize{b5j}{182mm} {257mm}
 \TUe@definepapersize{b6j}{128mm} {182mm}
 
-%%  paper option
+%%% option paper
+%%  sets layout width and height to values defined by \TUe@definepapersize
 \DeclareOptionX{paper}{\def\TUePapersize{#1}%
   \setlength{\temp@layoutwidth}{\csname #1@width\endcsname}%
   \setlength{\temp@layoutheight}{\csname #1@height\endcsname}%
@@ -253,7 +283,7 @@
     \newlength{\temp@layoutwidth}
     \newlength{\temp@layoutheight}
 
-% Specify shortcuts for papersizes defined by the default book & report classes
+%%% Specify shortcuts for papersizes defined by the default book & report classes
 \DeclareOptionX{a4paper}        {\ExecuteOptionsX{paper=a4paper}}
 \DeclareOptionX{a5paper}        {\ExecuteOptionsX{paper=a5paper}}
 \DeclareOptionX{b5paper}        {\ExecuteOptionsX{paper=b5paper}}
@@ -262,36 +292,42 @@
 \DeclareOptionX{legalpaper}     {\ExecuteOptionsX{paper=legalpaper}}
 \DeclareOptionX{landscape}      {\ClassErrorNotSupported[portrait]{landscape}}
 
-%default paper size
-\ExecuteOptionsX{a4paper}
+    %%  default paper size
+    \ExecuteOptionsX{a4paper}
 
-% custom layout margins
-\DeclareOptionX{left}       {\newlength{\layoutleftmargin}  \setlength{\layoutleftmargin}{#1}}
-\DeclareOptionX{right}      {\newlength{\layoutrightmargin} \setlength{\layoutrightmargin}{#1}}
-\DeclareOptionX{top}        {\newlength{\layouttopmargin}   \setlength{\layouttopmargin}{#1}}
-\DeclareOptionX{bottom}     {\newlength{\layoutbottommargin}\setlength{\layoutbottommargin}{#1}}
-\DeclareOptionX{marginparL} {\newlength{\marginparL}        \setlength{\marginparL}{#1}}
-\DeclareOptionX{marginparR} {\newlength{\marginparL}        \setlength{\marginparL}{#1}}
+%%% options custom layout margins
+\DeclareOptionX{left}       {\newlength{\layoutleftmargin}  \setlength{\layoutleftmargin}   {#1}}
+\DeclareOptionX{right}      {\newlength{\layoutrightmargin} \setlength{\layoutrightmargin}  {#1}}
+\DeclareOptionX{top}        {\newlength{\layouttopmargin}   \setlength{\layouttopmargin}    {#1}}
+\DeclareOptionX{bottom}     {\newlength{\layoutbottommargin}\setlength{\layoutbottommargin} {#1}}
+\DeclareOptionX{marginparL} {\newlength{\marginparL}        \setlength{\marginparL}         {#1}}
+\DeclareOptionX{marginparR} {\newlength{\marginparL}        \setlength{\marginparL}         {#1}}
 
-% language options
+%%%
+%   Other options
+%%%
+
+%%% options for languages
 \DeclareOptionX{english}    {\dutchfalse}
 \DeclareOptionX{engels}     {\dutchfalse}
 \DeclareOptionX{dutch}      {\dutchtrue}
 \DeclareOptionX{nederlands} {\dutchtrue}
 
-% load BibLaTeX, and use the BibLaTeX presets
+%%% option load BibLaTeX, and use the BibLaTeX presets
 \DeclareBooleanOptionX[false]{biblatex}
 
-% draft mode
+%%% option draft mode
 \DeclareBooleanOptionX[false]{draft}
 
-% draw draft mark
+%%% option draw draft mark
 \DeclareBooleanOptionX[false]{draftmark}
 
-% draw draft line numbering
+%%% option draw draft line numbering
 \DeclareBooleanOptionX[false]{linenum}
 
-%%% TU/e style options
+%%%
+%   TU/e style options
+%%%
 
 % draw TU/e slogan
 \DeclareBooleanOptionX[true]{slogan}
@@ -317,8 +353,9 @@
 % draw the date
 \DeclareBooleanOptionX[true]{date}
 
-%%% Sectioning options
-
+%%%
+%   sectioning options
+%%%
 % use sectioning style
 \DeclareBooleanOptionX[true]{sectioningstyling}
 
