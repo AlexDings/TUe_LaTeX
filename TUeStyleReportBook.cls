@@ -772,7 +772,7 @@
 %%  Outputs the warning: "Command \<obsolete command> is [<obsoletion definition of old command>], use <new option(s)> instead"
 \newcommand{\ObsoleteWarning}[3][obsolete]{%
   \ClassWarning{TUeStyle}{%
-    Command \@backslashchar#2\ is #1,\MessageBreak
+    Command \@backslashchar#2 is #1,\MessageBreak
     use #3 instead%
   }{}%
 }
