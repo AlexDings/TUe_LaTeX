@@ -13,11 +13,12 @@
 %   TeX primitives (\expandafter) lowercase.
 
 \NeedsTeXFormat{LaTeX2e}
-\def\fileversion{v.2.0}
-\def\filedate{2015/03/29}
-\def\filename{TU/e style report & book 2008}
-\def\docname{TUeStyleReportBook.cls}
-\ProvidesClass{TUeStyleReportBook}[\filedate\space\fileversion\space\filename]
+
+\def\fileversion  {v.2.0}
+\def\filedate     {2015/03/29}
+\def\filename     {TU/e style report & book 2008}
+\def\docname      {TUeStyleReportBook.cls}
+\ProvidesClass    {TUeStyleReportBook}[\filedate\space\fileversion\space\filename]
 
 
 
@@ -766,6 +767,15 @@
 %%%
 %   Package commands
 %%%
+
+%%% Command: \ObsoleteWarning[<obsoletion definition of old command>]{<obsolete command>}{<new option(s)>}
+%%  Outputs the warning: "Command \<obsolete command> is [<obsoletion definition of old command>], use <new option(s)> instead"
+\newcommand{\ObsoleteWarning}[3][obsolete]{%
+  \ClassWarning{TUeStyle}{%
+    Command \@backslashchar#2\ is #1,\MessageBreak
+    use #3 instead%
+  }{}%
+}
 
 %%% Command: \if\getcondition{<if-name>}
 %%  Usage:  \if\getcondition{<name>} "true" \else "false" \fi
@@ -5370,7 +5380,7 @@ L\kern-.36em%
 
 
 
-\def\titlebreak{\unskip\space} %unskip to remove space in front
+\def\titlebreak{\unskip\space}% unskip to remove space in front
 
 
 
@@ -5987,3 +5997,57 @@ L\kern-.36em%
         %%% Command:  \showfileslist@split<string.withdot>\showfilelist@endsplit
         %%  Usage:    \showfileslist@split TUestyleReportBook.cls \showfilelist@endsplit
         \def\showfilelist@split#1.#2\showfilelist@endsplit{#2}
+        
+        
+        
+        
+
+
+\DeclareOldFontCommand{\rm}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{rm}
+  {\protect\rmfamily\space or \protect\textrm}
+  \normalfont\rmfamily
+}{\mathrm}
+
+\DeclareOldFontCommand{\sf}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{sf}
+  {\protect\sffamily\space or \protect\textsf}
+  \normalfont\sffamily
+}{\mathsf}
+
+\DeclareOldFontCommand{\tt}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{tt}
+  {\protect\ttfamily\space or \protect\texttt}
+  \normalfont\ttfamily
+}{\mathtt}
+
+\DeclareOldFontCommand{\bf}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{bf}
+  {\protect\bfseries\space or \protect\textbf}
+  \normalfont\bfseries
+}{\mathbf}
+
+\DeclareOldFontCommand{\it}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{it}
+  {\protect\itshape\space or \protect\textit}
+  \normalfont\itshape
+}{\mathit}
+
+\DeclareOldFontCommand{\sl}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{sl}
+  {\protect\slshape\space or \protect\textsl}
+  \normalfont\slshape
+}{\@nomath\sl}
+
+\DeclareOldFontCommand{\sc}{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{sc}
+  {\protect\scshape\space or \protect\textsc}
+  \normalfont\scshape
+}{\@nomath\sc}
+
+\DeclareRobustCommand*\cal{
+  \ObsoleteWarning[an old (obsolete) LaTeX 2.09 command]{cal}
+  {\protect\mathcal}
+\@fontswitch\relax\mathcal}
+
+\DeclareRobustCommand*\mit{\@fontswitch\relax\mathnormal}
