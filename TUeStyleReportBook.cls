@@ -124,13 +124,13 @@
 \setlength{\listofparskip}{0cm}
 
 %%% Default image paths
-\graphicspath{{./}      % 0th
-              {Images/} % 1st
-              {Imgs/}   % 2nd
-              {Img/}    % 3rd
-              {images/} % 4th
-              {imgs/}   % 5th
-              {img/}}   % 6th
+\graphicspath{{./}%       0th
+              {Images/}%  1st
+              {Imgs/}%    2nd
+              {Img/}%     3rd
+              {images/}%  4th
+              {imgs/}%    5th
+              {img/}}%    6th
 
 
 %%%
@@ -149,16 +149,26 @@
   \fi%
 }
 
-%%% command \PassOptionsToBaseClass is used to pass options to the baseclass
-\newcommand{\PassOptionsToBaseClass}[1]{
-  \PassOptionsToClass{#1}{book}
-  \PassOptionsToClass{#1}{report}
+%%% command \PassOptionsToBaseClass{<options>}
+%%  used to pass <options> to the baseclass
+\newcommand{\PassOptionsToBaseClass}[1]{%
+  \PassOptionsToClass{#1}{book}%
+  \PassOptionsToClass{#1}{report}%
 }
 
-%%% Report class option error
-\def\ClassErrorNotSupported#1#2{\ClassError{\docname}{Sorry, only #1 is supported!}{Remove the #2 class option}}
+%%% command \ClassErrorNotSupported{<>}{}
+%%  report class option error
+\newcommand{\ClassErrorNotSupported}[2][\@empty]{%
+  \ClassError{\docname}{%
+    Please remove class option #2,\MessageBreak%
+    \ifx\@empty#1%
+    \else%
+      Only #1 is supported!%
+    \fi
+  }{}%
+}
 
-%%% 
+%%% D
 \newcommand{\DeclareBooleanOptionX}[2][true]{\define@boolkey{\docname}[]{#2}{}\csname#2#1\endcsname}
 
 
@@ -250,7 +260,7 @@
 \DeclareOptionX{letterpaper}    {\ExecuteOptionsX{paper=letterpaper}}
 \DeclareOptionX{executivepaper} {\ExecuteOptionsX{paper=executivepaper}}
 \DeclareOptionX{legalpaper}     {\ExecuteOptionsX{paper=legalpaper}}
-\DeclareOptionX{landscape}      {\ClassErrorNotSupported{portrait}{landscape}}
+\DeclareOptionX{landscape}      {\ClassErrorNotSupported[portrait]{landscape}}
 
 %default paper size
 \ExecuteOptionsX{a4paper}
