@@ -1171,21 +1171,24 @@
   \fi%
 }
 
+%%% command \providecounter{<counter>}
+%%  check if a counter exists, and if it doesn't creates it
 \newcommand*\providecounter[1]{
   \ifcounter{#1}{}{\newcounter{#1}}
 }
 
-%%% TODO add commments
-\newcommand\setnewcounter[2]{
+%%% command \providecounter{<counter>}{<value>}
+%%  check if a counter exists, and if it doesn't creates it,
+%%  and sets it to <value>
+\newcommand*\setnewcounter[2]{
   \providecounter{#1}
   \setcounter{#1}{#2}
 }
 
-
 %%% command \cs@to@str{\<command>}
 %%  makes a string from a cs
 %%  example: \cs@to@str\foo % => "foo"
-%%  example: \expandafter\cs@to@str\csname\space foo\endcsname % => " foo"
+%%  example: \expandafter\cs@to@str\csname\space foo\endcsname => " foo"
 \catcode`\@=11 %
 \def\cs@to@str{%
   \romannumeral\if\string\ \cs@to@str@aux@i\fi
@@ -1254,27 +1257,27 @@
 
         \newlength{\scalefontTempCurrentFontsize}
 
-
+%%% TODO add comments
 \def\@authordelimFirst{,\titlebreak}
 \def\@@authordelimSecond{ \&\titlebreak}
 \def\@author{\printdata\author{\@authordelimFirst}{\@@authordelimSecond}}
 
-\newcommand{\authordelim}[1]{%
-  \@ifnextchar\bgroup{
-    \@authordelim{#1}
-  }{
-    \def\@authordelimFirst{#1}
-    \def\@@authordelimSecond{#1}
+  \newcommand{\authordelim}[1]{%
+    \@ifnextchar\bgroup{
+      \@authordelim{#1}
+    }{
+      \def\@authordelimFirst{#1}
+      \def\@@authordelimSecond{#1}
+    }
   }
-}
         \newcommand{\@authordelim}[2]{
             \def\@authordelimFirst{#1}
             \def\@@authordelimSecond{#2}
         }
 
 
-\let\oldauthor\author
-\let\author\relax
+    \let\oldauthor\author
+    \let\author\relax
 %%% \author\<name>{<value 1}...{<value n-1}{<value n}
 %%  saves data in \data:<name>:<range>
 \newcommand{\author}{% Use a declaration
@@ -1291,6 +1294,7 @@
   \initadddata
 }
 
+%%% TODO add comments
 \newcommand{\initadddata}{
   \@ifundefined{c@\expandafter\cs@to@str\tmp@sum}{%
     \expandafter\newcount\csname c@\expandafter\cs@to@str\tmp@sum\endcsname % define counter c@<name>@sum if it doesn't exist yet
@@ -1342,7 +1346,7 @@
     }
 
 
-%%% \getstring[<index>]\<name>
+%%% \getdata[<index>]\<name>
 %%  prints data contained in \data:<name>:<index>
 \def\getdata[#1]#2{
   \ifcsname data:\string#2:#1\endcsname
@@ -1352,7 +1356,9 @@
   \fi
 }
 
-\def\getdata[#1]#2{
+%%% \getstring[<index>]\<name>
+%%  prints data contained in \data:<name>:<index> as string
+\def\getstring[#1]#2{
   \ifcsname data:\string#2:#1\endcsname
     \def\tempdata{\csname data:\string#2:#1\endcsname}%
       \edef\tempdata{\noexpand\scantokens{\tempdata}}%
@@ -1473,7 +1479,7 @@
   \fi%
 }
 
-
+%%% TODO description
 \newcommand\watermark[1]{#1}
 
 \ifwatermark
