@@ -283,7 +283,7 @@
     \newlength{\temp@layoutwidth}
     \newlength{\temp@layoutheight}
 
-%%% Specify shortcuts for papersizes defined by the default book & report classes
+%%% options for papersize shortcuts for papersizes defined by the default book & report classes
 \DeclareOptionX{a4paper}        {\ExecuteOptionsX{paper=a4paper}}
 \DeclareOptionX{a5paper}        {\ExecuteOptionsX{paper=a5paper}}
 \DeclareOptionX{b5paper}        {\ExecuteOptionsX{paper=b5paper}}
@@ -329,80 +329,81 @@
 %   TU/e style options
 %%%
 
-% draw TU/e slogan
+%%% option slogan to draw TU/e slogan
 \DeclareBooleanOptionX[true]{slogan}
 
-% draw the innovation mark
+%%% option innovation to draw the innovation mark
 \DeclareBooleanOptionX[true]{innovation}
 
-% draw the TU/e logo mark
+%%% option logo to draw the TU/e logo mark
 \DeclareBooleanOptionX[true]{logo}
 
-% draw the title in ToC
+%%% option title to draw the title in ToC
 \DeclareBooleanOptionX[true]{title}
 
-% draw the subtitle in ToC
+%%% option subtitle to draw the subtitle in ToC
 \DeclareBooleanOptionX[true]{subtitle}
 
-% draw TU/e address
+%%% option address to draw the (TU/e) address
 \DeclareBooleanOptionX[true]{address}
 
-% draw the author
+%%% option author to draw the author
 \DeclareBooleanOptionX[true]{author}
 
-% draw the date
+%%% option date to draw the date
 \DeclareBooleanOptionX[true]{date}
 
 %%%
 %   sectioning options
 %%%
-% use sectioning style
+
+%%% option sectioningstyling to use sectioning style
 \DeclareBooleanOptionX[true]{sectioningstyling}
 
-% draw "chapter XX" above chaptername
+%%% option chaptername to draw "chapter XX" above chaptername
 \DeclareBooleanOptionX[false]{chaptername}
 
-% disable pagebreak before sectioning
+%%% option inlinesec to disable pagebreak before sectioning, making it inline
 \DeclareBooleanOptionX[false]{inlinesec}
 
-% left align chapter head
+%%% option leftch to left align chapter head
 \DeclareBooleanOptionX[false]{leftch}
 
-% Shift all sectioning numbering to left margin,
-% widen left margin
-% Shift complete chapter heading in left margin
+%%% option runinsec
+%%  Shift all sectioning numbering to left margin,
+%%  widen left margin
+%%  Shift complete chapter heading in left margin
 \DeclareBooleanOptionX[false]{runinsec}
 
-% Keep subsectionmark
+%%% option subsecmark to keep subsectionmark
 \DeclareBooleanOptionX[false]{subsecmark}
 
-% Hidden watermark in sectioning
+%%% option watermark to have a hidden watermark in sectioning
 \DeclareBooleanOptionX[false]{watermark}
 
-% use paragraph style
+%%% option paragraphstyling to use (TU/e) paragraph styling
 \DeclareBooleanOptionX[true]{paragraphstyling}
 
-% start sectioning counters at zero
+%%% option zeroindexed to start sectioning counters at zero
 \DeclareOptionX{zeroindexed}{\def\@sectioningshift{-1}}
 
-% use auto labeling
-\DeclareBooleanOptionX[true]{autolabel}
-
-% show frame
+%%% option showframe to show layout frame
 \DeclareBooleanOptionX[false]{showframe}
 
-% draw one-sided / two-sided
+%%% option onsesided to draw one-sided
 \DeclareOptionX{oneside}{\twosidedfalse \twosidedtouchedtrue}
+%%% option twosided to draw two-sided
 \DeclareOptionX{twoside}{\twosidedtrue  \twosidedtouchedtrue}
 
-% draw one-column / two-column
+%%% option onecolumn to draw one-column
 \DeclareOptionX{onecolumn}{\twocolumnfalse}
+%%% option twocolumn to draw two-column
 \DeclareOptionX{twocolumn}{\twocolumntrue}
 
-%%	Option for cover ratio
-%   Ratio has to be bigger than 4:3
+%%% Option for cover ratio
+%%  Ratio has to be bigger than 4:3       TODO make cover specific
 \DeclareOptionX{coverratio}[4/3]{%
-\pgfmathsetmacro\@coverratio{%
+  \pgfmathsetmacro\@coverratio{%
     ifthenelse(
     #1 > (4/3),
     #1,
@@ -410,13 +411,13 @@
     )
   }%
 }
-\ExecuteOptionsX{coverratio}
+    \ExecuteOptionsX{coverratio}
 
-%%  Option for cover alignment
+%%% Option for cover alignment        TODO make cover specific + only allow width OR height
 \DeclareOptionX{coveralign}[width]{
     \def\@coveralign{#1}
 }
-\ExecuteOptionsX{coveralign=width}
+    \ExecuteOptionsX{coveralign=width}
 
 % don't float images
 \DeclareBooleanOptionX[false]{nofloat}
@@ -519,9 +520,6 @@
 }
 
 %%% Miscelanious options
-
-% use auto labeling
-\DeclareBooleanOptionX[false]{autolabel}
 
 % Print optimalization
 \DeclareBooleanOptionX[false]{print}
@@ -631,13 +629,13 @@
 %%  turns a symbol south west
 %%% command \turnse   
 %%  turns a symbol south east
-\newcommand{\reflh}   [1]{\reflectbox{#1}}
-\newcommand{\reflv}   [1]{\reflectbox{\rotatebox[origin=c]{180}{#1}}}
-\newcommand{\turnover}[1]{\rotatebox[origin=c]{180}{#1}}
-\newcommand{\turnne}  [1]{\rotatebox[origin=c]{45}{#1}}
-\newcommand{\turnnw}  [1]{\rotatebox[origin=c]{135}{#1}}
-\newcommand{\turnsw}  [1]{\rotatebox[origin=c]{225}{#1}}
-\newcommand{\turnse}  [1]{\rotatebox[origin=c]{315}{#1}}
+\newcommand{\reflh}     [1]{\reflectbox{#1}}
+\newcommand{\reflv}     [1]{\reflectbox{\rotatebox[origin=c]{180}{#1}}}
+\newcommand{\turnover}  [1]{\rotatebox[origin=c]{180}{#1}}
+\newcommand{\turnne}    [1]{\rotatebox[origin=c]{45}{#1}}
+\newcommand{\turnnw}    [1]{\rotatebox[origin=c]{135}{#1}}
+\newcommand{\turnsw}    [1]{\rotatebox[origin=c]{225}{#1}}
+\newcommand{\turnse}    [1]{\rotatebox[origin=c]{315}{#1}}
 
 %%  symbol reshaping commands
 %%  same as above, with math mode enabled
