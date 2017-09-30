@@ -203,6 +203,19 @@
 %   Layout options
 %%%
 
+%%% option showframe to show layout frame
+\DeclareBooleanOptionX[false]{showframe}
+
+%%% option onsesided to draw one-sided
+\DeclareOptionX{oneside}{\twosidedfalse \twosidedtouchedtrue}
+%%% option twosided to draw two-sided
+\DeclareOptionX{twoside}{\twosidedtrue  \twosidedtouchedtrue}
+
+%%% option onecolumn to draw one-column
+\DeclareOptionX{onecolumn}{\twocolumnfalse}
+%%% option twocolumn to draw two-column
+\DeclareOptionX{twocolumn}{\twocolumntrue}
+
 %%% option bleed
 %%  sets layout bleed length
 %%  default 0pt
@@ -387,18 +400,21 @@
 %%% option zeroindexed to start sectioning counters at zero
 \DeclareOptionX{zeroindexed}{\def\@sectioningshift{-1}}
 
-%%% option showframe to show layout frame
-\DeclareBooleanOptionX[false]{showframe}
+%%% option parindent to indent paragraphs
+\DeclareBooleanOptionX[false]{parindent}
 
-%%% option onsesided to draw one-sided
-\DeclareOptionX{oneside}{\twosidedfalse \twosidedtouchedtrue}
-%%% option twosided to draw two-sided
-\DeclareOptionX{twoside}{\twosidedtrue  \twosidedtouchedtrue}
+%%% option parskip to adjust parskip
+\DeclareBooleanOptionX[true]{parskip}
 
-%%% option onecolumn to draw one-column
-\DeclareOptionX{onecolumn}{\twocolumnfalse}
-%%% option twocolumn to draw two-column
-\DeclareOptionX{twocolumn}{\twocolumntrue}
+%%% option coloredsectioning to give the sectioning color
+\DeclareBooleanOptionX[true]{coloredsectioning}
+
+%%% option indentafter to disable the indent on the first paragraph after sectioning
+\DeclareBooleanOptionX[false]{indentafter}
+
+%%%
+%   Cover options
+%%%
 
 %%% Option for cover ratio
 %%  Ratio has to be bigger than 4:3       TODO make cover specific
@@ -418,21 +434,36 @@
     \def\@coveralign{#1}
 }
     \ExecuteOptionsX{coveralign=width}
+    
+%%%% TODO make option per cover
+\DeclareOptionX{cover}{%
+  \ifequal{#1}{}{}{
+    \def\covername{#1}
+  }
+  \covertrue
+}
+    \newif\ifcover
+    \coverfalse
+    \def\covername{cover}
+    
 
-% don't float images
+    
+    
+    
+%%% option nofloat to not float images
 \DeclareBooleanOptionX[false]{nofloat}
 
-% do use refcheck
+%%% option to load »refcheck«
 \DeclareBooleanOptionX[true]{refcheck}
 
-% fonts options
-\DeclareOptionX{tuefonts}{\tuefontstrue}
+%%% option tuefonts to load tuefonts
+\DeclareBooleanOptionX[true]{tuefonts}
 
-%notes options
-\newif\ifmarginnotes
-\newif\ifnotes
-\newif\iftextnotes
-
+%%% options for notes
+%%  textmargin: inline marker, expanded text in margin
+%%  text:       inline marker, expanded text is inline
+%%  margin:     margin marker, expanded text in margin
+%%  false:          no marker, expanded text is hidden
 \define@choicekey*{\docname}{notes}[\val\nr]{textmargin,text,margin,false}[textmargin]{%
   \ifcase\nr\relax
     \marginnotestrue
@@ -450,8 +481,14 @@
     \notesfalse
   \fi
 }
-\setkeys{\docname}{notes}
+    \newif\ifmarginnotes
+    \newif\ifnotes
+    \newif\iftextnotes
+    \setkeys{\docname}{notes}
 
+%%% options for footnotealign
+%%  hang:     hangs the footnotes
+%%  inline:   makes the footnote styling inline
 \define@choicekey*{\docname}{footnotealign}[\val\nr]{hang,inline}[hang]{%
   \ifcase\nr\relax
     \AtBeginDocument{\hangfntext}
@@ -459,32 +496,39 @@
     \AtBeginDocument{\inlinefntext}
   \fi
 }
-\setkeys{\docname}{footnotealign}
+    \setkeys{\docname}{footnotealign}
 
 %%% Align options
 %%  (centered by default)
+%%  aligns captions and images
+%%  left:     left aligns
+%%  center:   center aligns
+%%  right:    right aligns
+%%  none:     invokes default LaTeX behaviour
 \define@choicekey*{\docname}{align}[\val\nr]{left,center,right,none}[center]{%
   \ifcase\nr\relax
     \def\autocenter{\raggedright}%
     \def\autocentercap{\raggedright}%
-    \def\autocentershort{l}%
+    %\def\autocentershort{l}%
   \or
     \def\autocenter{\centering}%
     \def\autocentercap{\centering}%
-    \def\autocentershort{c}%
+    %\def\autocentershort{c}%
   \or
     \def\autocenter{\raggedleft}%
     \def\autocentercap{\raggedleft}%
-    \def\autocentershort{r}%
+    %\def\autocentershort{r}%
   \or
     \def\autocenter{\raggedright}%
     \def\autocentercap{\centering}%
-    \def\autocentershort{c}%
+    %\def\autocentershort{c}%
   \fi
 }
-\setkeys{\docname}{align}
+    \setkeys{\docname}{align}
 
-% header & footer options
+%%%
+%   header & footer options
+%%%
 
 % draw one-sided / two-sided header and footer
 \DeclareOptionX{onesidehf}{\onesidehftrue}
@@ -508,30 +552,12 @@
 
 \DeclareBooleanOptionX[true]{leadzero}
 
-%%%% TODO make option per cover
-\newif\ifcover
-\coverfalse
-\def\covername{cover}
-\DeclareOptionX{cover}{%
-  \ifequal{#1}{}{}{
-    \def\covername{#1}
-  }
-  \covertrue
-}
+
 
 %%% Miscelanious options
 
 % Print optimalization
 \DeclareBooleanOptionX[false]{print}
-
-% Force indent
-\DeclareBooleanOptionX[false]{parindent}
-
-% Force zero parskip
-\DeclareBooleanOptionX[true]{parskip}
-
-% Colored sectioning
-\DeclareBooleanOptionX[true]{coloredsectioning}
 
 % Colored text
 \DeclareBooleanOptionX[true]{coloredtext}
@@ -539,8 +565,7 @@
 % Mark blank pages
 \DeclareBooleanOptionX[false]{markblank}
 
-% Indent after sectioning
-\DeclareBooleanOptionX[false]{indentafter}
+
 
 % Global list of spacing
 \DeclareBooleanOptionX[true]{globallistspacing}
