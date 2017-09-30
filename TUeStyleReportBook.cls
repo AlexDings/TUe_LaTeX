@@ -7,10 +7,10 @@
 % Date: May, 2015.
 
 % Trying to follow the following naming convention:
-%   Document level commands (\section) lowercase.
-%   Package interface commands (\DeclareTextCommandDefault) CamelCase.
+%   Document level commands             (\section) lowercase.
+%   Package interface commands          (\DeclareTextCommandDefault) CamelCase.
 %   Package or kernel internal commands (\@text@composite@) lower@case@with@.
-%   TeX primitives (\expandafter) lowercase.
+%   TeX primitives                      (\expandafter) lowercase.
 
 \NeedsTeXFormat   {LaTeX2e}
 
@@ -317,28 +317,6 @@
 \DeclareOptionX{marginparR} {\newlength{\marginparL}        \setlength{\marginparL}         {#1}}
 
 %%%
-%   Other options
-%%%
-
-%%% options for languages
-\DeclareOptionX{english}    {\dutchfalse}
-\DeclareOptionX{engels}     {\dutchfalse}
-\DeclareOptionX{dutch}      {\dutchtrue}
-\DeclareOptionX{nederlands} {\dutchtrue}
-
-%%% option load BibLaTeX, and use the BibLaTeX presets
-\DeclareBooleanOptionX[false]{biblatex}
-
-%%% option draft mode
-\DeclareBooleanOptionX[false]{draft}
-
-%%% option draw draft mark
-\DeclareBooleanOptionX[false]{draftmark}
-
-%%% option draw draft line numbering
-\DeclareBooleanOptionX[false]{linenum}
-
-%%%
 %   TU/e style options
 %%%
 
@@ -376,6 +354,9 @@
 %%% option chaptername to draw "chapter XX" above chaptername
 \DeclareBooleanOptionX[false]{chaptername}
 
+%%% option leadzero to add a leading zero to chapter numbering
+\DeclareBooleanOptionX[true]{leadzero}
+
 %%% option inlinesec to disable pagebreak before sectioning, making it inline
 \DeclareBooleanOptionX[false]{inlinesec}
 
@@ -394,11 +375,27 @@
 %%% option watermark to have a hidden watermark in sectioning
 \DeclareBooleanOptionX[false]{watermark}
 
+%%% option zeroindexed to start sectioning counters at zero
+\DeclareOptionX{zeroindexed}{\def\@sectioningshift{-1}}
+
+%%% option coloredsectioning to give the sectioning color
+\DeclareBooleanOptionX[true]{coloredsectioning}
+
+%%%
+%   Font options
+%%%
+
+%%% option coloredtext to color TU/e style text
+\DeclareBooleanOptionX[true]{coloredtext}
+
+%%% option tuefonts to load tuefonts
+\DeclareBooleanOptionX[true]{tuefonts}
+
 %%% option paragraphstyling to use (TU/e) paragraph styling
 \DeclareBooleanOptionX[true]{paragraphstyling}
 
-%%% option zeroindexed to start sectioning counters at zero
-\DeclareOptionX{zeroindexed}{\def\@sectioningshift{-1}}
+%%% option indentafter to disable the indent on the first paragraph after sectioning
+\DeclareBooleanOptionX[false]{indentafter}
 
 %%% option parindent to indent paragraphs
 \DeclareBooleanOptionX[false]{parindent}
@@ -406,14 +403,34 @@
 %%% option parskip to adjust parskip
 \DeclareBooleanOptionX[true]{parskip}
 
-%%% option coloredsectioning to give the sectioning color
-\DeclareBooleanOptionX[true]{coloredsectioning}
+%%% option hyperstyle
+%%  border:     border all around links
+%%  underline:  border underneath links
+%%  color:            coloring of links
+\define@choicekey*{\docname}{hyperstyle}{border,underline,color}[color]{%
+  \def\hyperstyle{#1}
+}
+    \setkeys{\docname}{hyperstyle}
 
-%%% option indentafter to disable the indent on the first paragraph after sectioning
-\DeclareBooleanOptionX[false]{indentafter}
+%%% option urlstyle
+%%  same:             mimmick surrounding font style
+%%  allbreak:               break links everywhere
+%%  restrictedbreak:  don't break links anywhere
+\define@choicekey*{\docname}{urlstyle}{same,allbreak,restrictedbreak}[allbreak]{%
+  \AtBeginDocument{\urlstyle{#1}}
+}
+    \setkeys{\docname}{urlstyle}
+
+%%% options for fontsize
+\DeclareOptionX{9pt}  {\PassOptionsToBaseClass{10pt}            \def\classFontSize{9} }
+\DeclareOptionX{10pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{10}}
+\DeclareOptionX{11pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{11}}
+\DeclareOptionX{12pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{12}}
+    %% default 9pt
+    \ExecuteOptionsX{9pt}
 
 %%%
-%   Cover options
+%   Cover options     TODO make cover specific
 %%%
 
 %%% Option for cover ratio
@@ -445,19 +462,95 @@
     \newif\ifcover
     \coverfalse
     \def\covername{cover}
-    
 
-    
-    
+%%%
+%   image & caption options
+%%%
     
 %%% option nofloat to not float images
 \DeclareBooleanOptionX[false]{nofloat}
+    
+%%% Align options
+%%  (centered by default)
+%%  aligns captions and images
+%%  left:     left aligns
+%%  center:   center aligns
+%%  right:    right aligns
+%%  none:     invokes default LaTeX behaviour
+\define@choicekey*{\docname}{align}[\val\nr]{left,center,right,none}[center]{%
+  \ifcase\nr\relax
+    \def\autocenter{\raggedright}%
+    \def\autocentercap{\raggedright}%
+    %\def\autocentershort{l}%
+  \or
+    \def\autocenter{\centering}%
+    \def\autocentercap{\centering}%
+    %\def\autocentershort{c}%
+  \or
+    \def\autocenter{\raggedleft}%
+    \def\autocentercap{\raggedleft}%
+    %\def\autocentershort{r}%
+  \or
+    \def\autocenter{\raggedright}%
+    \def\autocentercap{\centering}%
+    %\def\autocentershort{c}%
+  \fi
+}
+    \setkeys{\docname}{align}
+
+%%%
+%   header & footer options
+%%%
+
+%%% option onesidehf to draw header footers onesided
+\DeclareOptionX{onesidehf}{\onesidehftrue}
+%%% option twosidehf to draw header footers twosided
+\DeclareOptionX{twosidehf}{\onesidehffalse}
+%%  not caught in a single true/false command to work nicely with onesided/twosided
+
+%%% option fadehf to draw faded header and footer
+%%  (false by default)
+\DeclareBooleanOptionX[false]{fadehf}
+
+%%% option sectioningf to draw chapter in footer
+\DeclareBooleanOptionX[false]{sectioningf}
+
+%%% option copyf to draw the copyholer in footer
+\DeclareBooleanOptionX[false]{copyf}
+
+%%% option enf to draw last page number in footer
+\DeclareBooleanOptionX[false]{endf}
+
+%%% option shorth to draw shorter header
+\DeclareBooleanOptionX[false]{shorth}
+
+%%%
+%   Other options
+%%%
+
+%%% options for languages
+\DeclareOptionX{english}    {\dutchfalse}
+\DeclareOptionX{engels}     {\dutchfalse}
+\DeclareOptionX{dutch}      {\dutchtrue}
+\DeclareOptionX{nederlands} {\dutchtrue}
+
+%%% option load BibLaTeX, and use the BibLaTeX presets
+\DeclareBooleanOptionX[false]{biblatex}
+
+%%% option draft mode
+\DeclareBooleanOptionX[false]{draft}
+
+% Print optimalization
+\DeclareBooleanOptionX[false]{print}
+
+%%% option draw draft mark
+\DeclareBooleanOptionX[false]{draftmark}
+
+%%% option draw draft line numbering
+\DeclareBooleanOptionX[false]{linenum}
 
 %%% option to load »refcheck«
 \DeclareBooleanOptionX[true]{refcheck}
-
-%%% option tuefonts to load tuefonts
-\DeclareBooleanOptionX[true]{tuefonts}
 
 %%% options for notes
 %%  textmargin: inline marker, expanded text in margin
@@ -498,118 +591,29 @@
 }
     \setkeys{\docname}{footnotealign}
 
-%%% Align options
-%%  (centered by default)
-%%  aligns captions and images
-%%  left:     left aligns
-%%  center:   center aligns
-%%  right:    right aligns
-%%  none:     invokes default LaTeX behaviour
-\define@choicekey*{\docname}{align}[\val\nr]{left,center,right,none}[center]{%
-  \ifcase\nr\relax
-    \def\autocenter{\raggedright}%
-    \def\autocentercap{\raggedright}%
-    %\def\autocentershort{l}%
-  \or
-    \def\autocenter{\centering}%
-    \def\autocentercap{\centering}%
-    %\def\autocentershort{c}%
-  \or
-    \def\autocenter{\raggedleft}%
-    \def\autocentercap{\raggedleft}%
-    %\def\autocentershort{r}%
-  \or
-    \def\autocenter{\raggedright}%
-    \def\autocentercap{\centering}%
-    %\def\autocentershort{c}%
-  \fi
-}
-    \setkeys{\docname}{align}
-
-%%%
-%   header & footer options
-%%%
-
-% draw one-sided / two-sided header and footer
-\DeclareOptionX{onesidehf}{\onesidehftrue}
-\DeclareOptionX{twosidehf}{\onesidehffalse}
-
-%%% Draw faded header and footer
-%%  (false by default)
-\DeclareBooleanOptionX[false]{fadehf}
-
-% draw chapter in footer
-\DeclareBooleanOptionX[false]{sectioningf}
-
-% draw chapter in footer
-\DeclareBooleanOptionX[false]{copyf}
-
-% draw last page number in footer
-\DeclareBooleanOptionX[false]{endf}
-
-% draw shorter header
-\DeclareBooleanOptionX[false]{shorth}
-
-\DeclareBooleanOptionX[true]{leadzero}
-
-
-
-%%% Miscelanious options
-
-% Print optimalization
-\DeclareBooleanOptionX[false]{print}
-
-% Colored text
-\DeclareBooleanOptionX[true]{coloredtext}
-
-% Mark blank pages
+%%% option markblank to mark blank pages
 \DeclareBooleanOptionX[false]{markblank}
 
-
-
-% Global list of spacing
+%%% option globallistspacing to give all "list ofs" the same spacing
 \DeclareBooleanOptionX[true]{globallistspacing}
 
-% Include TeX sourcecode in the pdf
+%%% option includesource to include TeX sourcecode in the pdf
 \DeclareBooleanOptionX[false]{includesource}
 
-% Hyperstyle option
-\define@choicekey*{\docname}{hyperstyle}{border,underline,color}[color]{%
-  \def\hyperstyle{#1}
-}
-\setkeys{\docname}{hyperstyle}
-
-% Urlstyle option
-\define@choicekey*{\docname}{urlstyle}{same,allbreak,restrictedbreak}[allbreak]{%
-  \AtBeginDocument{\urlstyle{#1}}
-}
-\setkeys{\docname}{urlstyle}
-
-
-% font options
-\DeclareOptionX{9pt}  {\PassOptionsToBaseClass{10pt}            \def\classFontSize{9} }
-\DeclareOptionX{10pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{10}}
-\DeclareOptionX{11pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{11}}
-\DeclareOptionX{12pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{12}}
-
-    % default 9pt
-    \ExecuteOptionsX{9pt}
-
-% Show build number
+%%% option buildnumber to show build number behind version number
 \DeclareBooleanOptionX[false]{buildnumber}
 
-%%% Option processing
+%%%
+%   Option processing
+%%%
 
-% Pass options to underlying classes
+%%% Pass options to underlying classes
 \DeclareOptionX*{%
   \PassOptionsToBaseClass{\CurrentOption}
 }
 
-% Process all options
+%%% Process all options
 \ProcessOptionsX % TODO define family: <>
-
-
-
 
 %%%
 %   Utility commands
