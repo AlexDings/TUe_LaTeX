@@ -616,12 +616,11 @@
 \ProcessOptionsX % TODO define family: <>
 
 %%%
-%   Utility commands
+%   User utility commands
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 %%%
-%   User commands
+%   
 %%%
 
 %%% command \rotatepdfpage
@@ -641,8 +640,8 @@
 %%  Creates an empty - blank - page
 \newcommand*\newpageafterblank{\newpage\null\thispagestyle{empty}\newpage}
 
-%%   symbol reshaping commands
-%%   used to rotate symbols to create new symbols
+%%% symbol reshaping commands
+%%  used to rotate symbols to create new symbols
 
 %%% command \reflh
 %%  reflects symbol horizontally
@@ -658,13 +657,13 @@
 %%  turns a symbol south west
 %%% command \turnse   
 %%  turns a symbol south east
-\newcommand{\reflh}     [1]{\reflectbox{#1}}
+\newcommand{\reflh}     [1]{\reflectbox                          {#1}}
 \newcommand{\reflv}     [1]{\reflectbox{\rotatebox[origin=c]{180}{#1}}}
-\newcommand{\turnover}  [1]{\rotatebox[origin=c]{180}{#1}}
-\newcommand{\turnne}    [1]{\rotatebox[origin=c]{45}{#1}}
-\newcommand{\turnnw}    [1]{\rotatebox[origin=c]{135}{#1}}
-\newcommand{\turnsw}    [1]{\rotatebox[origin=c]{225}{#1}}
-\newcommand{\turnse}    [1]{\rotatebox[origin=c]{315}{#1}}
+\newcommand{\turnover}  [1]{\rotatebox            [origin=c]{180}{#1}}
+\newcommand{\turnne}    [1]{\rotatebox            [origin=c]{45 }{#1}}
+\newcommand{\turnnw}    [1]{\rotatebox            [origin=c]{135}{#1}}
+\newcommand{\turnsw}    [1]{\rotatebox            [origin=c]{225}{#1}}
+\newcommand{\turnse}    [1]{\rotatebox            [origin=c]{315}{#1}}
 
 %%  symbol reshaping commands
 %%  same as above, with math mode enabled
@@ -679,26 +678,26 @@
 %%% command \superscript{<content>}
 %%  correctly writes content as superscript
 \newcommand{\superscript}[1]{\@textsuperscript{#1}}
-%%  command \up as a \superscript shorthand
+%%% command \up as a \superscript shorthand
 \let\up\superscript
 
 %%% command \subscript{<content>}
 %%  correctly writes content as subscript
 \newcommand{\subscript}[1]{\@textsubscript{#1}}
-%%  command \down as a \subscript shorthand
+%%% command \down as a \subscript shorthand
 \let\down\subscript
 
 %%%	Abbreviation commands
-\def\ie/{\emph  {i.e.},}
-\def\viz/{\emph {viz.},}
-\def\eg/{\emph  {e.g.},}
-\def\etc/{\emph {etc.}}
-\def\etal/{\emph{et al.}}
-\def\tue/{\emph {TU/e}}
+%   they end with a / to prevent swallowing of following space
+\def  \ie/{\emph {i.e.},}
+\def \viz/{\emph {viz.},}
+\def  \eg/{\emph {e.g.},}
+\def \etc/{\emph {etc.}}
+\def\etal/{\emph {et al.}}
+\def \tue/{\emph {TU/e}}
 
 %%% Partial derivative command
 \newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
-
 
 %%% Command: \quads{<# of quads>}
 %%  Used as a shorthand for multiple quads
@@ -840,7 +839,7 @@
 
 %%%
 %   Package commands
-%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Command: \ObsoleteWarning[<obsoletion definition of old command>]{<obsolete command>}{<new option(s)>}
 %%  Outputs the warning: "Command \<obsolete command> is [<obsoletion definition of old command>], use <new option(s)> instead"
