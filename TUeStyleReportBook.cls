@@ -1637,7 +1637,7 @@
 
 \newcounter{numberofsentences}
 %%% command \getlongestsentence{<string>}
-%%  Splits sentences on \break and outputs longest sentence to \longestsentence
+%%  Splits sentences on \linebreak and outputs longest sentence to \longestsentence
 \def\getlongestsentence#1{%
 	\setnewlength{\longestsentence}{0pt}
     \setcounter{numberofsentences}{0}
