@@ -41,6 +41,7 @@
 
 \RequirePackage[table]{xcolor}% also loads »colortbl«
 \RequirePackage{pgf}% also loads »xcolor«, so loaded after »xcolor«
+\RequirePackage{pgffor}
 
 \RequirePackage[dutch, english]{babel}
 
@@ -389,7 +390,7 @@
 \DeclareBooleanOptionX[true]{coloredtext}
 
 %%% option tuefonts to load tuefonts
-\DeclareBooleanOptionX[true]{tuefonts}
+\DeclareBooleanOptionX[false]{tuefonts}
 
 %%% option paragraphstyling to use (TU/e) paragraph styling
 \DeclareBooleanOptionX[true]{paragraphstyling}
@@ -1872,11 +1873,114 @@
 ]{geometry}
 
 \ifshowframe
-  \AtBeginShipout{
-    \begin{fullpagetextblock}
-      \pgfsetcolor{red}
-      \pgfpathrectangle{\pgfpoint{0mm}{0mm}}{\pgfpoint{\temp@layoutwidth}{\temp@layoutheight}} 
-      \pgfusepath{stroke}
+  \AtBeginShipout{%%% TODO fix for odd even
+    \begin{fullpagetextblock}%
+      \pgfsetlinewidth{.5pt}
+      \ifodd\value{page}%
+        \let\temp@gridleftcolumns\gridleftcolumns
+        \let\temp@gridrightcolumns\gridrightcolumns
+      \else
+        \let\temp@gridleftcolumns\gridrightcolumns
+        \let\temp@gridrightcolumns\gridleftcolumns
+      \fi
+      %% Page outline
+      \pgfpathrectangle{\pgfpoint{0mm}{0mm}}{\pgfpoint{\temp@layoutwidth}{\temp@layoutheight}}%
+      \pgfsetcolor{red}%
+      \pgfusepath{stroke}%
+      %% Content outline
+   %   \pgfpathrectangle{\pgfpoint{0mm+\layoutbleed}{0mm+\layoutbleed}}{\pgfpoint{\temp@layoutwidth}{\temp@layoutheight}}%
+   %   \pgfpathrectangle
+   %     {\pgfpoint{\layoutleftmargin}
+   %       {\layoutbottommargin}}
+   %     {\pgfpoint{\temp@layoutwidth-\layoutleftmargin-\layoutrightmargin}
+   %       {\temp@layoutheight-\layoutbottommargin-\layouttopmargin}}%
+   %   \pgfsetcolor{tuepink}%
+   %   \pgfusepath{stroke}%
+      %% Grid
+      \foreach \n in {1,...,\gridcolumns}{
+        \ifnum\gridcolumns=\n
+          \relax
+        \else
+          \pgfpathrectangle
+            {\pgfpoint{\layoutleftmargin+(\n-1)*\columnsize+\gridcolumnwidth}
+              {\layoutbottommargin}}
+            {\pgfpoint{\gridgutterwidth}
+              {\temp@layoutheight-\layoutbottommargin-\layouttopmargin}}%
+        \fi
+      }%
+      \pgfsetfillcolor{tueblue}
+      \pgfsetfillopacity{0.05}
+      \pgfsetstrokecolor{tueblue}
+      \pgfusepath{stroke,fill}
+      \foreach \n in {1,...,\gridcolumns}{
+        \pgfpathrectangle
+          {\pgfpoint{\layoutleftmargin+(\n-1)*\columnsize}
+            {\layoutbottommargin}}
+          {\pgfpoint{\gridcolumnwidth}
+            {\temp@layoutheight-\layoutbottommargin-\layouttopmargin}}%
+      }%
+      \pgfsetfillcolor{tuered}
+      \pgfsetfillopacity{0.05}
+      \pgfsetstrokecolor{tuered}
+      \pgfusepath{stroke,fill}
+      %%
+      \pgfsetlinewidth{1.5pt}
+      %% Left outline
+      \ifnum\temp@gridleftcolumns>0
+        \pgfpathrectangle
+          {\pgfpoint{\layoutleftmargin}
+            {\layoutbottommargin-\footskipvalue}}
+          {\pgfpoint{\temp@gridleftcolumns\columnsize-\gridgutterwidth}
+            {\temp@layoutheight-\layoutbottommargin+\footskipvalue-\layouttopmargin+\headheight+\headfootsep}}%
+        \pgfsetstrokecolor{black}
+        \pgfsetfillcolor{tuered}
+        \pgfsetfillopacity{0.05}
+        \pgfusepath{stroke,fill}
+      \fi
+      %%
+      \pgfsetlinewidth{.5pt}
+      %% Center outline
+      \pgfpathrectangle
+        {\pgfpoint{\layoutleftmargin+\temp@gridleftcolumns\columnsize}
+          {\layoutbottommargin-\footskipvalue}}
+        {\pgfpoint{\temp@layoutwidth-\layoutleftmargin-\layoutrightmargin-\temp@gridleftcolumns\columnsize-\temp@gridrightcolumns\columnsize}
+          {\temp@layoutheight-\layoutbottommargin+\footskipvalue-\layouttopmargin+\headheight+\headfootsep}}%
+      \pgfsetfillcolor{black}
+      \pgfsetfillcolor{tuered}
+      \pgfsetfillopacity{0.05}
+      \pgfusepath{stroke,fill}
+      %% Right outline
+      \ifnum\temp@gridrightcolumns>0
+        \pgfpathrectangle
+          {\pgfpoint{\layoutleftmargin+\gridbodycolumns\columnsize+\temp@gridleftcolumns\columnsize}
+            {\layoutbottommargin-\footskipvalue}}
+          {\pgfpoint{\temp@layoutwidth-\layoutleftmargin-\layoutrightmargin-\gridbodycolumns\columnsize-\temp@gridleftcolumns\columnsize}
+            {\temp@layoutheight-\layoutbottommargin+\footskipvalue-\layouttopmargin+\headheight+\headfootsep}}%
+        \pgfsetfillcolor{black}
+        \pgfsetfillcolor{tuered}
+        \pgfsetfillopacity{0.05}
+        \pgfusepath{stroke,fill}
+      \fi
+      %% Footer outline
+      \pgfpathrectangle
+        {\pgfpoint{\layoutleftmargin+\temp@gridleftcolumns\columnsize}
+          {\layoutbottommargin-\footskipvalue}}
+        {\pgfpoint{\temp@layoutwidth-\layoutleftmargin-\layoutrightmargin-\temp@gridleftcolumns\columnsize-\temp@gridrightcolumns\columnsize}
+          {\thefooterlines\baselineskip}}%
+      \pgfsetfillcolor{tueblue}
+      \pgfsetfillopacity{0.05}
+      \pgfsetstrokecolor{black}
+      \pgfusepath{stroke,fill}
+      %% Header outline
+      \pgfpathrectangle
+        {\pgfpoint{\layoutleftmargin+\temp@gridleftcolumns\columnsize}
+          {\temp@layoutheight-\layouttopmargin+\headsep}}
+        {\pgfpoint{\temp@layoutwidth-\layoutleftmargin-\layoutrightmargin-\temp@gridleftcolumns\columnsize-\temp@gridrightcolumns\columnsize}
+          {\headheight}}%
+      \pgfsetfillcolor{tueblue}
+      \pgfsetfillopacity{0.05}
+      \pgfsetstrokecolor{black}
+      \pgfusepath{stroke,fill}
     \end{fullpagetextblock}
   }
 \fi
@@ -1941,7 +2045,7 @@
 %%%
 \AtBeginDocument{
   \begingroup
-    \def\sentencedelimi{ }
+    \def\sentencedelimi{\break}
     \newcounter{footerlines}
     \expandafter\getlongestsentence{\@title}
     \addtocounter{footerlines}{\thenumberofsentences}
@@ -1958,7 +2062,7 @@
         \setcounter{footerlines}{\thenumberofsentences}
       \fi
     \fi
-  \endgroup  
+  \endgroup
   \setnewlengthifnone{\footskipvalue}{\thefooterlines\baselineskip + \headfootsep}
   \setnewlengthifnone{\layoutbottommargin}{15.75mm+\footskipvalue} % 15.75mm
 }
@@ -3649,9 +3753,8 @@
 
 %%%	Set link colors, bookmarks etc.
 \hypersetup{
-  linktocpage=true,
+  linktoc=all,
   breaklinks=true,
-  linktocpage=true,
   bookmarksnumbered=true,
 }
 
@@ -4971,7 +5074,7 @@ L\kern-.36em%
     \@dottedtocline{1}
      {0em} % Indent
      {#1\listindent} % Listing number width
-     {#3##1} % Entry text
+     {\hypersetup{hidelinks}#3##1} % Entry text %Hidelinks so the page number and text don't get colored, eventough they link
      {##2}% % Page number
   }
 }
