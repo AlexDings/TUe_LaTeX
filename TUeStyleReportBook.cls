@@ -1924,7 +1924,6 @@
       \pgfsetstrokecolor{tuered}
       \pgfusepath{stroke,fill}
       %%
-      \pgfsetlinewidth{1.5pt}
       %% Left outline
       \ifnum\temp@gridleftcolumns>0
         \pgfpathrectangle
@@ -1938,7 +1937,6 @@
         \pgfusepath{stroke,fill}
       \fi
       %%
-      \pgfsetlinewidth{.5pt}
       %% Center outline
       \pgfpathrectangle
         {\pgfpoint{\layoutleftmargin+\temp@gridleftcolumns\columnsize}
@@ -3979,10 +3977,10 @@
     \setcounter{subsubsection}{0}% Level 3
   \fi
 	\ifnum #1 < 4
-    \setcounter{paragraph}    {1}% Level 4, counter not used
+    \setcounter{paragraph}    {1}% Level 4, counter not used by default
   \fi
 	\ifnum #1 < 5
-    \setcounter{subparagraph} {1}% Level 5, counter not used
+    \setcounter{subparagraph} {1}% Level 5, counter not used by default
   \fi
 }
 
@@ -4630,8 +4628,7 @@
 
     \pagestyle{fancy}
       %%%	Draw TOC (Table of Contents)
-      {\def\@currentlist{toc}
-      \@starttoc{toc} 
+      {\@starttoc{toc} 
      }%
     
 	\end{onecolarea}
@@ -5054,7 +5051,9 @@ L\kern-.36em%
             \endgroup\end{onecolarea}
         }
 
-\newcommand{\stylelist}[3][2]{
+\def\stylelist{\@ifstar\@stylelist\@@stylelist}
+        
+\newcommand{\@@stylelist}[3][2]{
   \ifgloballistspacing 
     \expandafter\providecommand\csname l@tabs@globalitem\endcsname{#1}
     \expandafter\stylelistSingle[\csname l@tabs@globalitem\endcsname]{#2}{#3}
@@ -5064,9 +5063,15 @@ L\kern-.36em%
   \fi
 }
 
+%% TODO make starred command
+\newcommand{\@stylelist}[3][2]{
+  \expandafter\providecommand\csname l@tabs@#2\endcsname{#1}
+  \expandafter\stylelistSingle[\csname l@tabs@#2\endcsname]{#2}{#3}
+}
+
 \newcommand{\stylelistTabdefault}[2]{
   \pgfmathparse{int(round(#2))}
-  \expandafter\def\csname l@tabs@#1\endcsname{\numexpr\pgfmathresult+1\relax}
+  \expandafter\edef\csname l@tabs@#1\endcsname{\numexpr\pgfmathresult+1\relax}% edef to make sure \pgfmathresult is expanded before it is stored
 }
 
 \newcommand{\stylelistSingle}[3][2]{
@@ -5094,8 +5099,39 @@ L\kern-.36em%
 \storeold{\listoffigures}
 \redefinelist{figure}{lof}
 
-%%%	Declare the \listoffigures command for the list of notes
+%%%	Declare the \listofnotes command for the list of notes
 \definelist{note}{lon}
+
+
+%redefined from book
+\renewcommand*\l@chapter[2]{%
+  \def\@currentlist{chapter}% Added currentlist clause
+  \ifnum \c@tocdepth >\m@ne%
+    \addpenalty{-\@highpenalty}%
+    \vskip 1.0em \@plus\p@%
+    \setlength\@tempdima{\l@tabs@chapter\listindent}% Changed indent
+    \begingroup%
+      \parindent \z@ \rightskip \@pnumwidth%
+      \parfillskip -\@pnumwidth%
+      \leavevmode \bfseries%
+      \advance\leftskip\@tempdima%
+      \hskip -\leftskip%
+      {\hypersetup{hidelinks}#1}\nobreak\hfil \nobreak\hb@xt@\@pnumwidth{\hss #2}\par% Added hidelinks to body
+      \penalty\@highpenalty%
+    \endgroup
+  \fi}
+  
+\providecommand{\l@tabs@chapter}{2}
+
+\stylelist*{section}{\def\@currentlist{section}}
+\stylelist*{subsection}{\def\@currentlist{subsection}}
+\stylelist*{subsubsection}{\def\@currentlist{subsubsection}}
+\stylelist*{paragraph}{\def\@currentlist{paragraph}}
+\stylelist*{subparagraph}{\def\@currentlist{subparagraph}}
+\stylelist*{subsubparagraph}{\def\@currentlist{subsubparagraph}}
+
+
+
 
 %%%
 %	Notes
@@ -5925,48 +5961,6 @@ L\kern-.36em%
 
   
 \newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
-
-
-
-
-
-
-
-
-\renewcommand*\l@chapter[2]{%
-  \ifnum \c@tocdepth >\m@ne%
-    \addpenalty{-\@highpenalty}%
-    \vskip 1.0em \@plus\p@%
-    \setlength\@tempdima{\tabsize}%\setlength\@tempdima{1.5em}%
-    \begingroup%
-      \parindent \z@ \rightskip \@pnumwidth%
-      \parfillskip -\@pnumwidth%
-      \leavevmode \bfseries%
-      \advance\leftskip\@tempdima%
-      \hskip -\leftskip%
-      #1\nobreak\hfil \nobreak\hb@xt@\@pnumwidth{\hss #2}\par%
-      \penalty\@highpenalty%
-    \endgroup
-  \fi}
-
-\renewcommand*\l@section{\@dottedtocline{1}{\tabsize}{\tabsize}}
-\renewcommand*\l@subsection{\@dottedtocline{2}{2\tabsize}{\tabsize}}
-\renewcommand*\l@subsubsection{\@dottedtocline{3}{3\tabsize}{2\tabsize}}
-\renewcommand*\l@paragraph{\@dottedtocline{4}{4\tabsize}{2\tabsize}}
-\renewcommand*\l@subparagraph{\@dottedtocline{5}{5\tabsize}{2\tabsize}}
-\newcommand*  \l@subsubparagraph{\@dottedtocline{6}{6\tabsize}{2\tabsize}}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
