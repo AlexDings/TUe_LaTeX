@@ -422,11 +422,11 @@
 }
     \setkeys{\docname}{urlstyle}
 
-%%% options for fontsize
-\DeclareOptionX{9pt}  {\PassOptionsToBaseClass{10pt}            \def\classFontSize{9} }
-\DeclareOptionX{10pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{10}}
-\DeclareOptionX{11pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{11}}
-\DeclareOptionX{12pt} {\PassOptionsToBaseClass{\CurrentOption}  \def\classFontSize{12}}
+%%% options for fontsize, 9pt is new
+\DeclareOptionX{9pt}  {\def\classFontSize{9} }
+\DeclareOptionX{10pt} {\def\classFontSize{10}}
+\DeclareOptionX{11pt} {\def\classFontSize{11}}
+\DeclareOptionX{12pt} {\def\classFontSize{12}}
     %% default 9pt
     \ExecuteOptionsX{9pt}
 
@@ -1550,6 +1550,28 @@
   \storeold{#1}%
   \let#1\relax%
 }
+
+%%% \fullyexpand{<content>}
+%%  Fully expands <content>
+%   source: https://tex.stackexchange.com/questions/7515/expandable-full-expansion-of-tokens-that-preserves-catcodes/7524
+\long\def\fullyexpand#1{%
+  \csname donothing\fullyexpandauxi{#1}{}%
+}
+        \long\def\fullyexpandauxi#1{%
+          \expandafter\fullyexpandauxii\romannumeral -`0#1\fullyexpandend
+        }
+        \long\def\fullyexpandauxii#1#2\fullyexpandend#3{%
+          \ifx\donothing#2\donothing
+            \expandafter\fullyexpandend
+          \else
+            \expandafter\fullyexpandloop
+          \fi
+          {#1}{#2}{#3}%
+        }
+        \long\def\fullyexpandend#1#2#3{\endcsname#3#1}
+        \long\def\fullyexpandloop#1#2#3{%
+          \fullyexpandauxi{#2}{#3#1}%
+        }
 
 %%% command \disablepageskip
 %%	Store and disable clearpage, cleardoublepage & newpage commands
@@ -2908,6 +2930,38 @@
     }
 
 
+\ifnum \classFontSize = 9 
+  \def\setclassSkipSize#1#2#3#4#5#6#7#8#9{%
+    \def\@setclassSkipSize##1##2##3##4{%
+      \setlength\setclassSkipSize@temp{#2 plus #3 minus #4}
+      \expandafter\let\csname#1\endcsname\setclassSkipSize@temp
+    }\@setclassSkipSize
+  }
+\else \ifnum \classFontSize = 10
+  \def\setclassSkipSize#1#2#3#4#5#6#7#8#9{%
+    \def\@setclassSkipSize##1##2##3##4{%
+      \setlength\setclassSkipSize@temp{#5 plus #6 minus #7}
+      \expandafter\let\csname#1\endcsname\setclassSkipSize@temp
+    }\@setclassSkipSize
+  }
+\else \ifnum \classFontSize = 11
+  \def\setclassSkipSize#1#2#3#4#5#6#7#8#9{%
+    \def\@setclassSkipSize##1##2##3##4{%
+      \setlength\setclassSkipSize@temp{#8 plus #9 minus ##1}
+      \expandafter\let\csname#1\endcsname\setclassSkipSize@temp
+    }\@setclassSkipSize
+  }
+\else \ifnum \classFontSize = 12
+  \def\setclassSkipSize#1#2#3#4#5#6#7#8#9{%
+    \def\@setclassSkipSize##1##2##3##4{%
+      \setlength\setclassSkipSize@temp{##2 plus ##3 minus ##4}
+      \expandafter\let\csname#1\endcsname\setclassSkipSize@temp
+    }\@setclassSkipSize
+  }
+\fi\fi\fi\fi
+    \newlength{\setclassSkipSize@temp}
+
+
 %%% TODO add comments
 \newcommand{\copyclassFontSize}[2]{
   \expandafter\def\csname selectedfont@#1\endcsname{\csname selectedfont@#2\endcsname}
@@ -2947,7 +3001,7 @@
   \setOthersize   {footnotesize}      {10}  {12.75}   {11}  {2}   {6}     {4}                     {7}   {3}   {4}         {7}   {2}   {3}   {4}   {2}   {1}
 \fi\fi\fi\fi
 
-%                 Name                9pt           10pt          11pt          12pt
+%                 Name                9bp           10bp          11bp          12bp
 \setclassFontSize {tiny}              {5}{6.5}      {5}{6.5}      {6}{7.75}     {6}{7.75}
 \setclassFontSize {scriptsize}        {6.75}{9}     {6.75}{9}     {7.75}{11.25} {7.75}{11.25}
 \setclassFontSize {caption}           {7.75}{11.25} {8.5}{11.5}   {9.25}{12.75} {10}{12.75}
@@ -2986,6 +3040,49 @@
 \renewcommand \Huge       {\useclassFontSize{articleHeadv}}
 \newcommand   \HUGE       {\useclassFontSize{articleHeadiv}}
 
+%%%
+%   Other font sizes and spacing
+%%%
+
+\if@compatibility \setlength\maxdepth{4\p@} \else
+\setlength\maxdepth{.5\topskip} \fi
+
+% marginparpush:    the minimum vertical separation between two marginal notes
+% footnotesep:      the height of the strut placed at the beginning of the footnote. 
+%                     By default, this is set to the normal strut for \footnotesize fonts
+% floatsep:         the space between adjacent floats that are moved to the top or bottom of the text page
+% textfloatsep:     the space between the main text and floats at the top or bottom of the page
+% intextsep:        the space above and below the float and the texts
+% dblfloatsep:      the space between adjacent floats that are moved to the top or bottom of the text page
+% dbltextfloatsep:  the space between the main text and floats at the top or bottom of the page
+% @fptop:           at the top of the page \@fptop amount of stretchable whitespace is inserted
+% @fpsep:           between floats \@fpsep amount of stretchable whitespace is inserted
+% @fpbot:           at the bottom of the page we get an \@fpbot amount of stretchable whitespace
+% @dblfptop:        \@fptop for column floats in two column mode
+% @dblfpsep:        \@fpsep for column floats in two column mode
+% @dblfpbot:        \@fpbot for column floats in two column mode
+% partopsep:        when the user leaves a blank line before the environment an extra vertical space of \partopsep is inserted, 
+%                     in addition to \parskip and \topsep
+% skipfootins:      the space between the last line of the main text and the top of the first footnote
+
+%%% taken from book.cls TODO needs to be adjusted
+%                 Name            9bp                 10bp                11bp                12bp
+\setclassSkipSize{marginparpush}  {5bp}{0bp}{0bp}     {0bp}{0bp}{0bp}     {5bp}{0bp}{0bp}     {7bp}{0bp}{0bp}
+\setclassSkipSize{footnotesep}    {6.65bp}{0bp}{0bp}  {6.65bp}{0bp}{0bp}  {7.7bp}{0bp}{0bp}   {8.4bp}{0bp}{0bp}
+\setclassSkipSize{floatsep}       {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}
+\setclassSkipSize{textfloatsep}   {20bp}{2bp}{4bp}    {20bp}{2bp}{4bp}    {20bp}{2bp}{4bp}    {20bp}{2bp}{4bp}
+\setclassSkipSize{intextsep}      {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}    {14bp}{4bp}{4bp}
+\setclassSkipSize{dblfloatsep}    {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}    {12bp}{2bp}{2bp}    {14bp}{2bp}{4bp}
+\setclassSkipSize{dbltextfloatsep}{20bp}{2bp}{4bp}    {20bp}{2bp}{4bp}    {20bp}{2bp}{4bp}    {20bp}{2bp}{4bp}
+\setclassSkipSize{@fptop}         {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}
+\setclassSkipSize{@fpsep}         {8bp}{2fil}{0bp}    {8bp}{2fil}{0bp}    {8bp}{2fil}{0bp}    {10bp}{2fil}{0bp}
+\setclassSkipSize{@fpbot}         {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}
+\setclassSkipSize{@dblfptop}      {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}
+\setclassSkipSize{@dblfpsep}      {8bp}{2fil}{0bp}    {8bp}{2fil}{0bp}    {8bp}{2fil}{0bp}    {10bp}{2fil}{0bp}
+\setclassSkipSize{@dblfpbot}      {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}    {0bp}{1fil}{0bp}
+\setclassSkipSize{partopsep}      {2bp}{1bp}{1bp}     {2bp}{1bp}{1bp}     {3bp}{1bp}{1bp}     {3bp}{2bp}{2bp}
+\setclassSkipSize{skipfootins}    {5bp}{4bp}{2bp}     {9bp}{4bp}{2bp}     {10bp}{4bp}{2bp}    {10.8bp}{4bp}{2bp}
+\setlength{\skip\footins}{\skipfootins}% had to use placeholder because of name (last above)
 
 %%%
 %   Text styles
@@ -3276,8 +3373,87 @@
 
 \usepackage{ amssymb }
 
+%%% List environment indent (includes quote)
+\setlength{\leftmargini}  {.5\columnsize}
+\leftmargin\leftmargini
+
+\setlength\leftmarginii   {.5\columnsize}
+\setlength\leftmarginiii  {.5\columnsize}
+\setlength\leftmarginiv   {.5\columnsize}
+\if@twocolumn
+  \setlength\leftmarginv  {.5\columnsize}
+  \setlength\leftmarginvi {.5\columnsize}
+\else
+  \setlength\leftmarginv  {.5\columnsize}
+  \setlength\leftmarginvi {.5\columnsize}
+\fi
+\setlength    \labelsep   {\columnsize}
+\setlength    \labelwidth {\leftmargini}
+\addtolength  \labelwidth {-\labelsep}
+
+\@beginparpenalty -\@lowpenalty
+\@endparpenalty   -\@lowpenalty
+\@itempenalty     -\@lowpenalty
+
+\def\set@listi#1#2#3#4#5#6#7{
+  \def\@listi{\leftmargin\leftmargini
+                \parsep #1bp \@plus#2bp \@minus 1bp
+                \topsep #3bp \@plus#4bp \@minus#5bp
+                \itemsep#6bp \@plus#7bp \@minus 1bp}
+    \let\@listI\@listi
+    \@listi
+}
+
+\def\set@listii#1#2#3{
+  \def\@listii {\leftmargin\leftmarginii
+                \labelwidth\leftmarginii
+                \advance\labelwidth-\labelsep
+                \topsep    #2bp \@plus#3bp \@minus 1bp
+                \parsep    #1bp \@plus 1bp  \@minus 1bp
+                \itemsep   \parsep}
+}
+\def\set@listiii#1{
+  \def\@listiii{\leftmargin\leftmarginiii
+                \labelwidth\leftmarginiii
+                \advance\labelwidth-\labelsep
+                \topsep    #1bp \@plus 1bp\@minus 1bp
+                \parsep    \z@
+                \partopsep 1bp \@plus\z@ \@minus 1bp
+                \itemsep   \topsep}
+}
+
+%%% taken from book.cls TODO needs to be adjusted
+% Naam        parsep    topsep      itemsep
+\ifnum\classFontSize = 9
+  \set@listi  {4}{2}    {8}{2}{4}   {4}{2}
+  \set@listii {2}       {4}{2}    
+  \set@listiii          {2}
+\else \ifnum \classFontSize = 10
+  \set@listi  {4}{2}    {8}{2}{4}   {4}{2}
+  \set@listii {2}       {4}{2}    
+  \set@listiii          {2}
+\else \ifnum \classFontSize = 11
+  \set@listi  {4.5}{2}  {9}{3}{5}   {4.5}{2}
+  \set@listii {2}       {4.5}{2}  
+  \set@listiii          {2}
+\else \ifnum \classFontSize = 12
+  \set@listi  {5}{2.5}  {10}{4}{6}  {5}{2.5}
+  \set@listii {2.5}     {5}{2.5}  
+  \set@listiii          {2.5}
+\fi\fi\fi\fi
+
+\def\@listiv {\leftmargin\leftmarginiv
+              \labelwidth\leftmarginiv
+              \advance\labelwidth-\labelsep}
+\def\@listv  {\leftmargin\leftmarginv
+              \labelwidth\leftmarginv
+              \advance\labelwidth-\labelsep}
+\def\@listvi {\leftmargin\leftmarginvi
+              \labelwidth\leftmarginvi
+              \advance\labelwidth-\labelsep}
+
 %%% TODO enable with option
-\renewcommand{\labelitemi}{\scriptsize\labelstyle{$\blacksquare$}}%%% TODO add actual $bullet$ behind there
+\renewcommand{\labelitemi}{\scriptsize\labelstyle{$\blacksquare$}}%%% TODO add actual $bullet$ behind there so it can be copied
 \renewcommand{\labelitemii}{\labelstyle{--}}
 \renewcommand{\labelitemiii}{\labelstyle{-}}
 \renewcommand{\labelitemiv}{\labelstyle{$\cdot$}}
@@ -3297,6 +3473,10 @@
 \renewcommand{\labelenumiv}{%
   \color{colorlabel}\Alph{enumiv}.%
 }
+
+\renewcommand\p@enumii{\theenumi}
+\renewcommand\p@enumiii{\theenumi(\theenumii)}
+\renewcommand\p@enumiv{\p@enumiii\theenumiii}
 
 %%%
 %   Highlight style
@@ -3533,8 +3713,7 @@
 %%% List indent
 \setnewlength{\listindent}{\tabsize}
 
-%%% List environment indent (includes quote)
-\setlength{\leftmargini}{\tabsize}
+
 
 %%% Paragraph indent
 \setnewlength{\originalparindent}{\tabsize}%
@@ -3910,25 +4089,6 @@
     \@readfrom{\buildfile}
 	}{}
 }
-
-\long\def\fullyexpand#1{%
-  \csname donothing\fullyexpandauxi{#1}{}%
-}
-        \long\def\fullyexpandauxi#1{%
-          \expandafter\fullyexpandauxii\romannumeral -`0#1\fullyexpandend
-        }
-        \long\def\fullyexpandauxii#1#2\fullyexpandend#3{%
-          \ifx\donothing#2\donothing
-            \expandafter\fullyexpandend
-          \else
-            \expandafter\fullyexpandloop
-          \fi
-          {#1}{#2}{#3}%
-        }
-        \long\def\fullyexpandend#1#2#3{\endcsname#3#1}
-        \long\def\fullyexpandloop#1#2#3{%
-          \fullyexpandauxi{#2}{#3#1}%
-        }
 
 \ifbuildnumber
   \AtBeginDocument{
@@ -5132,6 +5292,32 @@ L\kern-.36em%
 
 
 
+\def\DividedListChapterTitle{}
+
+\newcommand{\DeclareDividedList}[1]%
+  {\setnewcounter{#1@chapter}{0}}
+  
+\def\DividedListChapterCheck#1#2{
+\ifcounter{#1@chapter}{%
+     \ifnum \value{chapter} > \value{#1@chapter}%
+       \setcounter{#1@chapter}{\value{chapter}}%
+       \addtocontents{#1}{\protect\addvspace{10\p@}}%
+       \addtocontents{#1}{\protect\contentsline{#2}%
+         {\bfseries\protect\numberline{\thechapter}{\DividedListChapterTitle}}{}{}}%%% TODO add chapter styling
+     \fi%
+   }{}%
+}
+
+\storeoldrelax{\addcontentsline}
+\def\addcontentsline#1#2#3{\DividedListChapterCheck{#1}{#2}\oldaddcontentsline{#1}{#2}{#3}}
+
+\DeclareDividedList{lof}
+\DeclareDividedList{lot}
+\DeclareDividedList{lon}
+
+
+
+
 
 %%%
 %	Notes
@@ -5755,7 +5941,7 @@ L\kern-.36em%
   \endgroup
 }
 
-
+%%% TODO move
 %%% renewing command \footnoterule
 %%  coloring the footnote rule and setting its width to 3\columnsize
 %%  keeping the height and spacing the same
@@ -5883,30 +6069,6 @@ L\kern-.36em%
 
 
 
-
-
-\def\DividedListChapterTitle{}
-
-\newcommand{\DeclareDividedList}[1]%
-  {\setnewcounter{#1@chapter}{0}}
-  
-\def\DividedListChapterCheck#1#2{
-\ifcounter{#1@chapter}{%
-     \ifnum \value{chapter} > \value{#1@chapter}%
-       \setcounter{#1@chapter}{\value{chapter}}%
-       \addtocontents{#1}{\protect\addvspace{10\p@}}%
-       \addtocontents{#1}{\protect\contentsline{#2}%
-         {\bfseries\protect\numberline{\thechapter}{\DividedListChapterTitle}}{}{}}%%% TODO add chapter styling
-     \fi%
-   }{}%
-}
-
-\storeoldrelax{\addcontentsline}
-\def\addcontentsline#1#2#3{\DividedListChapterCheck{#1}{#2}\oldaddcontentsline{#1}{#2}{#3}}
-
-\DeclareDividedList{lof}
-\DeclareDividedList{lot}
-\DeclareDividedList{lon}
 
 
 
@@ -6169,7 +6331,6 @@ L\kern-.36em%
     \fi
   }
 }
-
         %%% Command:  \showfileslist@split<string.withdot>\showfilelist@endsplit
         %%  Usage:    \showfileslist@split TUestyleReportBook.cls \showfilelist@endsplit
         \def\showfilelist@split#1.#2\showfilelist@endsplit{#2}
