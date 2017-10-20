@@ -1,3 +1,4 @@
 development/*
 *.bak
 *dev*
+*.log
