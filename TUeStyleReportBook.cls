@@ -33,7 +33,6 @@
 %%%
 %   Used Packages
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \RequirePackage[T1]{fontenc}
 \RequirePackage[utf8]{inputenc}% loaded after »fontenc«
 
@@ -82,6 +81,23 @@
 %   Definitions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%% Switch to rember to switch back to two columns
+%%  (default doesn't matter}
+\newif\if@restonecol
+
+%%% Switch to request titlepage
+\newif\if@titlepage
+\@titlepagetrue
+
+%%% Switch to enable mainmatter
+%%  (default for book)
+\newif\if@mainmatter 
+
+%%% Switch between openright / openany
+%%  (openright default for book  )
+%%  (openany   default for report)
+\newif\if@openright
+
 %%% Switch between book / report
 %%  (report by default)
 \newif\ifbook
@@ -100,16 +116,12 @@
 %%% Switch between one-sided / two-sided mode
 %%  (one-sided by default for report)
 %%  (one-sided by default for book)
+%   »geometry« sets \@twoside and \@mparswitch
 \newif\iftwosided
 
 %%% Check to see if user overwrites default twoside or oneside
 \newif\iftwosidedtouched
 \twosidedtouchedfalse
-
-%%% Switch between one-column / two-column mode
-%%  (one-column by default)
-\newif\iftwocolumn
-\twocolumnfalse
 
 %%% Switch between one-sided / two-sided header and footer
 %%  (two-sided by default)
@@ -153,8 +165,9 @@
 %%% command \PassOptionsToBaseClass{<options>}
 %%  used to pass <options> to the baseclass
 \newcommand{\PassOptionsToBaseClass}[1]{%
-  \PassOptionsToClass{#1}{book}%
-  \PassOptionsToClass{#1}{report}%
+ % \PassOptionsToClass{#1}{book}%
+ % \PassOptionsToClass{twocolumn}{book}%
+%  \PassOptionsToClass{#1}{report}%
 }
 
 %%% command \ClassErrorNotSupported[<suggested option>]{<unsupported option>}
@@ -198,7 +211,14 @@
 \DeclareOptionX{book}{%
   \booktrue%
   \iftwosidedtouched\relax\else\twosidedtrue\fi%
+  \@openrighttrue%
+  \@mainmattertrue%
 }
+
+%%% TODO REMOVE LOADING OF
+
+\DeclareOptionX{openright}{\@openrighttrue  }
+\DeclareOptionX{openany}   {\@openrightfalse }
 
 %%%
 %   Layout options
@@ -213,9 +233,10 @@
 \DeclareOptionX{twoside}{\twosidedtrue  \twosidedtouchedtrue}
 
 %%% option onecolumn to draw one-column
-\DeclareOptionX{onecolumn}{\twocolumnfalse}
+\DeclareOptionX{onecolumn}{\def\twocolumnvalue{onecolumn}}
 %%% option twocolumn to draw two-column
-\DeclareOptionX{twocolumn}{\twocolumntrue}
+\DeclareOptionX{twocolumn}{\def\twocolumnvalue{twocolumn}}
+  \def\twocolumnvalue{}
 
 %%% option bleed
 %%  sets layout bleed length
@@ -434,6 +455,10 @@
 %   Cover options     TODO make cover specific
 %%%
 
+%%% Option to request titlepage
+\DeclareOption{titlepage}{\@titlepagetrue}
+\DeclareOption{notitlepage}{\@titlepagefalse}
+
 %%% Option for cover ratio
 %%  Ratio has to be bigger than 4:3       TODO make cover specific
 \DeclareOptionX{coverratio}[4/3]{%
@@ -541,6 +566,9 @@
 %%% option draft mode
 \DeclareBooleanOptionX[false]{draft}
 
+%%% option final mode
+\DeclareBooleanOptionX[false]{final}
+
 % Print optimalization
 \DeclareBooleanOptionX[false]{print}
 
@@ -603,6 +631,19 @@
 
 %%% option buildnumber to show build number behind version number
 \DeclareBooleanOptionX[false]{buildnumber}
+
+\DeclareOptionX{leqno}{\input{leqno.clo}}
+\DeclareOptionX{fleqn}{\input{fleqn.clo}}
+\DeclareOptionX{openbib}{%
+  \AtEndOfPackage{%
+   \renewcommand\@openbib@code{%
+      \advance\leftmargin\bibindent
+      \itemindent -\bibindent
+      \listparindent \itemindent
+      \parsep \z@
+      }%
+   \renewcommand\newblock{\par}}%
+}
 
 %%%
 %   Option processing
@@ -1781,13 +1822,6 @@
 %   Document
 %%%
 
-% load underlying class
-\ifbook
-  \LoadClass{book}
-\else
-  \LoadClass{report}
-\fi
-
 %%%
 %	Set last page label
 %%%
@@ -1807,8 +1841,20 @@
   \RequirePackage[absolute          ]{textpos}% also loads »atbegshi«
 \fi
 \textblockorigin{\layoutbleed}{\layoutbleed}
+               
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{#1: #2}%
+  \ifdim \wd\@tempboxa >\hsize
+    #1: #2\par
+  \else
+    \global \@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
 
 \RequirePackage{caption}% loaded after document class
+\caption@setbool{documentclass}{0}
 
 \RequirePackage{csquotes}% loaded after document class
 \setquotestyle{american}
@@ -1818,6 +1864,12 @@
 \fi
 
 
+\ifdraft
+  \setlength\overfullrule{5pt}
+\fi
+\iffinal
+  \setlength\overfullrule{0pt}
+\fi
 
 \ifprint
   %%  colored links
@@ -1828,6 +1880,8 @@
     \PassOptionsToPackage{colorlinks}{hyperref}
   }{}
 \fi
+
+\@ifundefined{thepage}{\def\thepage{\arabic{page}}}{}%
 
 \RequirePackage[hypertexnames=false]{hyperref}% Option hypertexnames=false prevents table of contents link collision with two sectioning items with same number and name
 
@@ -1892,6 +1946,7 @@
 \RequirePackage[paperwidth=\temp@paperwidth,paperheight=\temp@paperheight,%
   \showframevalue,%
   \showcropvalue,%
+  \twocolumnvalue,%
 ]{geometry}
 
 \ifshowframe
@@ -2099,7 +2154,20 @@
 
 \setnewlength{\gridgutterwidth}{3.853mm}
 \setlength{\columnsep}{\gridgutterwidth}
-
+\setlength\columnseprule{0\p@}
+\pagestyle{plain}
+\pagenumbering{arabic}
+\if@twoside
+\else
+  \raggedbottom
+\fi
+\if@twocolumn
+  \twocolumn
+  \sloppy
+  \flushbottom
+\else
+  \onecolumn
+\fi
 
 
 \ifexists{gridcolumns}{
@@ -2311,6 +2379,7 @@
     headsep         = \headsepvalue,%
     bindingoffset   = 0cm,%
     headheight      = 16pt,%
+    \twocolumnvalue,%
     \asymmetricvalue,%
   }
   
@@ -2662,7 +2731,28 @@
 	\noindent\leavevmode\\*[-\baselineskip]\hspace*{#1\tabsize}%
 }
 
+%%%
+%   Chapter counters
+%%%
 
+%%% taken from report.cls & book.cls
+\newcommand*\chaptermark[1]{}
+\setcounter {secnumdepth}{2}
+\newcounter {part}
+\newcounter {chapter}
+\newcounter {section}       [chapter]
+\newcounter {subsection}    [section]
+\newcounter {subsubsection} [subsection]
+\newcounter {paragraph}     [subsubsection]
+\newcounter {subparagraph}  [paragraph]
+\renewcommand \thepart          {\@Roman\c@part}
+\renewcommand \thechapter       {\@arabic\c@chapter}
+\renewcommand \thesection       {\thechapter.\@arabic\c@section}
+\renewcommand \thesubsection    {\thesection.\@arabic\c@subsection}
+\renewcommand \thesubsubsection {\thesubsection .\@arabic\c@subsubsection}
+\renewcommand \theparagraph     {\thesubsubsection.\@arabic\c@paragraph}
+\renewcommand \thesubparagraph  {\theparagraph.\@arabic\c@subparagraph}
+\newcommand   \@chapapp         {\chaptername}
 
 %%%
 %   TU/e style
@@ -2890,7 +2980,7 @@
 
 \def\setOthersize#1#2#3#4#5#6#7#8#9{%
   \def\@setOthersize##1##2##3##4##5##6##7{%
-    \expandafter\renewcommand\csname#1\endcsname{%
+    \expandafter\newcommand\csname#1\endcsname{%
        \expandafter\@setfontsize\csname#1\endcsname{#2}{#3}%
        \abovedisplayskip #4\p@ \@plus#5\p@ \@minus#6\p@
        \abovedisplayshortskip \z@ \@plus#7\p@
@@ -3031,14 +3121,14 @@
 \setclassFontSize {articleHeadii}     {42}{54}      {42}{54}      {42}{54}      {42}{54}
 \setclassFontSize {articleHeadi}      {48}{58}      {48}{58}      {48}{58}      {48}{58}
 
-\renewcommand \tiny       {\useclassFontSize{tiny}}
-\renewcommand \scriptsize {\useclassFontSize{scriptsize}}
-\renewcommand \large      {\useclassFontSize{articleHeadviii}}
-\renewcommand \Large      {\useclassFontSize{articleHeadviihalf}}
-\renewcommand \LARGE      {\useclassFontSize{articleHeadvii}}
-\renewcommand \huge       {\useclassFontSize{articleHeadvi}}
-\renewcommand \Huge       {\useclassFontSize{articleHeadv}}
-\newcommand   \HUGE       {\useclassFontSize{articleHeadiv}}
+\newcommand \tiny       {\useclassFontSize{tiny}}
+\newcommand \scriptsize {\useclassFontSize{scriptsize}}
+\newcommand \large      {\useclassFontSize{articleHeadviii}}
+\newcommand \Large      {\useclassFontSize{articleHeadviihalf}}
+\newcommand \LARGE      {\useclassFontSize{articleHeadvii}}
+\newcommand \huge       {\useclassFontSize{articleHeadvi}}
+\newcommand \Huge       {\useclassFontSize{articleHeadv}}
+\newcommand \HUGE       {\useclassFontSize{articleHeadiv}}% Extra size
 
 %%%
 %   Other font sizes and spacing
@@ -3083,6 +3173,79 @@
 \setclassSkipSize{partopsep}      {2bp}{1bp}{1bp}     {2bp}{1bp}{1bp}     {3bp}{1bp}{1bp}     {3bp}{2bp}{2bp}
 \setclassSkipSize{skipfootins}    {5bp}{4bp}{2bp}     {9bp}{4bp}{2bp}     {10bp}{4bp}{2bp}    {10.8bp}{4bp}{2bp}
 \setlength{\skip\footins}{\skipfootins}% had to use placeholder because of name (last above)
+
+%%% taken from report.cls & book.cls
+\setlength\lineskip{1\p@}
+\setlength\normallineskip{1\p@}
+\renewcommand\baselinestretch{}
+\setlength\parskip{0\p@ \@plus \p@}
+\@lowpenalty   51
+\@medpenalty  151
+\@highpenalty 301
+\setcounter{topnumber}{2}
+\renewcommand\topfraction{.7}
+\setcounter{bottomnumber}{1}
+\renewcommand\bottomfraction{.3}
+\setcounter{totalnumber}{3}
+\renewcommand\textfraction{.2}
+\renewcommand\floatpagefraction{.5}
+\setcounter{dbltopnumber}{2}
+\renewcommand\dbltopfraction{.7}
+\renewcommand\dblfloatpagefraction{.5}
+
+%%% taken from report.cls & book.cls
+\newcommand\part{%
+  \if@openright
+    \cleardoublepage
+  \else
+    \clearpage
+  \fi
+  \thispagestyle{plain}%
+  \if@twocolumn
+    \onecolumn
+    \@tempswatrue
+  \else
+    \@tempswafalse
+  \fi
+  \null\vfil
+  \secdef\@part\@spart}
+
+%%% taken from report.cls & book.cls
+\def\@part[#1]#2{%
+    \ifnum \c@secnumdepth >-2\relax
+      \refstepcounter{part}%
+      \addcontentsline{toc}{part}{\thepart\hspace{1em}#1}%
+    \else
+      \addcontentsline{toc}{part}{#1}%
+    \fi
+    \markboth{}{}%
+    {\centering
+     \interlinepenalty \@M
+     \normalfont
+     \ifnum \c@secnumdepth >-2\relax
+       \huge\bfseries \partname\nobreakspace\thepart
+       \par
+       \vskip 20\p@
+     \fi
+     \Huge \bfseries #2\par}%
+    \@endpart}
+\def\@spart#1{%
+    {\centering
+     \interlinepenalty \@M
+     \normalfont
+     \Huge \bfseries #1\par}%
+    \@endpart}
+\def\@endpart{\vfil\newpage
+              \if@twoside
+               \if@openright
+                \null
+                \thispagestyle{empty}%
+                \newpage
+               \fi
+              \fi
+              \if@tempswa
+                \twocolumn
+              \fi}
 
 %%%
 %   Text styles
@@ -3453,24 +3616,24 @@
               \advance\labelwidth-\labelsep}
 
 %%% TODO enable with option
-\renewcommand{\labelitemi}{\scriptsize\labelstyle{$\blacksquare$}}%%% TODO add actual $bullet$ behind there so it can be copied
-\renewcommand{\labelitemii}{\labelstyle{--}}
-\renewcommand{\labelitemiii}{\labelstyle{-}}
-\renewcommand{\labelitemiv}{\labelstyle{$\cdot$}}
+\newcommand{\labelitemi}{\scriptsize\labelstyle{$\blacksquare$}}%%% TODO add actual $bullet$ behind there so it can be copied
+\newcommand{\labelitemii}{\labelstyle{--}}
+\newcommand{\labelitemiii}{\labelstyle{-}}
+\newcommand{\labelitemiv}{\labelstyle{$\cdot$}}
 
 \setlength{\labelsep}{\gridgutterwidth}
 \setlength{\labelwidth}{\tabsize}
 
-\renewcommand{\labelenumi}{%
+\newcommand{\labelenumi}{%
   \color{colorlabel}\arabic{enumi}.%
 }
-\renewcommand{\labelenumii}{%
+\newcommand{\labelenumii}{%
   \color{colorlabel}\alph{enumii}.%
 }
-\renewcommand{\labelenumiii}{%
+\newcommand{\labelenumiii}{%
   \color{colorlabel}\roman{enumiii}.%
 }
-\renewcommand{\labelenumiv}{%
+\newcommand{\labelenumiv}{%
   \color{colorlabel}\Alph{enumiv}.%
 }
 
@@ -3567,6 +3730,54 @@
   \if@twocolumn\null\newpage\fi\fi\fi}
 \fi
 
+%%%
+%   Default Figure & table styles
+%%%
+
+\@addtoreset {equation}{chapter}
+\renewcommand\theequation
+  {\ifnum \c@chapter>\z@ \thechapter.\fi \@arabic\c@equation}
+\newcounter{figure}[chapter]
+\renewcommand \thefigure
+     {\ifnum \c@chapter>\z@ \thechapter.\fi \@arabic\c@figure}
+\def\fps@figure{tbp}
+\def\ftype@figure{1}
+\def\ext@figure{lof}
+\def\fnum@figure{\figurename\nobreakspace\thefigure}
+\newenvironment{figure}
+               {\@float{figure}}
+               {\end@float}
+\newenvironment{figure*}
+               {\@dblfloat{figure}}
+               {\end@dblfloat}
+\newcounter{table}[chapter]
+\renewcommand \thetable
+     {\ifnum \c@chapter>\z@ \thechapter.\fi \@arabic\c@table}
+\def\fps@table{tbp}
+\def\ftype@table{2}
+\def\ext@table{lot}
+\def\fnum@table{\tablename\nobreakspace\thetable}
+\newenvironment{table}
+               {\@float{table}}
+               {\end@float}
+\newenvironment{table*}
+               {\@dblfloat{table}}
+               {\end@dblfloat}
+               
+%\newlength\abovecaptionskip TODO find where these are created
+%\newlength\belowcaptionskip
+\setlength\abovecaptionskip{10\p@}
+\setlength\belowcaptionskip{0\p@}
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{#1: #2}%
+  \ifdim \wd\@tempboxa >\hsize
+    #1: #2\par
+  \else
+    \global \@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
 
 %%%
 %   Table styles
@@ -3771,18 +3982,19 @@
 %%%
 
 \if@compatibility
-\renewenvironment{titlepage}
+\newenvironment{titlepage}
     {%
-      \begin{onecolarea}{}{\newpage}
+      \begin{onecolarea}{\newpage}{\newpage}
       \thispagestyle{empty}%
       %\setcounter{page}\z@
     }%
     {\end{onecolarea}
+    {\end{onecolarea}
     }
 \else
-\renewenvironment{titlepage}
+\newenvironment{titlepage}
     {%
-      \cleardoublepage
+      \ifbook\cleardoublepage\else\clearpage\fi
       \begin{onecolarea}{\newpage}{\newpage}
       \thispagestyle{empty}%
       %\setcounter{page}\@ne
@@ -4144,14 +4356,7 @@
   \fi
 }
 
-%%%
-% Customize appendix
-%%%
 
-\AtBeginDocument{
-  \storeold{\appendix}
-  \def\appendix{\part*{Appendix}\oldappendix}
-}
 
 
 
@@ -4539,6 +4744,9 @@
 
 \newcounter{footnotestore}
 
+\ifexists{maketitle}{}{% package hyperref defines maketitle
+  \newcommand\maketitle{}
+}
 \renewcommand\maketitle{
   \begingroup
     \def\and{\ClassWarning{TUestyle}{\string\and\space command is disabled, use \string\author{<name1>}{<name2>}{<name3>}[<key3>] for proper styling}{}}
@@ -4695,8 +4903,24 @@
 %%% disable \and command 
 \global\let\and\relax
 
-
-
+%%% taken from report.cls & book.cls
+\ifbook
+  \newcommand\frontmatter{%
+      \cleardoublepage
+    \@mainmatterfalse
+    \pagenumbering{roman}}
+  \newcommand\mainmatter{%
+      \cleardoublepage
+    \@mainmattertrue
+    \pagenumbering{arabic}}
+  \newcommand\backmatter{%
+    \if@openright
+      \cleardoublepage
+    \else
+      \clearpage
+    \fi
+    \@mainmatterfalse}
+\fi
 
 \newcommand{\axisfill}[2][blbrtlbl]{
 \in@{bl}{#1}\ifin@
@@ -4748,9 +4972,12 @@
 % for which the geometry package is used.
 
 \storeold{\tableofcontents}
-\renewcommand\tableofcontents{%
+\newcommand\tableofcontents{%
+
+  \setoddcontentlayout
+
   \microtypesetup{protrusion=false}%
-  \begin{onecolarea}{}{\newpage}%
+  \begin{onecolarea}{\newpage}{\newpage}%
 
   \localdisablerefcheck
   
@@ -4766,10 +4993,6 @@
       }%
       }
     \fi%
-%
-    
-    \setoddcontentlayout
-
 
     % The table of contents needs different margins. The package geometry is used to
     % change the margins of certain pages within a document.
@@ -5249,22 +5472,84 @@ L\kern-.36em%
 %%%
 
 %%%	Remove dots between text and pagenumbers
-\renewcommand{\@dotsep}{10000}
+\newcommand{\@dotsep}{10000}
+
+\newcommand\@pnumwidth{1.55em}
+\newcommand\@tocrmarg{2.55em}
+\setcounter{tocdepth}{2}
 
 %%%	Redeclare the \listoftables command for the list of tables
 \storeold{\listoftables}
-\redefinelist{table}{lot}
+\definelist{table}{lot}
 
 %%%	Redeclare the \listoffigures command for the list of figures
 \storeold{\listoffigures}
-\redefinelist{figure}{lof}
+\definelist{figure}{lof}
 
 %%%	Declare the \listofnotes command for the list of notes
 \definelist{note}{lon}
 
+\newdimen\bibindent
+\setlength\bibindent{\tabsize}
+\newenvironment{thebibliography}[1]
+     {\chapter*{\bibname}%
+      \@mkboth{\MakeUppercase\bibname}{\MakeUppercase\bibname}%
+      \list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\newcommand\newblock{\hskip .11em\@plus.33em\@minus.07em}
+\let\@openbib@code\@empty
+\newenvironment{theindex}
+               {\if@twocolumn
+                  \@restonecolfalse
+                \else
+                  \@restonecoltrue
+                \fi
+                \columnseprule \z@
+                \columnsep \gridgutterwidth
+                \twocolumn[\@makeschapterhead{\indexname}]%
+                \@mkboth{\MakeUppercase\indexname}%
+                        {\MakeUppercase\indexname}%
+                \thispagestyle{plain}\parindent\z@
+                \parskip\z@ \@plus .3\p@\relax
+                \let\item\@idxitem}
+               {\if@restonecol\onecolumn\else\clearpage\fi}
+\newcommand\@idxitem{\par\hangindent 40\p@}
+\newcommand\subitem{\@idxitem \hspace*{20\p@}}
+\newcommand\subsubitem{\@idxitem \hspace*{30\p@}}
+\newcommand\indexspace{\par \vskip 10\p@ \@plus5\p@ \@minus3\p@\relax}
 
+%redefined from part
+\newcommand*\l@part[2]{%
+  \ifnum \c@tocdepth >-2\relax
+    \addpenalty{-\@highpenalty}%
+    \addvspace{2.25em \@plus\p@}%
+    \setlength\@tempdima{3em}%
+    \begingroup
+      \parindent \z@ \rightskip \@pnumwidth
+      \parfillskip -\@pnumwidth
+      {\leavevmode
+       \large \bfseries #1\hfil \hb@xt@\@pnumwidth{\hss #2}}\par
+       \nobreak
+         \global\@nobreaktrue
+         \everypar{\global\@nobreakfalse\everypar{}}%
+    \endgroup
+  \fi}
 %redefined from book
-\renewcommand*\l@chapter[2]{%
+\newcommand*\l@chapter[2]{%
   \def\@currentlist{chapter}% Added currentlist clause
   \ifnum \c@tocdepth >\m@ne%
     \addpenalty{-\@highpenalty}%
@@ -5550,7 +5835,7 @@ L\kern-.36em%
 \setnewlength{\fnmarkbox}{\tabsize}
 
 \newcommand\inlinefntext{
-  \renewcommand\@makefntext[1]{%
+  \newcommand\@makefntext[1]{%
     \parindent \originalparindent%
     \noindent\hb@xt@ \fnmarkbox% hbox with "\fnmarkbox" width
     {\hss\@makefnmark\space}%
@@ -5559,7 +5844,7 @@ L\kern-.36em%
 }
  
 \newcommand\hangfntext{
-  \renewcommand\@makefntext[1]{%
+  \newcommand\@makefntext[1]{%
     \@setpar{% At every paragraph ending:
       \@@par% Start new paragraph
       \parshape \@ne \fnmarkbox \dimexpr \textwidth-\fnmarkbox\relax% Start new parshape
@@ -5572,6 +5857,18 @@ L\kern-.36em%
     
   }
 }
+
+\newcommand\contentsname{Contents}
+\newcommand\listfigurename{List of Figures}
+\newcommand\listtablename{List of Tables}
+\newcommand\bibname{Bibliography}
+\newcommand\indexname{Index}
+\newcommand\figurename{Figure}
+\newcommand\tablename{Table}
+\newcommand\partname{Part}
+\newcommand\chaptername{Chapter}
+\newcommand\appendixname{Appendix}
+\newcommand\abstractname{Abstract}
 
 %%% style marginpar command
 \storeold{\marginpar}
@@ -5640,6 +5937,58 @@ L\kern-.36em%
 
 \newcommand{\quotesource}[1]{\ifequal{#1}{}{}{\@quotesource{#1}}}
 
+\newenvironment{description}
+               {\list{}{\labelwidth\z@ \itemindent-\leftmargin
+                        \let\makelabel\descriptionlabel}}
+               {\endlist}
+\newcommand*\descriptionlabel[1]{\hspace\labelsep
+                                \normalfont\bfseries #1}
+
+\ifbook\relax\else
+  \if@titlepage
+    \newenvironment{abstract}{%
+        \titlepage
+        \null\vfil
+        \@beginparpenalty\@lowpenalty
+        \begin{center}%
+          \bfseries \abstractname
+          \@endparpenalty\@M
+        \end{center}}%
+       {\par\vfil\null\endtitlepage}
+  \else
+    \newenvironment{abstract}{%
+        \if@twocolumn
+          \section*{\abstractname}%
+        \else
+          \small
+          \begin{center}%
+            {\bfseries \abstractname\vspace{-.5em}\vspace{\z@}}%
+          \end{center}%
+          \quotation
+        \fi}
+        {\if@twocolumn\else\endquotation\fi}
+  \fi
+\fi
+                                
+\newenvironment{verse}
+               {\let\\\@centercr
+                \list{}{\itemsep      \z@
+                        \itemindent   -\tabsize%
+                        \listparindent\itemindent
+                        \rightmargin  \leftmargin
+                        \advance\leftmargin \tabsize}%
+                \item\relax}
+               {\endlist}
+
+% Old quotation environment
+\newenvironment{quotation}
+               {\list{}{\listparindent 1.5em%
+                        \itemindent    \listparindent
+                        \rightmargin   \leftmargin
+                        \parsep        \z@ \@plus\p@}%
+                \item\relax}
+               {\endlist}
+               
 \storeoldenv{\quotation}
 \renewenvironment{quotation}[1][]
            {\list{}{\listparindent \leftmargin%
@@ -5648,9 +5997,10 @@ L\kern-.36em%
                     \parsep        \z@ \@plus\p@}%
             \medskip\item\relax\style[4]{quote}\raggedright\def\tempaaaa{#1}}
            {\quotesource{\tempaaaa}\endlist\smallskip}
-
+           
+%% Quote environment is defined by a package
+           
 \storeoldenv{\quote}
-
 \renewenvironment{quote}[1][]
                {\list{}{\rightmargin\leftmargin}%
             \medskip\item\relax\style[4]{quote}\raggedright\def\tempaaaa{#1}}
@@ -5698,6 +6048,8 @@ L\kern-.36em%
 \newenvironment{axispage}{
     \setoddcontentlayout
     
+    \begin{onecolarea}{\newpage}{\newpage}
+    
     \begingroup
     \iftwosided
       \pagestyle{empty}
@@ -5719,6 +6071,9 @@ L\kern-.36em%
         \end{fullpagetextblock}
     \fi
 \endgroup
+  
+  \end{onecolarea}
+
   %%%	Begin new page to start layout-change
   \clearpage
   %%%	Reset the original values of all margins
@@ -5952,6 +6307,7 @@ L\kern-.36em%
     \kern 2.6pt
   \endgroup}
 }
+\@addtoreset{footnote}{chapter}
 
 
 
@@ -6201,8 +6557,11 @@ L\kern-.36em%
 % Declare commands for parts, chapters and sections without number
 %%%
 
-\renewcommand\chapter{%
+\newcommand\chapter{%
 \ifinlinesec%
+  \if@twocolumn% use clearpage before chapter to prevent loss of floats in twocolumn mode
+    \if@openright\cleardoublepage\else\clearpage\fi
+  \fi
   \relax%
 \else%
   \if@openright\cleardoublepage\else\clearpage\fi%
@@ -6213,11 +6572,40 @@ L\kern-.36em%
 \secdef\@chapter\@schapter%
 }
 
+%%% taken from report.cls & book.cls
+\def\@chapter[#1]#2{\ifnum \c@secnumdepth >\m@ne
+                       \if@mainmatter
+                         \refstepcounter{chapter}%
+                         \typeout{\@chapapp\space\thechapter.}%
+                         \addcontentsline{toc}{chapter}%
+                                   {\protect\numberline{\thechapter}#1}%
+                       \else
+                         \addcontentsline{toc}{chapter}{#1}%
+                       \fi
+                    \else
+                      \addcontentsline{toc}{chapter}{#1}%
+                    \fi
+                    \chaptermark{#1}%
+                    \addtocontents{lof}{\protect\addvspace{10\p@}}%
+                    \addtocontents{lot}{\protect\addvspace{10\p@}}%
+                    \if@twocolumn
+                      \@topnewpage[\@makechapterhead{#2}]%
+                    \else
+                      \@makechapterhead{#2}%
+                      \@afterheading
+                    \fi}
+\def\@schapter#1{\if@twocolumn
+                   \@topnewpage[\@makeschapterhead{#1}]%
+                 \else
+                   \@makeschapterhead{#1}%
+                   \@afterheading
+                 \fi}
+
 %%% command \TUe@createsectioningstyling[<level>]{\<name>}{<style>}{<space before>}{<space after>}
 \newcommand{\TUe@createsectioningstyling}[7][\secingLevelLowest]{
   \expandafter\providecommand\csname vbefore\cs@to@str#2\endcsname{#3 \@plus #4 \@minus #5}
   \expandafter\providecommand\csname vafter\cs@to@str#2\endcsname{#6 \@plus #7}
-  \renewcommand#2{
+  \newcommand#2{
     \@startsection{\cs@to@str#2}              % counter
     {#1}                                      % level
     {\z@}                                     % indent
@@ -6228,20 +6616,28 @@ L\kern-.36em%
   }
 }
 
-\ifsectioningstyling
+\ifsectioningstyling% TODO edit to TU/e spacing
+  \TUe@createsectioningstyling[1]{\section}       {-3.5ex}  {-1ex}{-.2ex}{2.3ex}{.2ex}
+  \TUe@createsectioningstyling[2]{\subsection}    {-3.25ex} {-1ex}{-.2ex}{1.5ex}{.2ex}
+  \TUe@createsectioningstyling[3]{\subsubsection} {-3.25ex} {-1ex}{-.2ex}{1.5ex}{.2ex}
+\else
   \TUe@createsectioningstyling[1]{\section}       {-3.5ex}  {-1ex}{-.2ex}{2.3ex}{.2ex}
   \TUe@createsectioningstyling[2]{\subsection}    {-3.25ex} {-1ex}{-.2ex}{1.5ex}{.2ex}
   \TUe@createsectioningstyling[3]{\subsubsection} {-3.25ex} {-1ex}{-.2ex}{1.5ex}{.2ex}
 \fi
 
 \ifsectioningstyling
-  \ifparagraphstyling
+  \ifparagraphstyling% TODO edit to TU/e spacing
     \TUe@createsectioningstyling[4]{\paragraph}   {-3.25ex} {-1ex}{-.2ex}{.2ex} {.2ex}% Negative values to create linebreak
     \TUe@createsectioningstyling[5]{\subparagraph}{-3.25ex} {-1ex}{-.2ex}{.2ex} {.2ex}% Negative values to create linebreak
+  \else
+    \TUe@createsectioningstyling[4]{\paragraph}   {-3.25ex} {-1ex}{-.2ex}{.2ex} {.2ex}% Negative values to create linebreak
+    \TUe@createsectioningstyling[5]{\subparagraph}{-3.25ex} {-1ex}{-.2ex}{.2ex} {.2ex}% Negative values to create linebreak
+
   \fi
 \fi
 
-    \newcommand\subsubparagraph{}
+    %\newcommand\subsubparagraph{} TODO check where defined
     \newcounter{subsubparagraph}[subparagraph]
     \newcommand{\subsubparagraphmark}[1]{}
     \providecommand*{\toclevel@subsubparagraph}{6}% toclevel, also used for bookmarks
@@ -6252,7 +6648,7 @@ L\kern-.36em%
 
 \AtBeginDocument{
   \def\chaptermark#1{
-   \markboth{\MakeUppercase{\ifnum \c@secnumdepth >\m@ne \chaptername\space\thechapter\fi\space#1}}{\rightmark}
+   \markboth{\MakeUppercase{\ifnum \c@secnumdepth >\m@ne \if@mainmatter \chaptername\space\thechapter\fi\fi\space#1}}{\rightmark}
   }
   
   \renewcommand\sectionmark[1]{%
@@ -6338,6 +6734,21 @@ L\kern-.36em%
         
         
         
+\newcommand\appendix{\part*{Appendix}\par
+  \setcounter{chapter}{0}%
+  \setcounter{section}{0}%
+  \gdef\@chapapp{\appendixname}%
+  \gdef\thechapter{\@Alph\c@chapter}
+  }
+\setlength\arraycolsep{5\p@}
+\setlength\tabcolsep{6\p@}
+\setlength\arrayrulewidth{.4\p@}
+\setlength\doublerulesep{2\p@}
+\setlength\tabbingsep{\labelsep}
+\skip\@mpfootins = \skip\footins
+\setlength\fboxsep{3\p@}
+\setlength\fboxrule{.4\p@}
+
 
 
 \DeclareOldFontCommand{\rm}{
@@ -6388,3 +6799,8 @@ L\kern-.36em%
 \@fontswitch\relax\mathcal}
 
 \DeclareRobustCommand*\mit{\@fontswitch\relax\mathnormal}
+
+\def\today{\ifcase\month\or
+  January\or February\or March\or April\or May\or June\or
+  July\or August\or September\or October\or November\or December\fi
+  \space\number\day, \number\year}
